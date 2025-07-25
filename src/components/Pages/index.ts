@@ -1,0 +1,9 @@
+export { default as AboutPage } from './AboutPage';
+export { default as ContactPage } from './ContactPage';
+export { default as CareersPage } from './CareersPage';
+export { default as HelpPage } from './HelpPage';
+export { default as FrequentlyAskedQuestions } from './FrequentlyAskedQuestions';
+export { default as FaqPage } from './FaqPage';
+export { default as TermsPage } from './TermsPage';
+export { default as PrivacyPage } from './PrivacyPage';
+export { default as CookiesPage } from './CookiesPage';
