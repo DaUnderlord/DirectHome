@@ -201,6 +201,61 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
+      {/* PAIN → PROMISE BRIDGE Section */}
+      <section className="py-24 bg-gradient-to-b from-black to-gray-900 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">Your Journey Made Simple</h2>
+            <div className="w-32 h-1 bg-gradient-to-r from-blue-500 to-blue-600 mx-auto rounded-full mb-6"></div>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">We've streamlined the housing process to just three simple steps</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            {/* Connecting line - visible on md+ screens */}
+            <div className="hidden md:block absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-blue-600 transform -translate-y-1/2 z-0"></div>
+            
+            {/* Step 1: Search */}
+            <div className="glass-dark p-8 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 relative z-10 transform transition-all duration-300 hover:-translate-y-2 hover:shadow-blue-500/20 hover:shadow-lg">
+              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">1</div>
+              <div className="text-center pt-6">
+                <IconSearch size={48} className="mx-auto text-blue-400 mb-4" />
+                <h3 className="text-2xl font-bold text-white mb-3">Search</h3>
+                <p className="text-gray-300 mb-4">Browse verified properties that match your exact needs</p>
+                <div className="bg-white/10 rounded-lg p-3 text-sm text-blue-100">
+                  <span className="font-medium">No hidden fees</span> • What you see is what you pay
+                </div>
+              </div>
+            </div>
+            
+            {/* Step 2: Book */}
+            <div className="glass-dark p-8 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 relative z-10 transform transition-all duration-300 hover:-translate-y-2 hover:shadow-blue-500/20 hover:shadow-lg">
+              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">2</div>
+              <div className="text-center pt-6">
+                <IconPhone size={48} className="mx-auto text-blue-400 mb-4" />
+                <h3 className="text-2xl font-bold text-white mb-3">Book</h3>
+                <p className="text-gray-300 mb-4">Schedule viewings directly with property owners</p>
+                <div className="bg-white/10 rounded-lg p-3 text-sm text-blue-100">
+                  <span className="font-medium">24h approval</span> • Quick response guaranteed
+                </div>
+              </div>
+            </div>
+            
+            {/* Step 3: Move-in */}
+            <div className="glass-dark p-8 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 relative z-10 transform transition-all duration-300 hover:-translate-y-2 hover:shadow-blue-500/20 hover:shadow-lg">
+              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">3</div>
+              <div className="text-center pt-6">
+                <IconArrowRight size={48} className="mx-auto text-blue-400 mb-4" />
+                <h3 className="text-2xl font-bold text-white mb-3">Move-in</h3>
+                <p className="text-gray-300 mb-4">Sign your agreement and move into your new home</p>
+                <div className="bg-white/10 rounded-lg p-3 text-sm text-blue-100">
+                  <span className="font-medium">Secure process</span> • Verified properties only
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Featured Properties - Continuous Scroll */}
       {!loading && featuredProperties.length > 0 && (
         <section className="py-20 overflow-hidden relative fade-carousel">
