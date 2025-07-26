@@ -106,7 +106,9 @@ const WhyChooseSection: React.FC<WhyChooseSectionProps> = ({ className = '' }) =
   }, []);
 
   return (
-    <section className={`py-32 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 ${className}`}>
+    <section className={`py-32 bg-white ${className} relative`}>
+      {/* Pattern Grid Background */}
+      <div className="absolute inset-0 pattern-grid z-0"></div>
       <div className="max-w-7xl mx-auto px-6 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-24">

@@ -5,6 +5,7 @@ import {
   IconMapPin,
   IconPhone,
   IconArrowRight,
+  IconArrowLeft,
   IconPlayerPlay,
   IconStar,
   IconBed,
@@ -25,8 +26,8 @@ const HomePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   
   // Animation hooks for CTA section
-  const { elementRef: ctaTextRef, isVisible: ctaTextVisible } = useScrollAnimation();
-  const { elementRef: ctaImageRef, isVisible: ctaImageVisible } = useScrollAnimation();
+  const { elementRef: ctaTextRef, isVisible: ctaTextVisible } = useScrollAnimation<HTMLDivElement>();
+  const { elementRef: ctaImageRef, isVisible: ctaImageVisible } = useScrollAnimation<HTMLDivElement>();
 
   useEffect(() => {
     const loadFeaturedProperties = async () => {
@@ -139,7 +140,7 @@ const HomePage: React.FC = () => {
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16 sm:mb-24">
               <Link
                 to="/search"
                 className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 btn-interactive shadow-lg hover:shadow-glow flex items-center space-x-2"
@@ -258,19 +259,49 @@ const HomePage: React.FC = () => {
 
       {/* Featured Properties - Continuous Scroll */}
       {!loading && featuredProperties.length > 0 && (
-        <section className="py-20 overflow-hidden relative fade-carousel">
+        <section className="py-20 overflow-hidden relative fade-carousel bg-white">
+          {/* Pattern Grid Background */}
+          <div className="absolute inset-0 pattern-grid z-0"></div>
+          
           {/* Extended Fade overlays - Hidden on mobile */}
           <div className="gradient-fade-left-extended hidden md:block"></div>
           <div className="gradient-fade-right-extended hidden md:block"></div>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
             <div className="text-center">
               <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Properties</h2>
               <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-blue-600 mx-auto rounded-full"></div>
             </div>
+            
+            {/* Mobile navigation controls */}
+            <div className="flex justify-between items-center md:hidden px-2 mb-4">
+              <button 
+                onClick={() => {
+                  const scrollContainer = document.getElementById('featured-properties-scroll');
+                  if (scrollContainer) {
+                    scrollContainer.scrollBy({ left: -320, behavior: 'smooth' });
+                  }
+                }}
+                className="p-3 bg-blue-500 text-white rounded-full shadow-lg">
+                <IconArrowLeft size={20} />
+              </button>
+              <button 
+                onClick={() => {
+                  const scrollContainer = document.getElementById('featured-properties-scroll');
+                  if (scrollContainer) {
+                    scrollContainer.scrollBy({ left: 320, behavior: 'smooth' });
+                  }
+                }}
+                className="p-3 bg-blue-500 text-white rounded-full shadow-lg">
+                <IconArrowRight size={20} />
+              </button>
+            </div>
           </div>
 
-          <div className="flex animate-scroll-left space-x-6 pl-4">
+          <div 
+            id="featured-properties-scroll"
+            className="flex md:animate-scroll-left space-x-6 pl-4 overflow-x-auto scrollbar-hide scroll-smooth md:overflow-visible mobile-scroll-fast"
+            style={{ scrollSnapType: 'x mandatory' }}>
             {/* Duplicate properties for seamless loop */}
             {[...featuredProperties, ...featuredProperties].map((property, index) => (
               <div key={`${property.id}-${index}`} className="flex-shrink-0 w-80">

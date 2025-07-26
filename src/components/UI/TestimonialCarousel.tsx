@@ -24,7 +24,7 @@ const TestimonialCarousel: React.FC<TestimonialCarouselProps> = ({
   title = 'What Our Clients Say',
   className = ''
 }) => {
-  const { elementRef, isVisible } = useScrollAnimation();
+  const { elementRef, isVisible } = useScrollAnimation<HTMLDivElement>();
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, index) => (
@@ -47,28 +47,34 @@ const TestimonialCarousel: React.FC<TestimonialCarouselProps> = ({
   return (
     <div 
       ref={elementRef}
-      className={`py-20 bg-gradient-to-br from-blue-50 to-indigo-50 ${className} ${
+      className={`py-20 bg-white ${className} overflow-hidden relative fade-carousel ${
         isVisible ? 'animate-slide-up' : 'scroll-animate-hidden'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Pattern Grid Background */}
+      <div className="absolute inset-0 pattern-grid z-0"></div>
+      {/* Extended Fade overlays - Hidden on mobile */}
+      <div className="gradient-fade-left-extended hidden md:block"></div>
+      <div className="gradient-fade-right-extended hidden md:block"></div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-8">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
             {title}
           </h2>
           <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-blue-600 mx-auto rounded-full"></div>
         </div>
-
-        {/* Testimonials Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {testimonials.map((testimonial, index) => (
-            <div 
-              key={testimonial.id}
-              className={`glass-card p-6 rounded-2xl relative overflow-hidden hover:shadow-glass transition-all duration-300 ${
-                isVisible ? `animate-slide-up animate-delay-${Math.min((index + 1) * 100, 600)}` : 'scroll-animate-hidden'
-              }`}
-            >
+      </div>
+      
+      {/* Testimonials Carousel */}
+      <div className="flex animate-scroll-left space-x-6 pl-4">
+        {/* Duplicate testimonials for seamless loop */}
+        {[...testimonials, ...testimonials].map((testimonial, index) => (
+          <div 
+            key={`${testimonial.id}-${index}`}
+            className="flex-shrink-0 w-96">
+            <div className="glass-card p-6 rounded-2xl relative overflow-hidden hover:shadow-glass transition-all duration-300">
               {/* Background Pattern */}
               <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-500/10 to-transparent rounded-full -translate-y-10 translate-x-10"></div>
               
@@ -115,8 +121,8 @@ const TestimonialCarousel: React.FC<TestimonialCarouselProps> = ({
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );

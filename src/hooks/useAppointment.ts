@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useAppointmentStore } from '../store/appointmentStore';
-import { 
-  AppointmentFilters, 
-  AppointmentStatus, 
-  AppointmentType, 
-  CreateAppointmentDto 
+import {
+  AppointmentFilters,
+  AppointmentStatus,
+  AppointmentType,
+  CreateAppointmentDto
 } from '../types/appointment';
 import { addDays, format, isSameDay, startOfDay } from 'date-fns';
 
@@ -42,8 +42,8 @@ export const useAppointment = () => {
 
   // Get selected appointment
   const selectedAppointment = useMemo(() => {
-    return selectedAppointmentId 
-      ? appointments.find(a => a.id === selectedAppointmentId) 
+    return selectedAppointmentId
+      ? appointments.find(a => a.id === selectedAppointmentId)
       : null;
   }, [selectedAppointmentId, appointments]);
 
@@ -51,8 +51,8 @@ export const useAppointment = () => {
   const upcomingAppointments = useMemo(() => {
     const now = new Date();
     return filteredAppointments
-      .filter(a => 
-        a.startTime > now && 
+      .filter(a =>
+        a.startTime > now &&
         (a.status === AppointmentStatus.CONFIRMED || a.status === AppointmentStatus.PENDING)
       )
       .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
@@ -75,7 +75,7 @@ export const useAppointment = () => {
     const confirmed = filteredAppointments.filter(a => a.status === AppointmentStatus.CONFIRMED).length;
     const rescheduled = filteredAppointments.filter(a => a.status === AppointmentStatus.RESCHEDULED).length;
     const missed = filteredAppointments.filter(a => a.status === AppointmentStatus.MISSED).length;
-    
+
     return {
       total,
       completed,
@@ -107,19 +107,19 @@ export const useAppointment = () => {
     // If we have host availability, check if the date is blocked
     if (hostAvailability) {
       // Check if date is blocked
-      const isBlocked = hostAvailability.blockedDates.some(blockedDate => 
+      const isBlocked = hostAvailability.blockedDates.some(blockedDate =>
         isSameDay(blockedDate, date)
       );
-      
+
       if (isBlocked) return false;
-      
+
       // Check if day of week has available slots
       const dayOfWeek = format(date, 'EEEE').toLowerCase() as keyof typeof hostAvailability.weekdayAvailability;
       const daySlots = hostAvailability.weekdayAvailability[dayOfWeek];
-      
+
       return daySlots.some(slot => slot.available);
     }
-    
+
     return true;
   }, [hostAvailability]);
 
@@ -127,74 +127,74 @@ export const useAppointment = () => {
   const scheduleAppointment = useCallback(async (data: Omit<CreateAppointmentDto, 'type'>) => {
     // Validate appointment
     const now = new Date();
-    
+
     if (data.startTime < now) {
       return { success: false, error: 'Cannot schedule an appointment in the past' };
     }
-    
+
     if (data.startTime >= data.endTime) {
       return { success: false, error: 'End time must be after start time' };
     }
-    
+
     // Check if host is available
     if (hostAvailability) {
       // Check if date is blocked
-      const isBlocked = hostAvailability.blockedDates.some(blockedDate => 
+      const isBlocked = hostAvailability.blockedDates.some(blockedDate =>
         isSameDay(blockedDate, data.startTime)
       );
-      
+
       if (isBlocked) {
         return { success: false, error: 'Host is not available on this date' };
       }
-      
+
       // Check if day of week has available slots
       const dayOfWeek = format(data.startTime, 'EEEE').toLowerCase() as keyof typeof hostAvailability.weekdayAvailability;
       const daySlots = hostAvailability.weekdayAvailability[dayOfWeek];
-      
+
       if (daySlots.length === 0) {
         return { success: false, error: 'Host is not available on this day of the week' };
       }
-      
+
       // Check if time is within available slots
       const startTimeStr = format(data.startTime, 'HH:mm');
       const endTimeStr = format(data.endTime, 'HH:mm');
-      
+
       const isWithinSlot = daySlots.some(slot => {
         return startTimeStr >= slot.start && endTimeStr <= slot.end && slot.available;
       });
-      
+
       if (!isWithinSlot) {
         return { success: false, error: 'Selected time is outside of host availability' };
       }
-      
+
       // Check if appointment duration is valid
       const durationMs = data.endTime.getTime() - data.startTime.getTime();
       const durationMinutes = durationMs / (1000 * 60);
-      
+
       if (durationMinutes !== hostAvailability.appointmentDuration) {
-        return { 
-          success: false, 
-          error: `Appointment duration must be ${hostAvailability.appointmentDuration} minutes` 
+        return {
+          success: false,
+          error: `Appointment duration must be ${hostAvailability.appointmentDuration} minutes`
         };
       }
-      
+
       // Check if appointment is too far in the future
       const maxDate = addDays(now, hostAvailability.maxDaysInAdvance);
-      
+
       if (data.startTime > maxDate) {
-        return { 
-          success: false, 
-          error: `Cannot schedule appointments more than ${hostAvailability.maxDaysInAdvance} days in advance` 
+        return {
+          success: false,
+          error: `Cannot schedule appointments more than ${hostAvailability.maxDaysInAdvance} days in advance`
         };
       }
     }
-    
+
     // Create appointment
     const appointmentId = await createAppointment({
       ...data,
       type: AppointmentType.VIEWING
     });
-    
+
     if (appointmentId) {
       return { success: true, appointmentId };
     } else {
@@ -226,7 +226,7 @@ export const useAppointment = () => {
     upcomingAppointments,
     todayAppointments,
     appointmentStats,
-    
+
     // Actions
     fetchAppointments,
     fetchAppointmentById,
@@ -242,25 +242,25 @@ export const useAppointment = () => {
     updateHostAvailability,
     fetchAvailabilitySlots,
     scheduleAppointment,
-    
+
     // Helper methods
     formatAppointmentDate,
     formatAppointmentTime,
     formatAppointmentDateTime,
     hasAvailableSlots,
-    
+
     // Filter helpers
-    filterByStatus: (status: AppointmentStatus | AppointmentStatus[]) => 
+    filterByStatus: (status: AppointmentStatus | AppointmentStatus[]) =>
       fetchAppointments({ ...appointmentFilters, status }),
-    filterByType: (type: AppointmentType | AppointmentType[]) => 
+    filterByType: (type: AppointmentType | AppointmentType[]) =>
       fetchAppointments({ ...appointmentFilters, type }),
-    filterByDateRange: (startDate: Date, endDate: Date) => 
+    filterByDateRange: (startDate: Date, endDate: Date) =>
       fetchAppointments({ ...appointmentFilters, startDate, endDate }),
-    filterByProperty: (propertyId: string) => 
+    filterByProperty: (propertyId: string) =>
       fetchAppointments({ ...appointmentFilters, propertyId }),
-    filterByHost: (hostId: string) => 
+    filterByHost: (hostId: string) =>
       fetchAppointments({ ...appointmentFilters, hostId }),
-    filterByAttendee: (attendeeId: string) => 
+    filterByAttendee: (attendeeId: string) =>
       fetchAppointments({ ...appointmentFilters, attendeeId }),
     clearFilters: () => fetchAppointments({})
   };

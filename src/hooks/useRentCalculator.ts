@@ -43,11 +43,26 @@ export const useRentCalculator = () => {
    * @returns Formatted currency string
    */
   const formatCurrency = useCallback((amount: number, currency = 'NGN'): string => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency,
-      maximumFractionDigits: 0
-    }).format(amount);
+    try {
+      // Use a safer approach to formatting with error handling
+      return new Intl.NumberFormat('en-NG', {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 0,
+        minimumFractionDigits: 0
+      }).format(amount);
+    } catch (error) {
+      // Fallback method if the Intl.NumberFormat fails
+      const formatter = new Intl.NumberFormat('en-NG', {
+        style: 'decimal',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      });
+      
+      // Format the number and add the currency symbol manually
+      const symbol = currency === 'NGN' ? '₦' : '$';
+      return `${symbol}${formatter.format(amount)}`;
+    }
   }, []);
 
   /**

@@ -1,9 +1,9 @@
 import React from 'react';
-import { 
-  IconShieldCheck, 
-  IconMapPin, 
-  IconMail, 
-  IconPhone, 
+import {
+  IconShieldCheck,
+  IconMapPin,
+  IconMail,
+  IconPhone,
   IconClock,
   IconStar,
   IconUsers,
@@ -125,9 +125,9 @@ const TrustIndicators: React.FC<TrustIndicatorsProps> = ({
         >
           <div className="flex items-center space-x-3">
             <div className={`p-2 rounded-full ${indicator.isVerified ? 'bg-green-100' : 'bg-gray-100'}`}>
-              <Icon 
-                size={16} 
-                className={indicator.isVerified ? 'text-green-600' : 'text-gray-600'} 
+              <Icon
+                size={16}
+                className={indicator.isVerified ? 'text-green-600' : 'text-gray-600'}
               />
             </div>
             <div>
@@ -151,9 +151,9 @@ const TrustIndicators: React.FC<TrustIndicatorsProps> = ({
           className="p-3 bg-white border border-gray-200 rounded-lg text-center"
         >
           <div className={`inline-flex p-2 rounded-full mb-2 ${indicator.isVerified ? 'bg-green-100' : 'bg-gray-100'}`}>
-            <Icon 
-              size={20} 
-              className={indicator.isVerified ? 'text-green-600' : 'text-gray-600'} 
+            <Icon
+              size={20}
+              className={indicator.isVerified ? 'text-green-600' : 'text-gray-600'}
             />
           </div>
           <div className="font-medium text-gray-900 text-sm">{indicator.name}</div>
@@ -172,8 +172,8 @@ const TrustIndicators: React.FC<TrustIndicatorsProps> = ({
         key={indicator.id}
         className={`
           inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium border
-          ${indicator.isVerified 
-            ? 'bg-green-50 border-green-200 text-green-700' 
+          ${indicator.isVerified
+            ? 'bg-green-50 border-green-200 text-green-700'
             : 'bg-gray-50 border-gray-200 text-gray-700'
           }
         `}

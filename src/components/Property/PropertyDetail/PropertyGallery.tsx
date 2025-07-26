@@ -51,7 +51,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ images }) => {
             className="w-full h-full object-cover"
             onClick={toggleFullscreen}
           />
-          
+
           {/* Navigation Arrows */}
           <button
             onClick={handlePrevious}
@@ -65,22 +65,21 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ images }) => {
           >
             <IconChevronRight size={24} />
           </button>
-          
+
           {/* Image Counter */}
           <div className="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white text-sm px-3 py-1 rounded-full">
             {activeIndex + 1} / {images.length}
           </div>
         </div>
-        
+
         {/* Thumbnails */}
         {images.length > 1 && (
           <div className="flex mt-4 space-x-2 overflow-x-auto pb-2">
             {sortedImages.map((image, index) => (
               <div
                 key={image.id}
-                className={`relative cursor-pointer flex-shrink-0 ${
-                  activeIndex === index ? 'ring-2 ring-blue-500' : ''
-                }`}
+                className={`relative cursor-pointer flex-shrink-0 ${activeIndex === index ? 'ring-2 ring-blue-500' : ''
+                  }`}
                 onClick={() => setActiveIndex(index)}
               >
                 <img
@@ -108,7 +107,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ images }) => {
               alt={sortedImages[activeIndex].caption || `Property image ${activeIndex + 1}`}
               className="max-w-full max-h-[90vh] object-contain"
             />
-            
+
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -127,7 +126,7 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ images }) => {
             >
               <IconChevronRight size={24} />
             </button>
-            
+
             <div className="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white text-sm px-3 py-1 rounded-full">
               {activeIndex + 1} / {images.length}
             </div>
