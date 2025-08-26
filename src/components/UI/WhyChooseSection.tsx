@@ -33,8 +33,8 @@ const WhyChooseSection: React.FC<WhyChooseSectionProps> = ({ className = '' }) =
   const benefits: Benefit[] = [
     {
       id: '1',
-      title: 'Largest Property Database',
-      description: 'Access over 50,000 verified listings updated daily across Nigeria. Find exactly what you\'re looking for with our comprehensive property database.',
+      title: 'Largest ‘NO-AGENT’ Property base',
+      description: 'Access over 50,000 verified listings updated daily across Nigeria without House agents and middlemen. Find exactly what you\'re looking for with our comprehensive property database.',
       icon: <IconDatabase size={40} />,
       statistic: {
         value: 10000,
@@ -116,7 +116,7 @@ const WhyChooseSection: React.FC<WhyChooseSectionProps> = ({ className = '' }) =
             Why Choose DirectHome
           </h2>
           <p className="text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-            Experience Nigeria's most trusted real estate platform with cutting-edge features designed to make your property journey seamless and successful.
+            Experience Nigeria's most trusted real estate RENTAL platform with cutting-edge features designed to make your property journey successful — effectively cutting off House agents.
           </p>
           <div className="w-32 h-1.5 bg-gradient-to-r from-blue-500 to-blue-600 mx-auto mt-10 rounded-full"></div>
         </div>

@@ -8,8 +8,6 @@ import {
   IconHeart,
   IconTarget,
   IconBulb,
-  IconHandshake,
-  IconStar,
   IconQuote
 } from '@tabler/icons-react';
 import { useScrollAnimation } from '../../hooks/useScrollAnimation';
@@ -17,28 +15,22 @@ import { useScrollAnimation } from '../../hooks/useScrollAnimation';
 // Team members data
 const teamMembers = [
   {
-    name: 'Adebayo Johnson',
+    name: 'Segun Owele',
     role: 'CEO & Founder',
     image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-    bio: 'Former real estate executive with 15+ years of experience transforming property markets across Nigeria.'
+    bio: 'Licensed Architect with 10+ years of experience providing homes for growing families and Nigerians in diaspora.'
   },
   {
-    name: 'Kemi Okafor',
-    role: 'CTO',
+    name: 'Abiodun Owele',
+    role: 'Business analyst & Co-founder',
     image: 'https://images.unsplash.com/photo-1494790108755-2616b9c5e8e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-    bio: 'Tech innovator passionate about creating seamless digital experiences for property transactions.'
+    bio: 'Co-founder focused on leveraging data and strategy to scale Nigeria’s most trusted rental platform.'
   },
   {
-    name: 'Emeka Nwankwo',
-    role: 'Head of Operations',
+    name: 'Dennis Ogi',
+    role: 'CTO/Head of IT',
     image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-    bio: 'Operations expert ensuring smooth property verification and user experience across our platform.'
-  },
-  {
-    name: 'Fatima Abdullahi',
-    role: 'Head of Customer Success',
-    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-    bio: 'Customer advocate dedicated to helping users find their perfect homes with exceptional service.'
+    bio: 'Key member of the team supporting our mission to connect renters directly with homeowners.'
   }
 ];
 
@@ -100,14 +92,12 @@ const milestones = [
 
 const AboutPage: React.FC = () => {
   // Animation hooks for different sections
-  const { elementRef: heroRef, isVisible: heroVisible } = useScrollAnimation();
-  const { elementRef: statsRef, isVisible: statsVisible } = useScrollAnimation();
-  const { elementRef: missionRef, isVisible: missionVisible } = useScrollAnimation();
-  const { elementRef: missionImageRef, isVisible: missionImageVisible } = useScrollAnimation();
-  const { elementRef: valuesRef, isVisible: valuesVisible } = useScrollAnimation();
-  const { elementRef: timelineRef, isVisible: timelineVisible } = useScrollAnimation();
-  const { elementRef: teamRef, isVisible: teamVisible } = useScrollAnimation();
-  const { elementRef: testimonialRef, isVisible: testimonialVisible } = useScrollAnimation();
+  const { elementRef: heroRef, isVisible: heroVisible } = useScrollAnimation<HTMLDivElement>();
+  const { elementRef: statsRef, isVisible: statsVisible } = useScrollAnimation<HTMLDivElement>();
+  const { elementRef: missionRef, isVisible: missionVisible } = useScrollAnimation<HTMLDivElement>();
+  const { elementRef: missionImageRef, isVisible: missionImageVisible } = useScrollAnimation<HTMLDivElement>();
+  const { elementRef: valuesRef, isVisible: valuesVisible } = useScrollAnimation<HTMLDivElement>();
+  const { elementRef: timelineRef, isVisible: timelineVisible } = useScrollAnimation<HTMLDivElement>();
 
   return (
     <div className="min-h-screen">
@@ -125,8 +115,7 @@ const AboutPage: React.FC = () => {
               Revolutionizing Real Estate in Nigeria
             </h1>
             <p className="text-xl md:text-2xl text-blue-100 mb-8 leading-relaxed">
-              We're on a mission to connect property seekers directly with homeowners, 
-              eliminating middlemen and creating a transparent, efficient marketplace.
+              We are on a mission to connect rental property seekers directly with homeowners, eliminating house agents (middlemen) and creating a transparent, efficient marketplace.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button className="px-8 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors">
@@ -183,14 +172,10 @@ const AboutPage: React.FC = () => {
                   <h2 className="text-3xl font-bold text-gray-900">Our Mission</h2>
                 </div>
                 <p className="text-lg text-gray-600 leading-relaxed mb-6">
-                  To democratize access to quality housing by creating a transparent, 
-                  efficient, and cost-effective platform that connects property seekers 
-                  directly with homeowners across Nigeria.
+                  To democratize access to quality rental housing by creating a transparent, efficient, and cost-effective platform that connects rental property seekers directly with homeowners across Nigeria — effectively cutting off house agents.
                 </p>
                 <p className="text-gray-600 leading-relaxed">
-                  We believe everyone deserves access to quality housing without the 
-                  burden of excessive fees and opaque processes that have plagued 
-                  the traditional real estate market.
+                  We believe everyone deserves access to quality housing without the burden of excessive fees and opaque processes that have plagued the traditional real estate market.
                 </p>
               </div>
               <div 

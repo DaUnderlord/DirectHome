@@ -111,8 +111,8 @@ const HomePage: React.FC = () => {
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-blue-100 mb-12 max-w-3xl mx-auto leading-relaxed">
-              Discover premium properties across Nigeria with our trusted real estate platform.
-              Your perfect home is just a search away.
+              Discover premium RENTAL properties across Nigeria with our trusted real estate platform — effectively cutting off house agents.
+              Your perfect RENTAL home is just a search away.
             </p>
 
             {/* Search Bar */}
@@ -206,9 +206,9 @@ const HomePage: React.FC = () => {
       <section className="py-24 bg-gradient-to-b from-black to-gray-900 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4">Your Journey Made Simple</h2>
+            <h2 className="text-4xl font-bold text-white mb-4">Your journey made simple</h2>
             <div className="w-32 h-1 bg-gradient-to-r from-blue-500 to-blue-600 mx-auto rounded-full mb-6"></div>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">We've streamlined the housing process to just three simple steps</p>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">We've streamlined the rental house search process to just three simple steps — effectively cutting off House agents.</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">

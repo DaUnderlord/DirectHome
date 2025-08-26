@@ -91,8 +91,8 @@ const ContactPage: React.FC = () => {
                   <IconMail className="text-blue-600 mt-1 mr-3" size={20} />
                   <div>
                     <p className="font-medium text-gray-800">Email</p>
-                    <a href="mailto:support@realestate.com" className="text-blue-600 hover:underline">
-                      support@realestate.com
+                    <a href="mailto:norwickprojects@gmail.com" className="text-blue-600 hover:underline">
+                      norwickprojects@gmail.com
                     </a>
                   </div>
                 </div>
@@ -101,8 +101,8 @@ const ContactPage: React.FC = () => {
                   <IconPhone className="text-blue-600 mt-1 mr-3" size={20} />
                   <div>
                     <p className="font-medium text-gray-800">Phone</p>
-                    <a href="tel:+2348012345678" className="text-blue-600 hover:underline">
-                      +234 801 234 5678
+                    <a href="tel:+2348105797401" className="text-blue-600 hover:underline">
+                      08105797401
                     </a>
                   </div>
                 </div>
@@ -112,19 +112,11 @@ const ContactPage: React.FC = () => {
                   <div>
                     <p className="font-medium text-gray-800">Address</p>
                     <p className="text-gray-600">
-                      123 Victoria Island,<br />
-                      Lagos, Nigeria
+                      39, Off-Igbe road, Ikorodu, Lagos.
                     </p>
                   </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-              <h2 className="text-2xl font-semibold mb-4 text-gray-800">Office Hours</h2>
-              <p className="text-gray-600 mb-2">Monday - Friday: 9:00 AM - 5:00 PM</p>
-              <p className="text-gray-600">Saturday: 10:00 AM - 2:00 PM</p>
-              <p className="text-gray-600">Sunday: Closed</p>
             </div>
           </div>
         </div>
