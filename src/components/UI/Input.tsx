@@ -1,12 +1,15 @@
 import React from 'react';
 
-interface InputProps {
+export interface InputProps {
   id: string;
   label?: string;
   type?: string;
   placeholder?: string;
-  value: string;
+  value?: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: () => void;
+  name?: string;
+  ref?: React.Ref<HTMLInputElement>;
   error?: string;
   required?: boolean;
   disabled?: boolean;

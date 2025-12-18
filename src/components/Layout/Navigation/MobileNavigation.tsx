@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   IconHome,
@@ -23,11 +23,16 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
 }) => {
   const { isAuthenticated, logout } = useAuth();
   const location = useLocation();
+  const lastPathRef = useRef(location.pathname);
 
   // Close menu when route changes
   useEffect(() => {
-    onClose();
-  }, [location.pathname, onClose]);
+    const lastPath = lastPathRef.current;
+    if (isOpen && location.pathname !== lastPath) {
+      onClose();
+    }
+    lastPathRef.current = location.pathname;
+  }, [location.pathname, isOpen, onClose]);
 
   // Close menu on escape key
   useEffect(() => {

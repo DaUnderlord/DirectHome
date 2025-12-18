@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { supabase } from '../lib/supabase';
 import { 
   AuthStatus, 
   UserRole, 
@@ -19,6 +20,27 @@ import type {
   PasswordResetConfirmation,
   SocialLoginData
 } from '../types/auth';
+import type { Session } from '@supabase/supabase-js';
+
+// Map database role to UserRole enum
+const mapDbRoleToUserRole = (dbRole: string): UserRole => {
+  switch (dbRole) {
+    case 'homeowner': return UserRole.HOME_OWNER;
+    case 'homeseeker': return UserRole.HOME_SEEKER;
+    case 'admin': return UserRole.ADMIN;
+    default: return UserRole.HOME_SEEKER;
+  }
+};
+
+// Map UserRole enum to database role
+const mapUserRoleToDbRole = (role: UserRole): 'homeowner' | 'homeseeker' | 'admin' => {
+  switch (role) {
+    case UserRole.HOME_OWNER: return 'homeowner';
+    case UserRole.HOME_SEEKER: return 'homeseeker';
+    case UserRole.ADMIN: return 'admin';
+    default: return 'homeseeker';
+  }
+};
 
 // Create context with undefined initial value
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,96 +62,225 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // State for user data and authentication status
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [status, setStatus] = useState<AuthStatus>(AuthStatus.IDLE);
+  const [status, setStatus] = useState<AuthStatus>(AuthStatus.UNAUTHENTICATED);
   const [error, setError] = useState<AuthError | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const isHandlingSessionRef = useRef(false);
 
-  // Check for stored auth data on component mount
+  // Check for Supabase session on component mount
   useEffect(() => {
-    const checkAuth = async () => {
-      setStatus(AuthStatus.AUTHENTICATING);
-      
+    let timeoutId: NodeJS.Timeout;
+    let isMounted = true;
+
+    const initializeAuth = async () => {
       try {
-        // Check for stored tokens
-        const storedToken = localStorage.getItem('auth_token');
-        const storedRefreshToken = localStorage.getItem('auth_refresh_token');
-        const storedExpiresAt = localStorage.getItem('auth_expires_at');
-        
-        if (!storedToken || !storedRefreshToken || !storedExpiresAt) {
+        // Get current session from Supabase
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError) {
+          console.error('Session error:', sessionError);
           setStatus(AuthStatus.UNAUTHENTICATED);
+          setIsInitializing(false);
           return;
         }
-        
-        const expiresAtNum = parseInt(storedExpiresAt, 10);
-        
-        // Check if token is expired
-        if (Date.now() >= expiresAtNum) {
-          // Token expired, try to refresh
-          try {
-            const refreshResult = await refreshAuthToken();
-            setToken(refreshResult.token);
-            setRefreshToken(refreshResult.refreshToken);
-            setExpiresAt(refreshResult.expiresAt);
-            
-            // Fetch user data with new token
-            await fetchUserData(refreshResult.token);
-            setStatus(AuthStatus.AUTHENTICATED);
-          } catch (refreshError) {
-            // Refresh failed, clear auth data
-            clearAuthData();
-            setStatus(AuthStatus.UNAUTHENTICATED);
-          }
+
+        if (session) {
+          await handleSession(session);
         } else {
-          // Token still valid
-          setToken(storedToken);
-          setRefreshToken(storedRefreshToken);
-          setExpiresAt(expiresAtNum);
-          
-          // Fetch user data
-          await fetchUserData(storedToken);
-          setStatus(AuthStatus.AUTHENTICATED);
+          setStatus(AuthStatus.UNAUTHENTICATED);
         }
       } catch (error) {
         console.error('Authentication check failed:', error);
-        clearAuthData();
-        setStatus(AuthStatus.ERROR);
-        setError({
-          type: AuthErrorType.UNKNOWN_ERROR,
-          message: 'Failed to authenticate. Please try again.'
-        });
+        setStatus(AuthStatus.UNAUTHENTICATED);
+      } finally {
+        setIsInitializing(false);
       }
     };
-    
-    checkAuth();
+
+    // Add timeout to prevent infinite loading (3 seconds max)
+    timeoutId = setTimeout(() => {
+      setIsInitializing(false);
+    }, 3000);
+
+    initializeAuth();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event);
+      if (session) {
+        if (isHandlingSessionRef.current) return;
+        isHandlingSessionRef.current = true;
+        try {
+          await handleSession(session);
+        } finally {
+          isHandlingSessionRef.current = false;
+        }
+      } else {
+        clearAuthData();
+        setStatus(AuthStatus.UNAUTHENTICATED);
+      }
+    });
+
+    const handleUnauthorized = async () => {
+      if (!isMounted) return;
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.error('Error signing out after unauthorized:', e);
+      } finally {
+        clearAuthData();
+        setStatus(AuthStatus.UNAUTHENTICATED);
+      }
+    };
+
+    window.addEventListener('directhome:unauthorized', handleUnauthorized);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+      window.removeEventListener('directhome:unauthorized', handleUnauthorized);
+      subscription.unsubscribe();
+    };
   }, []);
-  
-  // Helper function to fetch user data
-  const fetchUserData = async (authToken: string): Promise<void> => {
+
+  // Handle session and fetch user profile
+  const handleSession = async (session: Session) => {
     try {
-      // This would be replaced with an actual API call
-      // For now, we'll simulate a successful fetch with mock data
-      const mockUser: User = {
-        id: '123',
-        email: 'user@example.com',
-        phone: '+2348012345678',
-        firstName: 'John',
-        lastName: 'Doe',
-        role: UserRole.HOME_SEEKER,
-        emailVerified: true,
-        phoneVerified: true,
-        verificationStatus: VerificationStatus.VERIFIED,
+      setToken(session.access_token);
+      setRefreshToken(session.refresh_token || null);
+      setExpiresAt(session.expires_at ? session.expires_at * 1000 : null);
+
+      localStorage.setItem('auth_token', session.access_token);
+      if (session.refresh_token) {
+        localStorage.setItem('auth_refresh_token', session.refresh_token);
+      }
+      if (session.expires_at) {
+        localStorage.setItem('auth_expires_at', (session.expires_at * 1000).toString());
+      }
+
+      // Fetch user profile from database
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Profile fetch error:', profileError);
+      }
+
+      const dbProfile: any = profileData || {};
+
+      const userData: User = {
+        id: session.user.id,
+        email: session.user.email || dbProfile.email || '',
+        phone: dbProfile.phone || '',
+        firstName: dbProfile.first_name || '',
+        lastName: dbProfile.last_name || '',
+        role: mapDbRoleToUserRole(dbProfile.role || 'homeseeker'),
+        emailVerified: session.user.email_confirmed_at !== null,
+        phoneVerified: dbProfile.phone_verified || false,
+        verificationStatus: dbProfile.verification_status === 'verified' 
+          ? VerificationStatus.VERIFIED 
+          : VerificationStatus.PENDING,
+        accountStatus: dbProfile.account_status === 'active' 
+          ? AccountStatus.ACTIVE 
+          : AccountStatus.SUSPENDED,
+        lastLogin: new Date(),
+        createdAt: new Date(session.user.created_at),
+        updatedAt: new Date(dbProfile.updated_at || session.user.created_at),
+      };
+
+      const userProfile: UserProfile = {
+        userId: session.user.id,
+        avatar: dbProfile.avatar_url,
+        bio: dbProfile.bio,
+        notificationPreferences: dbProfile.notification_preferences || {
+          email: true,
+          sms: true,
+          push: true,
+          newMessages: true,
+          appointmentReminders: true,
+          marketingUpdates: false,
+        },
+        createdAt: new Date(dbProfile.created_at || session.user.created_at),
+        updatedAt: new Date(dbProfile.updated_at || session.user.created_at),
+      };
+
+      setUser(userData);
+      setProfile(userProfile);
+      setStatus(AuthStatus.AUTHENTICATED);
+    } catch (error) {
+      console.error('Error handling session:', error);
+      setStatus(AuthStatus.ERROR);
+    }
+  };
+
+  // Helper function to fetch user data (kept for compatibility)
+  const fetchUserData = async (_authToken: string): Promise<void> => {
+    // This is now handled by handleSession
+    console.log('fetchUserData called - session handling is automatic');
+  };
+
+  // Helper function to clear auth data
+  const clearAuthData = (): void => {
+    setUser(null);
+    setProfile(null);
+    setToken(null);
+    setRefreshToken(null);
+    setExpiresAt(null);
+    // Supabase handles its own session storage
+
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_refresh_token');
+    localStorage.removeItem('auth_expires_at');
+  };
+
+  // Login function using Supabase Auth
+  const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
+    setStatus(AuthStatus.AUTHENTICATING);
+    setError(null);
+
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: credentials.emailOrPhone,
+        password: credentials.password,
+      });
+
+      if (signInError) {
+        throw signInError;
+      }
+
+      if (!data.session || !data.user) {
+        throw new Error('No session returned');
+      }
+
+      const metadata: any = data.user.user_metadata || {};
+      const roleFromMeta = metadata.role || metadata.user_role;
+
+      const userData: User = {
+        id: data.user.id,
+        email: data.user.email || '',
+        phone: metadata.phone || '',
+        firstName: metadata.first_name || metadata.firstName || '',
+        lastName: metadata.last_name || metadata.lastName || '',
+        role: mapDbRoleToUserRole(roleFromMeta || 'homeseeker'),
+        emailVerified: data.user.email_confirmed_at !== null,
+        phoneVerified: false,
+        verificationStatus: VerificationStatus.PENDING,
         accountStatus: AccountStatus.ACTIVE,
         lastLogin: new Date(),
-        createdAt: new Date(),
+        createdAt: new Date(data.user.created_at),
         updatedAt: new Date(),
       };
-      
-      const mockProfile: UserProfile = {
-        userId: '123',
-        avatar: 'https://example.com/avatar.jpg',
-        bio: 'Looking for a nice apartment in Lagos',
+
+      const userProfile: UserProfile = {
+        userId: data.user.id,
+        avatar: metadata.avatar_url,
+        bio: metadata.bio,
         notificationPreferences: {
           email: true,
           sms: true,
@@ -138,141 +289,118 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           appointmentReminders: true,
           marketingUpdates: false,
         },
-        createdAt: new Date(),
+        createdAt: new Date(data.user.created_at),
         updatedAt: new Date(),
       };
-      
-      setUser(mockUser);
-      setProfile(mockProfile);
-    } catch (error) {
-      console.error('Failed to fetch user data:', error);
-      throw error;
-    }
-  };
-  
-  // Helper function to clear auth data
-  const clearAuthData = (): void => {
-    setUser(null);
-    setProfile(null);
-    setToken(null);
-    setRefreshToken(null);
-    setExpiresAt(null);
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_refresh_token');
-    localStorage.removeItem('auth_expires_at');
-  };
 
-  // Login function
-  const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    setStatus(AuthStatus.AUTHENTICATING);
-    setError(null);
-    
-    try {
-      // This would be replaced with an actual API call
-      // For now, we'll simulate a successful login with mock data
-      const mockResponse: AuthResponse = {
-        user: {
-          id: '123',
-          email: credentials.emailOrPhone.includes('@') ? credentials.emailOrPhone : 'user@example.com',
-          phone: !credentials.emailOrPhone.includes('@') ? credentials.emailOrPhone : '+2348012345678',
-          firstName: 'John',
-          lastName: 'Doe',
-          role: UserRole.HOME_SEEKER,
-          emailVerified: true,
-          phoneVerified: true,
-          verificationStatus: VerificationStatus.VERIFIED,
-          accountStatus: AccountStatus.ACTIVE,
-          lastLogin: new Date(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        profile: {
-          userId: '123',
-          notificationPreferences: {
-            email: true,
-            sms: true,
-            push: true,
-            newMessages: true,
-            appointmentReminders: true,
-            marketingUpdates: false,
-          },
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        token: 'mock_token_' + Math.random(),
-        refreshToken: 'mock_refresh_token_' + Math.random(),
-        expiresAt: Date.now() + 3600000, // 1 hour from now
-      };
-      
-      // Store auth data
-      setUser(mockResponse.user);
-      setProfile(mockResponse.profile);
-      setToken(mockResponse.token);
-      setRefreshToken(mockResponse.refreshToken);
-      setExpiresAt(mockResponse.expiresAt);
+      setUser(userData);
+      setProfile(userProfile);
+      setToken(data.session.access_token);
+      setRefreshToken(data.session.refresh_token || null);
+      setExpiresAt(data.session.expires_at ? data.session.expires_at * 1000 : null);
       setStatus(AuthStatus.AUTHENTICATED);
-      
-      // Save to localStorage if rememberMe is true
-      if (credentials.rememberMe) {
-        localStorage.setItem('auth_token', mockResponse.token);
-        localStorage.setItem('auth_refresh_token', mockResponse.refreshToken);
-        localStorage.setItem('auth_expires_at', mockResponse.expiresAt.toString());
+      setIsInitializing(false);
+
+      localStorage.setItem('auth_token', data.session.access_token);
+      if (data.session.refresh_token) {
+        localStorage.setItem('auth_refresh_token', data.session.refresh_token);
       }
-      
-      return mockResponse;
-    } catch (error) {
+      if (data.session.expires_at) {
+        localStorage.setItem('auth_expires_at', (data.session.expires_at * 1000).toString());
+      }
+
+      const response: AuthResponse = {
+        user: userData,
+        profile: userProfile,
+        token: data.session.access_token,
+        refreshToken: data.session.refresh_token || '',
+        expiresAt: data.session.expires_at ? data.session.expires_at * 1000 : Date.now() + 3600000,
+      };
+
+      return response;
+    } catch (error: any) {
       console.error('Login failed:', error);
       setStatus(AuthStatus.ERROR);
       const authError: AuthError = {
         type: AuthErrorType.INVALID_CREDENTIALS,
-        message: 'Invalid email/phone or password. Please try again.'
+        message: error.message || 'Invalid email or password. Please try again.'
       };
       setError(authError);
       throw authError;
     }
   };
 
-  // Register function
   const register = async (data: RegistrationData): Promise<void> => {
     setStatus(AuthStatus.AUTHENTICATING);
     setError(null);
-    
+
     try {
-      // This would be replaced with an actual API call
-      // For now, we'll simulate a successful registration
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // In a real implementation, this would return user data and tokens
-      // For now, we'll just set the status to unauthenticated to prompt verification
-      setStatus(AuthStatus.UNAUTHENTICATED);
-      
-      // In a real app, we might store the email to pre-fill the verification form
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            first_name: data.firstName,
+            last_name: data.lastName,
+            role: mapUserRoleToDbRole(data.role as UserRole),
+            phone: data.phone,
+          },
+        },
+      });
+
+      if (signUpError) {
+        throw signUpError;
+      }
+
+      if (!authData.user) {
+        throw new Error('Registration failed - no user returned');
+      }
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: authData.user.id,
+          email: data.email,
+          phone: data.phone,
+          first_name: data.firstName,
+          last_name: data.lastName,
+          role: mapUserRoleToDbRole(data.role as UserRole),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+      }
+
       sessionStorage.setItem('pending_verification_email', data.email);
-    } catch (error) {
+
+      if (!authData.session) {
+        setStatus(AuthStatus.UNAUTHENTICATED);
+      }
+    } catch (error: any) {
       console.error('Registration failed:', error);
       setStatus(AuthStatus.ERROR);
       const authError: AuthError = {
         type: AuthErrorType.SERVER_ERROR,
-        message: 'Registration failed. Please try again.'
+        message: error.message || 'Registration failed. Please try again.'
       };
       setError(authError);
       throw authError;
     }
   };
 
-  // Logout function
+  // Logout function using Supabase Auth
   const logout = async (): Promise<void> => {
     try {
-      // This would include an API call to invalidate the token on the server
-      // For now, we'll just clear the local state
-      
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Logout error:', error);
+      }
       clearAuthData();
       setStatus(AuthStatus.UNAUTHENTICATED);
     } catch (error) {
       console.error('Logout failed:', error);
-      // Even if logout fails on the server, we clear local state
       clearAuthData();
       setStatus(AuthStatus.UNAUTHENTICATED);
     }
@@ -529,7 +657,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     status,
     error,
     isAuthenticated: status === AuthStatus.AUTHENTICATED,
-    isLoading: status === AuthStatus.AUTHENTICATING || status === AuthStatus.IDLE,
+    isLoading: isInitializing && status !== AuthStatus.AUTHENTICATED,
     login,
     register,
     logout,

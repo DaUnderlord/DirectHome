@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { supabase } from '../lib/supabase';
 import { 
   Property, 
   PropertySearchFilters, 
@@ -10,7 +11,8 @@ import {
   PropertyApiResponse,
   PropertiesApiResponse,
   PropertyStatus,
-  PropertyVerificationStatus
+  PropertyVerificationStatus,
+  PropertyRules
 } from '../types/property';
 import type { ApiResponse } from '../types';
 import { mockPropertyService } from './mockPropertyData';
@@ -30,8 +32,9 @@ const api = axios.create({
 
 // Add request interceptor to include auth token
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('auth_token');
+  async (config) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || localStorage.getItem('auth_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -46,11 +49,11 @@ api.interceptors.response.use(
   (error) => {
     // Handle authentication errors
     if (error.response?.status === 401) {
-      // Clear auth data and redirect to login
+      // Clear auth data and dispatch unauthorized event
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_refresh_token');
       localStorage.removeItem('auth_expires_at');
-      window.location.href = '/auth/login';
+      window.dispatchEvent(new Event('directhome:unauthorized'));
     }
     
     // Handle rate limiting
@@ -152,6 +155,18 @@ export const propertyService = {
       // Get the existing property
       const existingResponse = await mockPropertyService.getProperty(id);
       const existingProperty = existingResponse.property;
+
+      const baseRules: PropertyRules = existingProperty.rules || {
+        smoking: false,
+        pets: false,
+        parties: false,
+        children: false,
+        additionalRules: []
+      };
+
+      const mergedRules: PropertyRules | undefined = property.rules
+        ? { ...baseRules, ...property.rules }
+        : existingProperty.rules;
       
       // Update the property with the new data
       const updatedProperty: Property = {
@@ -173,10 +188,7 @@ export const propertyService = {
           ...existingProperty.availability,
           ...(property.availability || {}),
         },
-        rules: property.rules ? {
-          ...existingProperty.rules,
-          ...property.rules,
-        } : existingProperty.rules,
+        rules: mergedRules,
         updatedAt: new Date(),
       };
       

@@ -145,7 +145,7 @@ const Header: React.FC<HeaderProps> = ({ toggle }) => {
               </Link>
               <Link
                 to="/auth/login"
-                className="flex items-center space-x-2 text-slate-700 dark:text-slate-200 font-medium hover:opacity-70 transition"
+                className="flex items-center space-x-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-semibold rounded-xl shadow-sm transition-all duration-200"
               >
                 <IconLogin size={18} />
                 <span>Login</span>

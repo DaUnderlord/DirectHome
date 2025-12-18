@@ -6,6 +6,30 @@ import {
   PropertyVerificationStatus
 } from '../types/property';
 
+// Real house images from Unsplash for realistic property listings
+const houseImages = [
+  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1560520653-9e0e4c89eb11?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1600607687644-aac4c3eac7f4?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1600573472591-ee6b68d14c68?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1600585154363-67eb9e2e2099?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1600607688969-a5bfcd646154?w=800&h=600&fit=crop',
+];
+
 /**
  * Generate a collection of mock properties for development and testing
  * @param count Number of properties to generate
@@ -114,24 +138,24 @@ export const generateMockProperties = (count: number = 10): Property[] => {
       images: [
         {
           id: `img-${id}-1`,
-          url: `https://picsum.photos/seed/${id}-1/800/600`,
-          thumbnailUrl: `https://picsum.photos/seed/${id}-1/400/300`,
+          url: houseImages[(i * 3) % houseImages.length],
+          thumbnailUrl: houseImages[(i * 3) % houseImages.length],
           isPrimary: true,
           order: 1,
           uploadedAt: new Date(),
         },
         {
           id: `img-${id}-2`,
-          url: `https://picsum.photos/seed/${id}-2/800/600`,
-          thumbnailUrl: `https://picsum.photos/seed/${id}-2/400/300`,
+          url: houseImages[(i * 3 + 1) % houseImages.length],
+          thumbnailUrl: houseImages[(i * 3 + 1) % houseImages.length],
           isPrimary: false,
           order: 2,
           uploadedAt: new Date(),
         },
         {
           id: `img-${id}-3`,
-          url: `https://picsum.photos/seed/${id}-3/800/600`,
-          thumbnailUrl: `https://picsum.photos/seed/${id}-3/400/300`,
+          url: houseImages[(i * 3 + 2) % houseImages.length],
+          thumbnailUrl: houseImages[(i * 3 + 2) % houseImages.length],
           isPrimary: false,
           order: 3,
           uploadedAt: new Date(),

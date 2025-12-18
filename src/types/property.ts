@@ -58,7 +58,7 @@ export interface PropertyLocation {
 export interface PropertyFeatures {
   bedrooms: number;
   bathrooms: number;
-  area: number; // Alias for squareFootage
+  area?: number; // Alias for squareFootage (optional)
   squareFootage: number;
   lotSize?: number;
   yearBuilt?: number;
@@ -181,7 +181,7 @@ export interface Property {
   description: string;
   ownerId: string;
   owner?: User;
-  type: PropertyType; // Alias for propertyType for backward compatibility
+  type?: PropertyType; // Alias for propertyType for backward compatibility (optional)
   propertyType: PropertyType;
   listingType: ListingType;
   status: PropertyStatus;
@@ -229,6 +229,7 @@ export interface PropertySearchFilters {
   sortBy?: 'price_asc' | 'price_desc' | 'date_newest' | 'date_oldest' | 'relevance';
   page?: number;
   limit?: number;
+  ownerId?: string;
 }
 
 // Property Search Results

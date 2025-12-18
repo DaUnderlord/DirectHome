@@ -9,21 +9,26 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRoles }) => {
-  // In a real implementation, this would check authentication and authorization
-  // For development purposes, we'll allow access to all protected routes
+  const { isAuthenticated, user, isLoading } = useAuth();
   
-  // Uncomment this code when you want to enforce authentication
-  /*
-  const { isAuthenticated, user } = useAuth();
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
   
+  // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/auth/login" replace />;
   }
   
+  // Check role-based access
   if (requiredRoles && user && !requiredRoles.includes(user.role)) {
     return <Navigate to="/unauthorized" replace />;
   }
-  */
   
   return <>{children}</>;
 };

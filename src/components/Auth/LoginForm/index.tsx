@@ -3,12 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema } from '../../../validations/auth';
-import type { LoginFormValues } from '../../../validations/auth';
 import { useAuth } from '../../../context/AuthContext';
-import { AuthErrorType } from '../../../types/auth';
+import { AuthErrorType, UserRole } from '../../../types/auth';
 import Button from '../../UI/Button';
 import Card from '../../UI/Card';
-import SocialLoginButtons from './SocialLoginButtons';
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
@@ -31,26 +29,20 @@ const LoginForm: React.FC = () => {
     
     try {
       const response = await login(formData);
-      
-      // Check if email or phone verification is required
-      if (!response.user.emailVerified || !response.user.phoneVerified) {
-        navigate('/auth/verify');
-        return;
-      }
-      
+
       // Redirect based on user role
       switch (response.user.role) {
-        case 'homeowner':
-          navigate('/dashboard/homeowner');
+        case UserRole.HOME_OWNER:
+          navigate('/dashboard/homeowner', { replace: true });
           break;
-        case 'homeseeker':
-          navigate('/dashboard/homeseeker');
+        case UserRole.HOME_SEEKER:
+          navigate('/dashboard/homeseeker', { replace: true });
           break;
-        case 'admin':
-          navigate('/admin');
+        case UserRole.ADMIN:
+          navigate('/admin', { replace: true });
           break;
         default:
-          navigate('/dashboard');
+          navigate('/dashboard', { replace: true });
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -58,12 +50,6 @@ const LoginForm: React.FC = () => {
       // Handle specific error types
       if (error.type === AuthErrorType.INVALID_CREDENTIALS) {
         setServerError('Invalid email/phone or password');
-      } else if (error.type === AuthErrorType.EMAIL_NOT_VERIFIED) {
-        setServerError('Please verify your email address');
-        navigate('/auth/verify');
-      } else if (error.type === AuthErrorType.PHONE_NOT_VERIFIED) {
-        setServerError('Please verify your phone number');
-        navigate('/auth/verify');
       } else if (error.type === AuthErrorType.ACCOUNT_SUSPENDED) {
         setServerError('Your account has been suspended. Please contact support.');
       } else {
@@ -141,17 +127,6 @@ const LoginForm: React.FC = () => {
           </Button>
         </form>
       </Card>
-      
-      <div className="relative mb-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-300"></div>
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white text-gray-500">Or continue with</span>
-        </div>
-      </div>
-      
-      <SocialLoginButtons />
       
       <div className="text-center mt-6">
         <p className="text-sm text-gray-600">

@@ -49,7 +49,7 @@ export const registrationStep1Schema = z.object({
 // Registration Schema - Step 2: Role Selection
 export const registrationStep2Schema = z.object({
   role: z.nativeEnum(UserRole, {
-    required_error: 'Please select a role'
+    message: 'Please select a role'
   }),
 });
 

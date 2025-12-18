@@ -8,7 +8,7 @@ import {
 import { User, UserRole, VerificationStatus, AccountStatus } from '../types/auth';
 import { AppointmentStatus, AppointmentType, Appointment } from '../types/appointment';
 import { SubscriptionTier, SubscriptionStatus } from '../types/subscription';
-import { Conversation, Message, ConversationStatus } from '../types/messaging';
+import { Conversation, Message, ConversationStatus, MessageType } from '../types/messaging';
 
 // Mock Users
 export const mockUsers: User[] = [
@@ -514,7 +514,7 @@ export const mockMessages: Message[] = [
     conversationId: 'conv-1',
     senderId: 'user-2',
     content: 'Hello, I am interested in your 3 bedroom apartment in Lekki. Is it still available?',
-    type: 'text',
+    type: MessageType.TEXT,
     readBy: {
       'user-1': new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000)
     },
@@ -525,7 +525,7 @@ export const mockMessages: Message[] = [
     conversationId: 'conv-1',
     senderId: 'user-1',
     content: 'Yes, it is still available. Would you like to schedule a viewing?',
-    type: 'text',
+    type: MessageType.TEXT,
     readBy: {
       'user-2': new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000)
     },
@@ -536,7 +536,7 @@ export const mockMessages: Message[] = [
     conversationId: 'conv-1',
     senderId: 'user-2',
     content: 'That would be great. I am available this weekend.',
-    type: 'text',
+    type: MessageType.TEXT,
     readBy: {
       'user-1': new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000)
     },
@@ -547,7 +547,7 @@ export const mockMessages: Message[] = [
     conversationId: 'conv-1',
     senderId: 'user-1',
     content: 'Perfect. How about Saturday at 10 AM?',
-    type: 'text',
+    type: MessageType.TEXT,
     readBy: {
       'user-2': new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 1 * 60 * 60 * 1000)
     },
@@ -558,7 +558,7 @@ export const mockMessages: Message[] = [
     conversationId: 'conv-1',
     senderId: 'user-2',
     content: 'Saturday at 10 AM works for me. See you then!',
-    type: 'text',
+    type: MessageType.TEXT,
     readBy: {
       'user-1': new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000)
     },
@@ -592,7 +592,7 @@ export const mockConversations: Conversation[] = [
       conversationId: 'conv-2',
       senderId: 'user-2',
       content: 'I am interested in your 4 bedroom duplex in Ikoyi. What is the best price you can offer?',
-      type: 'text',
+      type: MessageType.TEXT,
       readBy: {},
       createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
     },

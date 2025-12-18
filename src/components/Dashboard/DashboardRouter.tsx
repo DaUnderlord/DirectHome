@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types/auth';
-import HomeOwnerDashboard from './HomeOwnerDashboard';
+import { PropertyOwnerDashboard } from '../PropertyOwner';
 import HomeSeekerDashboard from './HomeSeekerDashboard';
 import RoleToggle from './RoleToggle';
 
@@ -15,10 +15,11 @@ const DashboardRouter: React.FC = () => {
     ((user.role === UserRole.HOME_OWNER && user.previousRoles?.includes(UserRole.HOME_SEEKER)) ||
      (user.role === UserRole.HOME_SEEKER && user.previousRoles?.includes(UserRole.HOME_OWNER)));
   
-  // Determine available roles
-  const availableRoles = user ? 
-    (user.previousRoles ? [user.role, ...user.previousRoles] : [user.role]) 
-    : [];
+  // Determine available roles - memoized to prevent infinite loop
+  const availableRoles = useMemo(() => {
+    if (!user) return [];
+    return user.previousRoles ? [user.role, ...user.previousRoles] : [user.role];
+  }, [user?.role, user?.previousRoles]);
   
   // Set initial active role based on user's primary role or stored preference
   useEffect(() => {
@@ -31,7 +32,7 @@ const DashboardRouter: React.FC = () => {
     } else {
       setActiveRole(user.role);
     }
-  }, [user, availableRoles]);
+  }, [user?.role, availableRoles]);
   
   // Handle role change
   const handleRoleChange = (role: UserRole) => {
@@ -69,10 +70,7 @@ const DashboardRouter: React.FC = () => {
       
       {/* Dashboard Content based on active role */}
       {activeRole === UserRole.HOME_OWNER ? (
-        <HomeOwnerDashboard 
-          activeRole={activeRole} 
-          onRoleChange={handleRoleChange} 
-        />
+        <PropertyOwnerDashboard />
       ) : (
         <HomeSeekerDashboard 
           activeRole={activeRole} 

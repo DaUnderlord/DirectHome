@@ -35,6 +35,9 @@ import ErrorBoundary from '../components/ErrorBoundary/ErrorBoundary';
 // Import the new HomePage component
 import HomePage from '../components/Pages/HomePage';
 
+// Import the new SearchPage component
+import SearchPage from '../components/Pages/SearchPage';
+
 // Import RentCalculator component
 import RentCalculator from '../components/RentCalculator/RentCalculator';
 
@@ -49,17 +52,6 @@ import TermsPage from '../components/Pages/SimpleTermsPage';
 import PrivacyPage from '../components/Pages/PrivacyPage';
 import CookiesPage from '../components/Pages/CookiesPage';
 
-const SearchPage = () => (
-  <div className="container mx-auto px-4 py-8">
-    <div className="h-12 mb-8"></div>
-    <PropertyGrid
-      title="Available Properties"
-      showFilters={true}
-      showPagination={true}
-    />
-  </div>
-);
-
 const CalculatorPage = () => (
   <div className="container mx-auto px-4 py-8">
     <RentCalculator />
@@ -69,27 +61,17 @@ const CalculatorPage = () => (
 // Import the ProfilePage component
 import ProfilePage from '../components/Profile/ProfilePage';
 
-// Dashboard Components (placeholders)
-const HomeOwnerDashboard = () => (
-  <div className="container mx-auto px-4 py-8">
-    <h1 className="text-3xl font-bold mb-8">Home Owner Dashboard</h1>
-    <p className="text-gray-600">Manage your properties and inquiries here.</p>
-  </div>
-);
-
-const HomeSeekerDashboard = () => (
-  <div className="container mx-auto px-4 py-8">
-    <h1 className="text-3xl font-bold mb-8">Home Seeker Dashboard</h1>
-    <p className="text-gray-600">View your saved properties and inquiries here.</p>
-  </div>
-);
-
-const AdminDashboard = () => (
-  <div className="container mx-auto px-4 py-8">
-    <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
-    <p className="text-gray-600">Manage users, properties, and platform settings here.</p>
-  </div>
-);
+// Property Owner Dashboard Components
+import {
+  PropertyOwnerDashboard,
+  PropertyOnboardingForm,
+  ViewingManagement,
+  EnquiriesManagement,
+  ApplicationsManagement,
+  PaymentsManagement,
+  MaintenanceManagement,
+  AnalyticsDashboard
+} from '../components/PropertyOwner';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -210,6 +192,82 @@ const AppRoutes: React.FC = () => {
             element={
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        {/* Property Owner Routes */}
+        <Route path="/owner" element={<Layout />}>
+          <Route
+            index
+            element={
+              <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
+                <PropertyOwnerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="properties/new"
+            element={
+              <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
+                <PropertyOnboardingForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="properties"
+            element={
+              <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
+                <PropertyOwnerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="viewings"
+            element={
+              <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
+                <ViewingManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="enquiries"
+            element={
+              <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
+                <EnquiriesManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="applications"
+            element={
+              <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
+                <ApplicationsManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="payments"
+            element={
+              <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
+                <PaymentsManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="maintenance"
+            element={
+              <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
+                <MaintenanceManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="analytics"
+            element={
+              <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
+                <AnalyticsDashboard />
               </ProtectedRoute>
             }
           />

@@ -2,6 +2,15 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '@/assets/logo.png';
 
+// Brand Colors
+const brand = {
+  navy: '#1e4a6d',
+  navyLight: '#2a5f8a',
+  navyDark: '#153a55',
+  gold: '#c9a962',
+  goldLight: '#d4b97a',
+};
+
 interface SplashScreenProps {
   show: boolean;
 }
@@ -14,64 +23,143 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ show }) => {
           key="splash"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.6, ease: 'easeInOut' }}
-          className="fixed inset-0 z-50 flex items-center justify-center"
+          transition={{ duration: 0.8, ease: 'easeInOut' }}
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
         >
-          {/* Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-700 via-blue-800 to-blue-900" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.08),transparent_60%)]" />
-          {/* Subtle vignette to increase central contrast for blue logo text */}
-          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.25),transparent_60%)]" />
+          {/* Animated Background */}
+          <div 
+            className="absolute inset-0"
+            style={{ background: `linear-gradient(135deg, ${brand.navyDark} 0%, ${brand.navy} 50%, ${brand.navyLight} 100%)` }}
+          />
+          
+          {/* Animated Gradient Orbs */}
+          <motion.div
+            className="absolute w-[600px] h-[600px] rounded-full"
+            style={{ 
+              background: `radial-gradient(circle, ${brand.gold}40 0%, transparent 70%)`,
+              top: '-20%',
+              right: '-10%'
+            }}
+            animate={{ 
+              scale: [1, 1.2, 1],
+              opacity: [0.3, 0.5, 0.3]
+            }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.div
+            className="absolute w-[500px] h-[500px] rounded-full"
+            style={{ 
+              background: `radial-gradient(circle, ${brand.navyLight}50 0%, transparent 70%)`,
+              bottom: '-15%',
+              left: '-10%'
+            }}
+            animate={{ 
+              scale: [1.2, 1, 1.2],
+              opacity: [0.4, 0.6, 0.4]
+            }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+          />
+
+          {/* Floating Particles */}
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 rounded-full bg-white/20"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+              animate={{
+                y: [0, -30, 0],
+                opacity: [0.2, 0.5, 0.2],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+              }}
+            />
+          ))}
 
           {/* Content */}
           <motion.div
-            initial={{ scale: 0.92, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
-            className="relative glass-card/0 text-center px-8"
+            className="relative text-center px-8"
           >
-            <div className="relative mx-auto h-28 w-28 md:h-32 md:w-32 mb-6">
-              {/* High-contrast badge behind logo to ensure readability on blue bg */}
-              <motion.div 
-                className="absolute inset-0 rounded-2xl bg-white/90 backdrop-blur-sm ring-1 ring-white/30 shadow-2xl"
-                initial={{ opacity: 0, scale: 0.94 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.45, ease: 'easeOut' }}
+            {/* Logo Container with Glow */}
+            <div className="relative mx-auto mb-8">
+              {/* Glow Effect */}
+              <motion.div
+                className="absolute inset-0 rounded-3xl blur-2xl"
+                style={{ background: brand.gold }}
+                animate={{ opacity: [0.2, 0.4, 0.2] }}
+                transition={{ duration: 2, repeat: Infinity }}
               />
-              <div className="absolute inset-0 p-3 md:p-4">
+              
+              {/* Logo Card */}
+              <motion.div 
+                className="relative h-32 w-32 md:h-40 md:w-40 mx-auto rounded-3xl bg-white shadow-2xl p-4 md:p-5"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
                 <motion.img
                   src={logo}
                   alt="DirectHome"
                   className="h-full w-full object-contain"
-                  initial={{ opacity: 0, scale: 0.96 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
                 />
-              </div>
+              </motion.div>
             </div>
 
-            <motion.p
-              className="mt-2 text-blue-50 text-base md:text-lg font-medium"
-              initial={{ y: 10, opacity: 0 }}
+            {/* Brand Name */}
+            <motion.h1
+              className="text-3xl md:text-4xl font-bold text-white mb-3"
+              initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
             >
-              Nigeria’s trusted agent-free RENTAL platform
+              Direct<span style={{ color: brand.gold }}>Home</span>
+            </motion.h1>
+
+            {/* Tagline */}
+            <motion.p
+              className="text-white/80 text-base md:text-lg font-medium mb-8"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+            >
+              Nigeria's #1 Agent-Free Rental Platform
             </motion.p>
 
-            {/* Progress bar */}
+            {/* Progress Bar */}
             <motion.div
-              className="mt-8 h-1 w-48 mx-auto overflow-hidden rounded-full bg-white/15"
+              className="w-56 md:w-64 mx-auto"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.25, duration: 0.4 }}
+              transition={{ delay: 0.5, duration: 0.4 }}
             >
-              <motion.div
-                className="h-full bg-white/80"
-                initial={{ x: '-100%' }}
-                animate={{ x: '0%' }}
-                transition={{ duration: 1.1, ease: 'easeInOut' }}
-              />
+              <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ background: `linear-gradient(90deg, ${brand.gold}, ${brand.goldLight})` }}
+                  initial={{ width: '0%' }}
+                  animate={{ width: '100%' }}
+                  transition={{ duration: 1.2, ease: 'easeInOut', delay: 0.6 }}
+                />
+              </div>
+              <motion.p
+                className="text-white/50 text-sm mt-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7 }}
+              >
+                Loading your experience...
+              </motion.p>
             </motion.div>
           </motion.div>
         </motion.div>

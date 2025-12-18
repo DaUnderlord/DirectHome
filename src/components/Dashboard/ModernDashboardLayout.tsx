@@ -15,19 +15,20 @@ interface ModernDashboardLayoutProps {
     value: number | string;
     change?: number;
     trend?: 'up' | 'down' | 'stable';
-    color: 'blue' | 'green' | 'yellow' | 'purple' | 'red';
+    color: 'blue' | 'green' | 'yellow' | 'purple' | 'red' | 'indigo';
   }>;
 }
 
 const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
   user,
   activeRole,
-  onRoleChange,
+  onRoleChange: _onRoleChange,
   children,
   title,
   subtitle,
   stats = []
 }) => {
+  // onRoleChange is available via _onRoleChange if needed for future role switching UI
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -97,6 +98,7 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
                             stat.color === 'green' ? 'text-green-600' :
                             stat.color === 'yellow' ? 'text-yellow-600' :
                             stat.color === 'purple' ? 'text-purple-600' :
+                            stat.color === 'indigo' ? 'text-indigo-600' :
                             'text-red-600'
                           }`}>
                             {stat.value}
