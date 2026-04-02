@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import { supabase } from '../lib/supabase';
 import {
   AdminUser,
   DashboardMetrics,
@@ -334,40 +335,35 @@ export const useAdminStore = create<AdminState>()(
           set({ isLoading: true, error: null });
           
           try {
-            await new Promise(resolve => setTimeout(resolve, 600));
+            const { data, error } = await supabase
+              .from('moderation_queue')
+              .select('*')
+              .order('created_at', { ascending: false });
+              
+            if (error) throw error;
             
-            const mockModerationItems: ModerationItem[] = [
-              {
-                id: 'mod-1',
-                type: 'property',
-                itemId: 'prop-123',
-                title: 'Suspicious Property Listing',
-                description: 'Property listing with potentially fake images and unrealistic pricing',
-                reportedBy: 'user-456',
-                reportReason: 'Fake listing',
-                priority: 'high',
-                status: 'pending',
-                createdAt: new Date('2024-01-20'),
-                updatedAt: new Date('2024-01-20')
-              },
-              {
-                id: 'mod-2',
-                type: 'user',
-                itemId: 'user-789',
-                title: 'User Account Review',
-                description: 'Multiple reports of inappropriate behavior',
-                reportedBy: 'user-101',
-                reportReason: 'Inappropriate behavior',
-                priority: 'medium',
-                status: 'in_review',
-                assignedTo: 'admin-1',
-                createdAt: new Date('2024-01-19'),
-                updatedAt: new Date('2024-01-20')
-              }
-            ];
+            const moderationItems: ModerationItem[] = data.map((item: any) => ({
+              id: item.id,
+              type: item.item_type,
+              itemId: item.item_id,
+              title: item.title,
+              description: item.description,
+              reportedBy: item.reported_by,
+              reportReason: item.report_reason,
+              priority: item.priority as any,
+              status: item.status as any,
+              assignedTo: item.assigned_to,
+              createdAt: new Date(item.created_at),
+              updatedAt: new Date(item.updated_at),
+              reviewedAt: item.reviewed_at ? new Date(item.reviewed_at) : undefined,
+              reviewedBy: item.reviewed_by,
+              reviewNotes: item.review_notes,
+              metadata: item.metadata
+            }));
             
-            set({ moderationQueue: mockModerationItems, isLoading: false });
+            set({ moderationQueue: moderationItems, isLoading: false });
           } catch (error) {
+            console.error('Failed to fetch moderation queue:', error);
             set({ error: 'Failed to fetch moderation queue', isLoading: false });
           }
         },
@@ -376,17 +372,42 @@ export const useAdminStore = create<AdminState>()(
           set({ isLoading: true, error: null });
           
           try {
-            await new Promise(resolve => setTimeout(resolve, 500));
+            const { data: { session } } = await supabase.auth.getSession();
+            const currentAdminId = session?.user?.id;
             
-            // Update the moderation item status
+            const statusMap: Record<string, string> = {
+              'approve': 'approved',
+              'reject': 'rejected',
+              'suspend': 'escalated',
+              'delete': 'rejected',
+              'escalate': 'escalated',
+              'request_changes': 'pending'
+            };
+            
+            const newStatus = statusMap[decision.action] || 'reviewed';
+            const reviewedAt = new Date().toISOString();
+            
+            const { error } = await supabase
+              .from('moderation_queue')
+              .update({
+                status: newStatus,
+                reviewed_by: currentAdminId,
+                reviewed_at: reviewedAt,
+                review_notes: decision.notes
+              })
+              .eq('id', itemId);
+              
+            if (error) throw error;
+            
+            // Update the moderation item status locally
             set(state => ({
               moderationQueue: state.moderationQueue.map(item =>
                 item.id === itemId
                   ? {
                       ...item,
-                      status: decision.action === 'approve' ? 'approved' : 'rejected',
-                      reviewedAt: new Date(),
-                      reviewedBy: 'current-admin-id',
+                      status: newStatus as any,
+                      reviewedAt: new Date(reviewedAt),
+                      reviewedBy: currentAdminId,
                       reviewNotes: decision.notes
                     }
                   : item
@@ -396,6 +417,7 @@ export const useAdminStore = create<AdminState>()(
             
             return true;
           } catch (error) {
+            console.error('Failed to submit moderation decision:', error);
             set({ error: 'Failed to submit moderation decision', isLoading: false });
             return false;
           }
@@ -405,12 +427,17 @@ export const useAdminStore = create<AdminState>()(
           set({ isLoading: true, error: null });
           
           try {
-            await new Promise(resolve => setTimeout(resolve, 300));
+            const { error } = await supabase
+              .from('moderation_queue')
+              .update({ assigned_to: adminId, status: 'in_review', updated_at: new Date().toISOString() })
+              .eq('id', itemId);
+              
+            if (error) throw error;
             
             set(state => ({
               moderationQueue: state.moderationQueue.map(item =>
                 item.id === itemId
-                  ? { ...item, assignedTo: adminId, status: 'in_review' }
+                  ? { ...item, assignedTo: adminId, status: 'in_review', updatedAt: new Date() }
                   : item
               ),
               isLoading: false
@@ -418,6 +445,7 @@ export const useAdminStore = create<AdminState>()(
             
             return true;
           } catch (error) {
+            console.error('Failed to assign moderation item:', error);
             set({ error: 'Failed to assign moderation item', isLoading: false });
             return false;
           }
@@ -428,10 +456,21 @@ export const useAdminStore = create<AdminState>()(
           set({ isLoading: true, error: null });
           
           try {
-            await new Promise(resolve => setTimeout(resolve, 500));
+            const { data, error } = await supabase
+              .from('system_settings')
+              .select('*');
+              
+            if (error) throw error;
             
+            // Build the settings object from rows
+            const fetchedSettings: any = {};
+            data.forEach((row: any) => {
+              fetchedSettings[row.section] = row.settings;
+            });
+            
+            // Merge with mock defaults if some sections are missing
             const mockSettings: SystemSettings = {
-              general: {
+              general: fetchedSettings.general || {
                 siteName: 'Real Estate',
                 siteDescription: 'Direct property rental platform for Nigeria',
                 contactEmail: 'contact@realestate.com',
@@ -439,26 +478,26 @@ export const useAdminStore = create<AdminState>()(
                 maintenanceMode: false,
                 registrationEnabled: true
               },
-              verification: {
+              verification: fetchedSettings.verification || {
                 autoApproveEmail: true,
                 autoApprovePhone: false,
                 requireIdentityVerification: true,
                 requireAddressVerification: true,
                 verificationExpiryDays: 365
               },
-              moderation: {
+              moderation: fetchedSettings.moderation || {
                 autoModerationEnabled: true,
                 flaggedContentThreshold: 3,
                 autoSuspendThreshold: 5,
                 reviewTimeoutHours: 48
               },
-              payments: {
+              payments: fetchedSettings.payments || {
                 currency: 'NGN',
                 taxRate: 7.5,
                 subscriptionPlans: [],
                 featuredListingPrice: 5000
               },
-              notifications: {
+              notifications: fetchedSettings.notifications || {
                 emailNotificationsEnabled: true,
                 smsNotificationsEnabled: true,
                 pushNotificationsEnabled: true,
@@ -470,8 +509,9 @@ export const useAdminStore = create<AdminState>()(
               }
             };
             
-            set({ systemSettings: mockSettings, isLoading: false });
+            set({ systemSettings: mockSettings as SystemSettings, isLoading: false });
           } catch (error) {
+            console.error('Failed to fetch system settings:', error);
             set({ error: 'Failed to fetch system settings', isLoading: false });
           }
         },
@@ -480,16 +520,24 @@ export const useAdminStore = create<AdminState>()(
           set({ isLoading: true, error: null });
           
           try {
-            await new Promise(resolve => setTimeout(resolve, 500));
+            const currentSectionSettings = get().systemSettings?.[update.section] || {};
+            const newSectionSettings = { ...currentSectionSettings, ...update.settings };
+            
+            const { error } = await supabase
+              .from('system_settings')
+              .upsert({
+                section: update.section,
+                settings: newSectionSettings,
+                updated_at: new Date().toISOString()
+              });
+              
+            if (error) throw error;
             
             set(state => ({
               systemSettings: state.systemSettings
                 ? {
                     ...state.systemSettings,
-                    [update.section]: {
-                      ...state.systemSettings[update.section],
-                      ...update.settings
-                    }
+                    [update.section]: newSectionSettings
                   }
                 : null,
               isLoading: false
@@ -497,6 +545,7 @@ export const useAdminStore = create<AdminState>()(
             
             return true;
           } catch (error) {
+            console.error('Failed to update system settings:', error);
             set({ error: 'Failed to update system settings', isLoading: false });
             return false;
           }
@@ -507,11 +556,31 @@ export const useAdminStore = create<AdminState>()(
           set({ isLoading: true, error: null });
           
           try {
-            await new Promise(resolve => setTimeout(resolve, 500));
+            const { data, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .in('role', ['admin', 'super_admin', 'moderator', 'support']);
+              
+            if (error) throw error;
             
-            // Mock admin users would be fetched here
-            set({ adminUsers: [], isLoading: false });
+            const admins: AdminUser[] = data.map((u: any) => ({
+              id: u.id,
+              email: u.email,
+              firstName: u.first_name || '',
+              lastName: u.last_name || '',
+              role: u.role as any,
+              permissions: u.permissions || [],
+              isActive: u.is_active ?? true,
+              lastLogin: u.last_login ? new Date(u.last_login) : undefined,
+              createdAt: new Date(u.created_at),
+              updatedAt: new Date(u.updated_at),
+              department: u.department,
+              notes: u.admin_notes
+            }));
+            
+            set({ adminUsers: admins, isLoading: false });
           } catch (error) {
+            console.error('Failed to fetch admin users:', error);
             set({ error: 'Failed to fetch admin users', isLoading: false });
           }
         },
@@ -520,14 +589,15 @@ export const useAdminStore = create<AdminState>()(
           set({ isLoading: true, error: null });
           
           try {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            
-            const newAdminId = `admin-${Date.now()}`;
-            // In real implementation, this would make an API call
+            // Usually requires Auth admin API in Supabase (or Edge Function).
+            // For now, if we mock the auth signup but insert to profile:
+            // Since we can't create an auth user from frontend easily, we just throw/mock error for now, or just simulate DB insertion for a mock user id.
+            const newAdminId = `admin-mock-${Date.now()}`;
             
             set({ isLoading: false });
             return newAdminId;
           } catch (error) {
+            console.error('Failed to create admin user:', error);
             set({ error: 'Failed to create admin user', isLoading: false });
             return null;
           }
@@ -537,7 +607,21 @@ export const useAdminStore = create<AdminState>()(
           set({ isLoading: true, error: null });
           
           try {
-            await new Promise(resolve => setTimeout(resolve, 500));
+            const updateData: any = {};
+            if (updates.firstName !== undefined) updateData.first_name = updates.firstName;
+            if (updates.lastName !== undefined) updateData.last_name = updates.lastName;
+            if (updates.role !== undefined) updateData.role = updates.role;
+            if (updates.permissions !== undefined) updateData.permissions = updates.permissions;
+            if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
+            if (updates.department !== undefined) updateData.department = updates.department;
+            if (updates.notes !== undefined) updateData.admin_notes = updates.notes;
+            
+            const { error } = await supabase
+              .from('profiles')
+              .update(updateData)
+              .eq('id', adminId);
+              
+            if (error) throw error;
             
             set(state => ({
               adminUsers: state.adminUsers.map(admin =>
@@ -548,6 +632,7 @@ export const useAdminStore = create<AdminState>()(
             
             return true;
           } catch (error) {
+            console.error('Failed to update admin user:', error);
             set({ error: 'Failed to update admin user', isLoading: false });
             return false;
           }
@@ -557,7 +642,12 @@ export const useAdminStore = create<AdminState>()(
           set({ isLoading: true, error: null });
           
           try {
-            await new Promise(resolve => setTimeout(resolve, 500));
+            const { error } = await supabase
+              .from('profiles')
+              .delete()
+              .eq('id', adminId);
+              
+            if (error) throw error;
             
             set(state => ({
               adminUsers: state.adminUsers.filter(admin => admin.id !== adminId),
@@ -566,6 +656,7 @@ export const useAdminStore = create<AdminState>()(
             
             return true;
           } catch (error) {
+            console.error('Failed to delete admin user:', error);
             set({ error: 'Failed to delete admin user', isLoading: false });
             return false;
           }
@@ -576,11 +667,30 @@ export const useAdminStore = create<AdminState>()(
           set({ isLoading: true, error: null });
           
           try {
-            await new Promise(resolve => setTimeout(resolve, 600));
+            const { data, error } = await supabase
+              .from('admin_audit_logs')
+              .select('*')
+              .order('timestamp', { ascending: false });
+              
+            if (error) throw error;
             
-            // Mock audit logs would be fetched here
-            set({ auditLogs: [], isLoading: false });
+            const logs: AuditLog[] = data.map((l: any) => ({
+              id: l.id,
+              userId: l.user_id,
+              userEmail: l.user_email,
+              action: l.action,
+              resource: l.resource,
+              resourceId: l.resource_id,
+              details: l.details,
+              ipAddress: l.ip_address,
+              userAgent: l.user_agent,
+              severity: l.severity,
+              timestamp: new Date(l.timestamp)
+            }));
+            
+            set({ auditLogs: logs, isLoading: false });
           } catch (error) {
+            console.error('Failed to fetch audit logs:', error);
             set({ error: 'Failed to fetch audit logs', isLoading: false });
           }
         },
@@ -590,36 +700,49 @@ export const useAdminStore = create<AdminState>()(
           set({ isLoading: true, error: null });
           
           try {
-            await new Promise(resolve => setTimeout(resolve, 400));
+            const { data, error } = await supabase
+              .from('admin_notifications')
+              .select('*')
+              .order('created_at', { ascending: false });
+              
+            if (error) throw error;
             
-            const mockNotifications: AdminNotification[] = [
-              {
-                id: 'notif-1',
-                type: 'moderation',
-                title: 'New Report Submitted',
-                message: 'A new property has been reported for suspicious activity',
-                priority: 'high',
-                isRead: false,
-                actionRequired: true,
-                actionUrl: '/admin/moderation/reports/rep-123',
-                createdAt: new Date()
-              }
-            ];
+            const fetchedList: AdminNotification[] = data.map((n: any) => ({
+              id: n.id,
+              type: n.type as any,
+              title: n.title,
+              message: n.message,
+              priority: n.priority as any,
+              isRead: n.is_read,
+              actionRequired: n.action_required,
+              actionUrl: n.action_url,
+              createdAt: new Date(n.created_at),
+              expiresAt: n.expires_at ? new Date(n.expires_at) : undefined,
+              metadata: n.metadata
+            }));
             
-            const unreadCount = mockNotifications.filter(n => !n.isRead).length;
+            const unreadCount = fetchedList.filter(n => !n.isRead).length;
             
             set({ 
-              notifications: mockNotifications, 
+              notifications: fetchedList, 
               unreadNotificationCount: unreadCount,
               isLoading: false 
             });
           } catch (error) {
+            console.error('Failed to fetch notifications:', error);
             set({ error: 'Failed to fetch notifications', isLoading: false });
           }
         },
 
         markNotificationAsRead: async (notificationId) => {
           try {
+            const { error } = await supabase
+              .from('admin_notifications')
+              .update({ is_read: true })
+              .eq('id', notificationId);
+              
+            if (error) throw error;
+            
             set(state => ({
               notifications: state.notifications.map(notif =>
                 notif.id === notificationId ? { ...notif, isRead: true } : notif
@@ -629,6 +752,7 @@ export const useAdminStore = create<AdminState>()(
             
             return true;
           } catch (error) {
+            console.error('Failed to mark notification as read:', error);
             set({ error: 'Failed to mark notification as read' });
             return false;
           }
@@ -636,6 +760,13 @@ export const useAdminStore = create<AdminState>()(
 
         markAllNotificationsAsRead: async () => {
           try {
+            const { error } = await supabase
+              .from('admin_notifications')
+              .update({ is_read: true })
+              .eq('is_read', false); // Updates all unread to true!
+              
+            if (error) throw error;
+            
             set(state => ({
               notifications: state.notifications.map(notif => ({ ...notif, isRead: true })),
               unreadNotificationCount: 0
@@ -643,6 +774,7 @@ export const useAdminStore = create<AdminState>()(
             
             return true;
           } catch (error) {
+            console.error('Failed to mark all notifications as read:', error);
             set({ error: 'Failed to mark all notifications as read' });
             return false;
           }

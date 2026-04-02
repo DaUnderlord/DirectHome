@@ -7,8 +7,155 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
+  }
   public: {
     Tables: {
+      admin_audit_logs: {
+        Row: {
+          action: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          resource: string
+          resource_id: string | null
+          severity: string | null
+          timestamp: string | null
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource: string
+          resource_id?: string | null
+          severity?: string | null
+          timestamp?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource?: string
+          resource_id?: string | null
+          severity?: string | null
+          timestamp?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_notifications: {
+        Row: {
+          action_required: boolean | null
+          action_url: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          metadata: Json | null
+          priority: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          action_required?: boolean | null
+          action_url?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          metadata?: Json | null
+          priority?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          action_required?: boolean | null
+          action_url?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          metadata?: Json | null
+          priority?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      bulk_operations: {
+        Row: {
+          action: string
+          completed_at: string | null
+          id: string
+          parameters: Json | null
+          performed_by: string | null
+          progress: number | null
+          results: Json | null
+          started_at: string | null
+          status: string | null
+          target_ids: string[] | null
+          type: string
+        }
+        Insert: {
+          action: string
+          completed_at?: string | null
+          id?: string
+          parameters?: Json | null
+          performed_by?: string | null
+          progress?: number | null
+          results?: Json | null
+          started_at?: string | null
+          status?: string | null
+          target_ids?: string[] | null
+          type: string
+        }
+        Update: {
+          action?: string
+          completed_at?: string | null
+          id?: string
+          parameters?: Json | null
+          performed_by?: string | null
+          progress?: number | null
+          results?: Json | null
+          started_at?: string | null
+          status?: string | null
+          target_ids?: string[] | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulk_operations_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_participants: {
         Row: {
           conversation_id: string
@@ -76,6 +223,59 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_exports: {
+        Row: {
+          completed_at: string | null
+          expires_at: string | null
+          file_size: number | null
+          file_url: string | null
+          filters: Json | null
+          format: string
+          id: string
+          record_count: number | null
+          requested_at: string | null
+          requested_by: string | null
+          status: string | null
+          type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          expires_at?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          filters?: Json | null
+          format: string
+          id?: string
+          record_count?: number | null
+          requested_at?: string | null
+          requested_by?: string | null
+          status?: string | null
+          type: string
+        }
+        Update: {
+          completed_at?: string | null
+          expires_at?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          filters?: Json | null
+          format?: string
+          id?: string
+          record_count?: number | null
+          requested_at?: string | null
+          requested_by?: string | null
+          status?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_exports_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -201,6 +401,42 @@ export type Database = {
           },
         ]
       }
+      message_read_receipts: {
+        Row: {
+          id: string
+          message_id: string
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          message_id?: string
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_read_receipts_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_read_receipts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           attachments: Json | null
@@ -249,6 +485,85 @@ export type Database = {
           {
             foreignKeyName: "messages_sender_id_fkey"
             columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moderation_queue: {
+        Row: {
+          assigned_to: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          item_id: string
+          item_type: string
+          metadata: Json | null
+          priority: string
+          report_reason: string | null
+          reported_by: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          item_id: string
+          item_type: string
+          metadata?: Json | null
+          priority?: string
+          report_reason?: string | null
+          reported_by?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          item_id?: string
+          item_type?: string
+          metadata?: Json | null
+          priority?: string
+          report_reason?: string | null
+          reported_by?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_queue_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_queue_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_queue_reviewed_by_fkey"
+            columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -365,6 +680,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "payments_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_applications"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "payments_payer_id_fkey"
             columns: ["payer_id"]
             isOneToOne: false
@@ -391,12 +713,14 @@ export type Database = {
         Row: {
           account_status: Database["public"]["Enums"]["account_status"] | null
           address: string | null
+          admin_notes: string | null
           avatar_url: string | null
           bio: string | null
           city: string | null
           company: string | null
           created_at: string | null
           date_of_birth: string | null
+          department: string | null
           email: string
           email_verified: boolean | null
           first_name: string
@@ -406,6 +730,7 @@ export type Database = {
           last_name: string
           notification_preferences: Json | null
           occupation: string | null
+          permissions: string[] | null
           phone: string | null
           phone_verified: boolean | null
           previous_roles: Database["public"]["Enums"]["user_role"][] | null
@@ -415,7 +740,9 @@ export type Database = {
           state: string | null
           trust_score: number | null
           updated_at: string | null
-          verification_status: Database["public"]["Enums"]["verification_status"] | null
+          verification_status:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
           verified_documents: string[] | null
           website: string | null
           zip_code: string | null
@@ -423,12 +750,14 @@ export type Database = {
         Insert: {
           account_status?: Database["public"]["Enums"]["account_status"] | null
           address?: string | null
+          admin_notes?: string | null
           avatar_url?: string | null
           bio?: string | null
           city?: string | null
           company?: string | null
           created_at?: string | null
           date_of_birth?: string | null
+          department?: string | null
           email: string
           email_verified?: boolean | null
           first_name: string
@@ -438,6 +767,7 @@ export type Database = {
           last_name: string
           notification_preferences?: Json | null
           occupation?: string | null
+          permissions?: string[] | null
           phone?: string | null
           phone_verified?: boolean | null
           previous_roles?: Database["public"]["Enums"]["user_role"][] | null
@@ -447,7 +777,9 @@ export type Database = {
           state?: string | null
           trust_score?: number | null
           updated_at?: string | null
-          verification_status?: Database["public"]["Enums"]["verification_status"] | null
+          verification_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
           verified_documents?: string[] | null
           website?: string | null
           zip_code?: string | null
@@ -455,12 +787,14 @@ export type Database = {
         Update: {
           account_status?: Database["public"]["Enums"]["account_status"] | null
           address?: string | null
+          admin_notes?: string | null
           avatar_url?: string | null
           bio?: string | null
           city?: string | null
           company?: string | null
           created_at?: string | null
           date_of_birth?: string | null
+          department?: string | null
           email?: string
           email_verified?: boolean | null
           first_name?: string
@@ -470,6 +804,7 @@ export type Database = {
           last_name?: string
           notification_preferences?: Json | null
           occupation?: string | null
+          permissions?: string[] | null
           phone?: string | null
           phone_verified?: boolean | null
           previous_roles?: Database["public"]["Enums"]["user_role"][] | null
@@ -479,7 +814,9 @@ export type Database = {
           state?: string | null
           trust_score?: number | null
           updated_at?: string | null
-          verification_status?: Database["public"]["Enums"]["verification_status"] | null
+          verification_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
           verified_documents?: string[] | null
           website?: string | null
           zip_code?: string | null
@@ -489,6 +826,7 @@ export type Database = {
       properties: {
         Row: {
           access_route: string | null
+          accessibility_options: string[] | null
           additional_fees: Json | null
           additional_rules: string[] | null
           address: string
@@ -497,7 +835,9 @@ export type Database = {
           available_from: string | null
           bathrooms: number
           bedrooms: number
-          building_condition: Database["public"]["Enums"]["building_condition"] | null
+          building_condition:
+            | Database["public"]["Enums"]["building_condition"]
+            | null
           category: Database["public"]["Enums"]["property_category"] | null
           caution_fee: number | null
           children_allowed: boolean | null
@@ -510,7 +850,9 @@ export type Database = {
           featured: boolean | null
           floors: number | null
           furnished: boolean | null
-          furnishing_status: Database["public"]["Enums"]["furnishing_status"] | null
+          furnishing_status:
+            | Database["public"]["Enums"]["furnishing_status"]
+            | null
           id: string
           inquiry_count: number | null
           kitchen_type: string | null
@@ -527,7 +869,9 @@ export type Database = {
           negotiable: boolean | null
           neighborhood: string | null
           nepa_hours: number | null
-          nigerian_property_type: Database["public"]["Enums"]["nigerian_property_type"] | null
+          nigerian_property_type:
+            | Database["public"]["Enums"]["nigerian_property_type"]
+            | null
           outdoor_features: string[] | null
           owner_id: string
           parking_spaces: number | null
@@ -550,15 +894,17 @@ export type Database = {
           toilets: number | null
           updated_at: string | null
           utilities: Json | null
-          verification_status: Database["public"]["Enums"]["property_verification_status"] | null
+          verification_status:
+            | Database["public"]["Enums"]["property_verification_status"]
+            | null
           view_count: number | null
           water_source: string | null
           year_built: number | null
           zip_code: string | null
-          accessibility_options: string[] | null
         }
         Insert: {
           access_route?: string | null
+          accessibility_options?: string[] | null
           additional_fees?: Json | null
           additional_rules?: string[] | null
           address: string
@@ -567,7 +913,9 @@ export type Database = {
           available_from?: string | null
           bathrooms?: number
           bedrooms?: number
-          building_condition?: Database["public"]["Enums"]["building_condition"] | null
+          building_condition?:
+            | Database["public"]["Enums"]["building_condition"]
+            | null
           category?: Database["public"]["Enums"]["property_category"] | null
           caution_fee?: number | null
           children_allowed?: boolean | null
@@ -580,7 +928,9 @@ export type Database = {
           featured?: boolean | null
           floors?: number | null
           furnished?: boolean | null
-          furnishing_status?: Database["public"]["Enums"]["furnishing_status"] | null
+          furnishing_status?:
+            | Database["public"]["Enums"]["furnishing_status"]
+            | null
           id?: string
           inquiry_count?: number | null
           kitchen_type?: string | null
@@ -597,7 +947,9 @@ export type Database = {
           negotiable?: boolean | null
           neighborhood?: string | null
           nepa_hours?: number | null
-          nigerian_property_type?: Database["public"]["Enums"]["nigerian_property_type"] | null
+          nigerian_property_type?:
+            | Database["public"]["Enums"]["nigerian_property_type"]
+            | null
           outdoor_features?: string[] | null
           owner_id: string
           parking_spaces?: number | null
@@ -620,15 +972,17 @@ export type Database = {
           toilets?: number | null
           updated_at?: string | null
           utilities?: Json | null
-          verification_status?: Database["public"]["Enums"]["property_verification_status"] | null
+          verification_status?:
+            | Database["public"]["Enums"]["property_verification_status"]
+            | null
           view_count?: number | null
           water_source?: string | null
           year_built?: number | null
           zip_code?: string | null
-          accessibility_options?: string[] | null
         }
         Update: {
           access_route?: string | null
+          accessibility_options?: string[] | null
           additional_fees?: Json | null
           additional_rules?: string[] | null
           address?: string
@@ -637,7 +991,9 @@ export type Database = {
           available_from?: string | null
           bathrooms?: number
           bedrooms?: number
-          building_condition?: Database["public"]["Enums"]["building_condition"] | null
+          building_condition?:
+            | Database["public"]["Enums"]["building_condition"]
+            | null
           category?: Database["public"]["Enums"]["property_category"] | null
           caution_fee?: number | null
           children_allowed?: boolean | null
@@ -650,7 +1006,9 @@ export type Database = {
           featured?: boolean | null
           floors?: number | null
           furnished?: boolean | null
-          furnishing_status?: Database["public"]["Enums"]["furnishing_status"] | null
+          furnishing_status?:
+            | Database["public"]["Enums"]["furnishing_status"]
+            | null
           id?: string
           inquiry_count?: number | null
           kitchen_type?: string | null
@@ -667,7 +1025,9 @@ export type Database = {
           negotiable?: boolean | null
           neighborhood?: string | null
           nepa_hours?: number | null
-          nigerian_property_type?: Database["public"]["Enums"]["nigerian_property_type"] | null
+          nigerian_property_type?:
+            | Database["public"]["Enums"]["nigerian_property_type"]
+            | null
           outdoor_features?: string[] | null
           owner_id?: string
           parking_spaces?: number | null
@@ -690,12 +1050,13 @@ export type Database = {
           toilets?: number | null
           updated_at?: string | null
           utilities?: Json | null
-          verification_status?: Database["public"]["Enums"]["property_verification_status"] | null
+          verification_status?:
+            | Database["public"]["Enums"]["property_verification_status"]
+            | null
           view_count?: number | null
           water_source?: string | null
           year_built?: number | null
           zip_code?: string | null
-          accessibility_options?: string[] | null
         }
         Relationships: [
           {
@@ -962,6 +1323,35 @@ export type Database = {
           },
         ]
       }
+      system_settings: {
+        Row: {
+          section: string
+          settings: Json
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          section: string
+          settings?: Json
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          section?: string
+          settings?: Json
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_applications: {
         Row: {
           applicant_id: string
@@ -1158,25 +1548,33 @@ export type Database = {
   }
 }
 
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
 export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (Database["public"]["Tables"] & Database["public"]["Views"])
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (Database["public"]["Tables"] &
-        Database["public"]["Views"])
-    ? (Database["public"]["Tables"] &
-        Database["public"]["Views"])[PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -1184,20 +1582,24 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof Database["public"]["Tables"]
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
-    ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -1205,20 +1607,24 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof Database["public"]["Tables"]
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
-    ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -1226,14 +1632,138 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  PublicEnumNameOrOptions extends
-    | keyof Database["public"]["Enums"]
-    | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
-    ? Database["public"]["Enums"][PublicEnumNameOrOptions]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      account_status: ["active", "suspended", "deactivated", "deleted"],
+      application_status: [
+        "pending",
+        "under_review",
+        "approved",
+        "rejected",
+        "withdrawn",
+      ],
+      building_condition: [
+        "newly_built",
+        "renovated",
+        "good",
+        "fair",
+        "needs_renovation",
+      ],
+      conversation_status: ["active", "archived", "blocked"],
+      enquiry_status: ["new", "responded", "in_progress", "closed", "spam"],
+      furnishing_status: ["furnished", "semi_furnished", "unfurnished"],
+      listing_type: ["rent", "sale"],
+      maintenance_priority: ["low", "medium", "high", "urgent"],
+      maintenance_status: ["pending", "in_progress", "completed", "cancelled"],
+      message_type: ["text", "image", "document", "appointment", "system"],
+      nigerian_property_type: [
+        "self_con",
+        "mini_flat",
+        "1_bedroom",
+        "2_bedroom",
+        "3_bedroom",
+        "4_bedroom",
+        "5_bedroom",
+        "duplex",
+        "penthouse",
+        "bungalow",
+        "terrace",
+        "detached",
+        "semi_detached",
+        "commercial",
+        "land",
+      ],
+      payment_cycle: [
+        "daily",
+        "weekly",
+        "monthly",
+        "quarterly",
+        "biannually",
+        "yearly",
+        "per_night",
+      ],
+      payment_status: [
+        "pending",
+        "completed",
+        "failed",
+        "refunded",
+        "cancelled",
+      ],
+      payment_type: [
+        "rent",
+        "deposit",
+        "caution_fee",
+        "legal_fee",
+        "service_charge",
+        "other",
+      ],
+      property_category: ["rent", "sale", "short_stay", "lease"],
+      property_status: [
+        "active",
+        "pending",
+        "rented",
+        "sold",
+        "inactive",
+        "draft",
+      ],
+      property_type: [
+        "house",
+        "condo",
+        "townhouse",
+        "apartment",
+        "land",
+        "commercial",
+        "other",
+      ],
+      property_verification_status: [
+        "unverified",
+        "pending",
+        "verified",
+        "rejected",
+      ],
+      user_role: ["homeowner", "homeseeker", "admin"],
+      verification_status: ["unverified", "pending", "verified", "rejected"],
+      viewing_status: [
+        "pending",
+        "confirmed",
+        "completed",
+        "cancelled",
+        "no_show",
+      ],
+    },
+  },
+} as const

@@ -381,9 +381,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error: any) {
       console.error('Registration failed:', error);
       setStatus(AuthStatus.ERROR);
+
+      // Detect "User already registered" – Supabase returns this as a 422
+      const isAlreadyRegistered =
+        error?.status === 422 ||
+        (typeof error?.message === 'string' &&
+          error.message.toLowerCase().includes('user already registered'));
+
       const authError: AuthError = {
-        type: AuthErrorType.SERVER_ERROR,
-        message: error.message || 'Registration failed. Please try again.'
+        type: isAlreadyRegistered ? AuthErrorType.INVALID_CREDENTIALS : AuthErrorType.SERVER_ERROR,
+        message: isAlreadyRegistered
+          ? 'An account with this email already exists. Please log in instead.'
+          : (error.message || 'Registration failed. Please try again.'),
       };
       setError(authError);
       throw authError;

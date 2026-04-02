@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { supabase } from '../lib/supabase';
 import {
   TrustIndicator,
   UserVerification,
@@ -136,8 +137,33 @@ export const useVerificationStore = create<VerificationState>((set, get) => ({
   fetchUserVerification: async (userId: string) => {
     set({ isLoading: true, error: null });
     try {
-      await new Promise(resolve => setTimeout(resolve, 200));
-      const verification = mockUserVerifications[userId] || null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('verification_status, trust_score, verified_documents')
+        .eq('id', userId)
+        .single();
+        
+      if (error) throw error;
+      
+      const status = data.verification_status;
+      const isVerified = status === 'verified';
+      
+      const verification: UserVerification = {
+        userId,
+        identityVerified: isVerified,
+        addressVerified: isVerified,
+        phoneVerified: isVerified,
+        emailVerified: isVerified,
+        documentsVerified: isVerified,
+        verificationLevel: isVerified ? VerificationLevel.STANDARD : VerificationLevel.NONE,
+        trustScore: data.trust_score || 0,
+        verifiedSince: isVerified ? new Date() : undefined as any,
+        lastVerificationUpdate: new Date(),
+        verificationBadges: isVerified ? ['verified-identity'] : [],
+        activeVerificationRequests: status === 'pending' ? [{ id: 'req', userId, status: 'pending', submittedAt: new Date(), documents: [] }] as any : [],
+        completedVerificationRequests: []
+      };
+      
       set(state => ({
         userVerifications: {
           ...state.userVerifications,
@@ -147,6 +173,7 @@ export const useVerificationStore = create<VerificationState>((set, get) => ({
       }));
       return verification;
     } catch (error) {
+      console.error('Failed to fetch user verification:', error);
       set({ error: 'Failed to fetch user verification', isLoading: false });
       return null;
     }
@@ -215,12 +242,19 @@ export const useVerificationStore = create<VerificationState>((set, get) => ({
   calculateTrustScore: async (userId: string) => {
     set({ isLoading: true, error: null });
     try {
-      await new Promise(resolve => setTimeout(resolve, 200));
-      const verification = mockUserVerifications[userId];
-      const score = verification?.trustScore || 50;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('trust_score')
+        .eq('id', userId)
+        .single();
+        
+      if (error) throw error;
+      
+      const score = data.trust_score || 0;
       set({ isLoading: false });
       return score;
     } catch (error) {
+      console.error('Error calculating trust score:', error);
       set({ error: 'Failed to calculate trust score', isLoading: false });
       return 0;
     }
@@ -230,17 +264,21 @@ export const useVerificationStore = create<VerificationState>((set, get) => ({
   submitVerificationRequest: async (userId: string, documents, additionalInfo) => {
     set({ isLoading: true, error: null });
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await supabase
+        .from('profiles')
+        .update({ verification_status: 'pending' })
+        .eq('id', userId);
+        
+      if (error) throw error;
 
-      // Create a new verification request
+      // Mock the request tracking locally
       const newRequest = {
         id: `req-${Date.now()}`,
         userId,
         documents: documents.map(doc => ({
           id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           type: doc.type,
-          fileUrl: doc.url,
+          fileUrl: '',
           fileName: doc.file?.name || 'document.pdf',
           fileSize: doc.file?.size || 0,
           mimeType: doc.file?.type || 'application/pdf',
@@ -253,10 +291,8 @@ export const useVerificationStore = create<VerificationState>((set, get) => ({
         notes: additionalInfo
       };
 
-      // Update pending verifications
       set(state => {
         const userPendingVerifications = state.pendingVerifications[userId] || [];
-
         return {
           pendingVerifications: {
             ...state.pendingVerifications,
@@ -268,6 +304,7 @@ export const useVerificationStore = create<VerificationState>((set, get) => ({
 
       return newRequest;
     } catch (error) {
+      console.error('Error submitting verification request:', error);
       set({ error: 'Failed to submit verification request', isLoading: false });
       throw error;
     }
@@ -276,26 +313,19 @@ export const useVerificationStore = create<VerificationState>((set, get) => ({
   checkVerificationStatus: async (userId: string) => {
     set({ isLoading: true, error: null });
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('verification_status')
+        .eq('id', userId)
+        .single();
+        
+      if (error) throw error;
 
-      // Get user verification
-      const userVerification = get().userVerifications[userId];
-
-      // Get pending verifications
-      const pendingVerifications = get().pendingVerifications[userId] || [];
-
-      let status = 'unverified';
-
-      if (userVerification?.verificationLevel && userVerification.verificationLevel !== 'none') {
-        status = 'verified';
-      } else if (pendingVerifications.length > 0) {
-        status = 'pending';
-      }
-
+      let status = data.verification_status || 'unverified';
       set({ isLoading: false });
       return status as VerificationStatus;
     } catch (error) {
+      console.error('Error checking verification status:', error);
       set({ error: 'Failed to check verification status', isLoading: false });
       throw error;
     }

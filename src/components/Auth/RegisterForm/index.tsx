@@ -108,8 +108,20 @@ const RegisterForm: React.FC = () => {
       
       <Card>
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
             {error}
+            {error.toLowerCase().includes('already exists') && (
+              <span>
+                {' '}
+                <button
+                  type="button"
+                  onClick={() => navigate('/auth/login')}
+                  className="underline font-medium hover:text-red-900"
+                >
+                  Log in
+                </button>
+              </span>
+            )}
           </div>
         )}
         

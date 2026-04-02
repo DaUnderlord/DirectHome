@@ -750,24 +750,53 @@ export const usePropertyOwnerStore = create<PropertyOwnerState>()(
         
         updateProperty: async (id: string, data: Partial<PropertyOnboarding>) => {
           set({ isLoadingProperties: true });
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          set(state => ({
-            properties: state.properties.map(p => 
-              p.id === id ? { ...p, ...data, updatedAt: new Date() } : p
-            ),
-            isLoadingProperties: false
-          }));
+          try {
+            // Update the record in Supabase
+            // Extract the fields we want to update
+            const updateData: any = { updated_at: new Date().toISOString() };
+            if (data.basicInfo?.title) updateData.title = data.basicInfo.title;
+            if (data.basicInfo?.description) updateData.description = data.basicInfo.description;
+            if (data.pricing?.rentPrice) updateData.price = data.pricing.rentPrice;
+            if (data.status) updateData.status = data.status;
+            // (You can add more mappings here later as needed)
+            
+            const { error } = await supabase
+              .from('properties')
+              .update(updateData)
+              .eq('id', id);
+              
+            if (error) throw error;
+            
+            set(state => ({
+              properties: state.properties.map(p => 
+                p.id === id ? { ...p, ...data, updatedAt: new Date() } : p
+              ),
+              isLoadingProperties: false
+            }));
+          } catch (error) {
+            console.error('Error updating property:', error);
+            set({ isLoadingProperties: false });
+          }
         },
         
         deleteProperty: async (id: string) => {
           set({ isLoadingProperties: true });
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          set(state => ({
-            properties: state.properties.filter(p => p.id !== id),
-            isLoadingProperties: false
-          }));
+          try {
+            const { error } = await supabase
+              .from('properties')
+              .delete()
+              .eq('id', id);
+              
+            if (error) throw error;
+            
+            set(state => ({
+              properties: state.properties.filter(p => p.id !== id),
+              isLoadingProperties: false
+            }));
+          } catch (error) {
+            console.error('Error deleting property:', error);
+            set({ isLoadingProperties: false });
+          }
         },
         
         setCurrentProperty: (property: PropertyOnboarding | null) => {
@@ -775,20 +804,68 @@ export const usePropertyOwnerStore = create<PropertyOwnerState>()(
         },
         
         // Viewing Actions
-        fetchViewings: async (_ownerId: string) => {
+        fetchViewings: async (ownerId: string) => {
           set({ isLoadingViewings: true });
-          // Return empty array - no mock data
-          set({ viewings: [], isLoadingViewings: false });
+          try {
+            const { data, error } = await supabase
+              .from('property_viewings')
+              .select(`
+                *,
+                properties:property_id(title),
+                seeker:profiles!property_viewings_seeker_id_fkey(first_name, last_name, phone, email)
+              `)
+              .eq('owner_id', ownerId);
+              
+            if (error) {
+              console.error('Error fetching viewings:', error);
+              set({ viewings: [], isLoadingViewings: false });
+              return;
+            }
+            
+            const viewings: ViewingRequest[] = (data || []).map((v: any) => ({
+              id: v.id,
+              propertyId: v.property_id,
+              propertyTitle: v.properties?.title || 'Unknown Property',
+              seekerId: v.seeker_id,
+              seekerName: v.seeker ? `${v.seeker.first_name || ''} ${v.seeker.last_name || ''}`.trim() : 'Unknown User',
+              seekerPhone: v.seeker?.phone || '',
+              seekerEmail: v.seeker?.email || '',
+              requestedDate: new Date(v.scheduled_date),
+              requestedTime: v.scheduled_time,
+              status: v.status as ViewingStatus,
+              notes: v.notes,
+              feedback: v.seeker_feedback ? JSON.parse(v.seeker_feedback) : undefined,
+              createdAt: new Date(v.created_at),
+              updatedAt: new Date(v.updated_at)
+            }));
+            
+            set({ viewings, isLoadingViewings: false });
+          } catch (err) {
+            console.error('Error fetching viewings:', err);
+            set({ viewings: [], isLoadingViewings: false });
+          }
         },
         
         updateViewingStatus: async (id: string, status: ViewingStatus, notes?: string) => {
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          set(state => ({
-            viewings: state.viewings.map(v => 
-              v.id === id ? { ...v, status, notes: notes || v.notes, updatedAt: new Date() } : v
-            )
-          }));
+          try {
+            const updateData: any = { status: status as any, updated_at: new Date().toISOString() };
+            if (notes) updateData.notes = notes;
+            
+            const { error } = await supabase
+              .from('property_viewings')
+              .update(updateData)
+              .eq('id', id);
+              
+            if (error) throw error;
+            
+            set(state => ({
+              viewings: state.viewings.map(v => 
+                v.id === id ? { ...v, status, notes: notes || v.notes, updatedAt: new Date() } : v
+              )
+            }));
+          } catch (error) {
+            console.error('Error updating viewing status:', error);
+          }
         },
         
         generateAccessCode: async (viewingId: string) => {
@@ -815,20 +892,60 @@ export const usePropertyOwnerStore = create<PropertyOwnerState>()(
         },
         
         // Enquiry Actions
-        fetchEnquiries: async (_ownerId: string) => {
+        fetchEnquiries: async (ownerId: string) => {
           set({ isLoadingEnquiries: true });
-          // Return empty array - no mock data
-          set({ enquiries: [], isLoadingEnquiries: false });
+          try {
+            const { data, error } = await supabase
+              .from('property_enquiries')
+              .select(`
+                *,
+                properties:property_id(title),
+                seeker:profiles!property_enquiries_seeker_id_fkey(first_name, last_name, phone, email)
+              `)
+              .eq('owner_id', ownerId);
+              
+            if (error) throw error;
+            
+            const enquiries: Enquiry[] = (data || []).map((e: any) => ({
+              id: e.id,
+              propertyId: e.property_id,
+              propertyTitle: e.properties?.title || 'Unknown Property',
+              seekerId: e.seeker_id,
+              seekerName: e.seeker ? `${e.seeker.first_name || ''} ${e.seeker.last_name || ''}`.trim() : 'Unknown User',
+              seekerPhone: e.seeker?.phone || '',
+              seekerEmail: e.seeker?.email || '',
+              message: e.message,
+              status: e.status as EnquiryStatus,
+              lastContactDate: new Date(e.updated_at),
+              messages: [], // We might need a separate query for messages if needed, keeping empty for now
+              createdAt: new Date(e.created_at),
+              updatedAt: new Date(e.updated_at)
+            }));
+            
+            set({ enquiries, isLoadingEnquiries: false });
+          } catch (err) {
+            console.error('Error fetching enquiries:', err);
+            set({ enquiries: [], isLoadingEnquiries: false });
+          }
         },
         
         updateEnquiryStatus: async (id: string, status: EnquiryStatus) => {
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          set(state => ({
-            enquiries: state.enquiries.map(e => 
-              e.id === id ? { ...e, status, updatedAt: new Date() } : e
-            )
-          }));
+          try {
+            const { error } = await supabase
+              .from('property_enquiries')
+              .update({ status: status as any, updated_at: new Date().toISOString() })
+              .eq('id', id);
+              
+            if (error) throw error;
+            
+            set(state => ({
+              enquiries: state.enquiries.map(e => 
+                e.id === id ? { ...e, status, updatedAt: new Date() } : e
+              )
+            }));
+          } catch (error) {
+            console.error('Error updating enquiry status:', error);
+          }
         },
         
         sendEnquiryReply: async (enquiryId: string, message: string) => {
@@ -852,20 +969,69 @@ export const usePropertyOwnerStore = create<PropertyOwnerState>()(
         },
         
         // Application Actions
-        fetchApplications: async (_ownerId: string) => {
+        fetchApplications: async (ownerId: string) => {
           set({ isLoadingApplications: true });
-          // Return empty array - no mock data
-          set({ applications: [], isLoadingApplications: false });
+          try {
+            const { data, error } = await supabase
+              .from('tenant_applications')
+              .select(`
+                *,
+                properties:property_id(title),
+                applicant:profiles!tenant_applications_applicant_id_fkey(first_name, last_name, phone, email)
+              `)
+              .eq('owner_id', ownerId);
+              
+            if (error) throw error;
+            
+            const applications: TenantApplication[] = (data || []).map((a: any) => ({
+              id: a.id,
+              propertyId: a.property_id,
+              propertyTitle: a.properties?.title || 'Unknown Property',
+              applicantId: a.applicant_id,
+              applicantName: a.applicant ? `${a.applicant.first_name || ''} ${a.applicant.last_name || ''}`.trim() : 'Unknown User',
+              applicantPhone: a.applicant?.phone || '',
+              applicantEmail: a.applicant?.email || '',
+              occupation: a.employment_status || '',
+              employer: a.employer_name || '',
+              monthlyIncome: a.monthly_income || 0,
+              documents: a.documents || [],
+              status: a.status as ApplicationStatus,
+              verificationStatus: 'pending',
+              notes: a.review_notes,
+              contractGenerated: false,
+              contractSignedByTenant: false,
+              contractSignedByOwner: false,
+              createdAt: new Date(a.created_at),
+              updatedAt: new Date(a.updated_at)
+            }));
+            
+            set({ applications, isLoadingApplications: false });
+          } catch (err) {
+            console.error('Error fetching applications:', err);
+            set({ applications: [], isLoadingApplications: false });
+          }
         },
         
         updateApplicationStatus: async (id: string, status: ApplicationStatus, notes?: string) => {
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          set(state => ({
-            applications: state.applications.map(a => 
-              a.id === id ? { ...a, status, notes: notes || a.notes, updatedAt: new Date() } : a
-            )
-          }));
+          try {
+            const updateData: any = { status: status as any, updated_at: new Date().toISOString() };
+            if (notes) updateData.review_notes = notes;
+            
+            const { error } = await supabase
+              .from('tenant_applications')
+              .update(updateData)
+              .eq('id', id);
+              
+            if (error) throw error;
+            
+            set(state => ({
+              applications: state.applications.map(a => 
+                a.id === id ? { ...a, status, notes: notes || a.notes, updatedAt: new Date() } : a
+              )
+            }));
+          } catch (error) {
+            console.error('Error updating application status:', error);
+          }
         },
         
         generateContract: async (applicationId: string) => {
@@ -882,58 +1048,108 @@ export const usePropertyOwnerStore = create<PropertyOwnerState>()(
         },
         
         // Financial Actions
-        fetchFinancials: async (_ownerId: string, _period?: { start: Date; end: Date }) => {
+        fetchFinancials: async (ownerId: string, _period?: { start: Date; end: Date }) => {
           set({ isLoadingFinancials: true });
-          await new Promise(resolve => setTimeout(resolve, 500));
           
-          const payments = generateMockPayments();
-          const expenses: Expense[] = [
-            {
-              id: 'exp-1',
-              propertyId: 'prop-1',
-              category: 'maintenance',
-              description: 'AC Repair',
-              amount: 25000,
-              date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000)
-            }
-          ];
-          
-          const financialSummary: FinancialSummary = {
-            totalRentCollected: 15000000,
-            totalOutstanding: 3500000,
-            totalExpenses: 25000,
-            netIncome: 14975000,
-            occupancyRate: 85,
-            period: {
-              start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-              end: new Date()
-            }
-          };
-          
-          set({ payments, expenses, financialSummary, isLoadingFinancials: false });
+          try {
+            const { data, error } = await supabase
+              .from('payments')
+              .select(`
+                *,
+                properties:property_id(title),
+                tenant:profiles!payments_payer_id_fkey(first_name, last_name)
+              `)
+              .eq('recipient_id', ownerId);
+              
+            if (error) throw error;
+            
+            const payments = (data || []).map((p: any) => ({
+              id: p.id,
+              propertyId: p.property_id || '',
+              propertyTitle: p.properties?.title || 'Unknown Property',
+              tenantId: p.payer_id || '',
+              tenantName: p.tenant ? `${p.tenant.first_name || ''} ${p.tenant.last_name || ''}`.trim() : 'Unknown Tenant',
+              amount: p.amount || 0,
+              dueDate: p.due_date ? new Date(p.due_date) : new Date(),
+              paidDate: p.payment_date ? new Date(p.payment_date) : undefined,
+              status: p.status as PaymentStatus,
+              paymentMethod: p.payment_method,
+              receiptUrl: p.receipt_url,
+              notes: p.notes
+            }));
+            
+            const expenses: Expense[] = []; // No expenses table yet
+            
+            const totalRentCollected = payments.filter((p: any) => p.status === PaymentStatus.PAID).reduce((acc: number, curr: any) => acc + curr.amount, 0);
+            const totalOutstanding = payments.filter((p: any) => p.status !== PaymentStatus.PAID).reduce((acc: number, curr: any) => acc + curr.amount, 0);
+            
+            const financialSummary: FinancialSummary = {
+              totalRentCollected,
+              totalOutstanding,
+              totalExpenses: 0,
+              netIncome: totalRentCollected,
+              occupancyRate: 85, // Might need to calculate this from properties
+              period: {
+                start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+                end: new Date()
+              }
+            };
+            
+            set({ payments, expenses, financialSummary, isLoadingFinancials: false });
+          } catch (err) {
+            console.error('Error fetching financials:', err);
+            set({ payments: [], expenses: [], financialSummary: null, isLoadingFinancials: false });
+          }
         },
         
         recordPayment: async (payment: Partial<RentPayment>) => {
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          const newPayment: RentPayment = {
-            id: `pay-${Date.now()}`,
-            propertyId: payment.propertyId || '',
-            propertyTitle: payment.propertyTitle || '',
-            tenantId: payment.tenantId || '',
-            tenantName: payment.tenantName || '',
-            amount: payment.amount || 0,
-            dueDate: payment.dueDate || new Date(),
-            paidDate: payment.paidDate,
-            status: payment.status || PaymentStatus.PENDING,
-            paymentMethod: payment.paymentMethod,
-            receiptUrl: payment.receiptUrl,
-            notes: payment.notes
-          };
-          
-          set(state => ({
-            payments: [...state.payments, newPayment]
-          }));
+          try {
+            // Get current session to link the owner
+            const { data: { session } } = await supabase.auth.getSession();
+            const recipientId = session?.user?.id;
+            
+            const insertData = {
+              property_id: payment.propertyId,
+              payer_id: payment.tenantId,
+              recipient_id: recipientId,
+              amount: payment.amount,
+              type: 'rent',
+              due_date: payment.dueDate ? payment.dueDate.toISOString().split('T')[0] : null,
+              payment_date: payment.paidDate ? payment.paidDate.toISOString() : null,
+              status: payment.status as any,
+              payment_method: payment.paymentMethod,
+              notes: payment.notes
+            };
+            
+            const { error, data } = await supabase
+              .from('payments')
+              .insert(insertData as any)
+              .select('id')
+              .single();
+              
+            if (error) throw error;
+            
+            const newPayment: RentPayment = {
+              id: data.id,
+              propertyId: payment.propertyId || '',
+              propertyTitle: payment.propertyTitle || '',
+              tenantId: payment.tenantId || '',
+              tenantName: payment.tenantName || '',
+              amount: payment.amount || 0,
+              dueDate: payment.dueDate || new Date(),
+              paidDate: payment.paidDate,
+              status: payment.status || PaymentStatus.PENDING,
+              paymentMethod: payment.paymentMethod,
+              receiptUrl: payment.receiptUrl,
+              notes: payment.notes
+            };
+            
+            set(state => ({
+              payments: [...state.payments, newPayment]
+            }));
+          } catch (err) {
+            console.error('Error recording payment:', err);
+          }
         },
         
         addExpense: async (expense: Partial<Expense>) => {
@@ -961,20 +1177,69 @@ export const usePropertyOwnerStore = create<PropertyOwnerState>()(
         },
         
         // Maintenance Actions
-        fetchMaintenanceRequests: async (_ownerId: string) => {
+        fetchMaintenanceRequests: async (ownerId: string) => {
           set({ isLoadingMaintenance: true });
-          // Return empty array - no mock data
-          set({ maintenanceRequests: [], isLoadingMaintenance: false });
+          try {
+            const { data, error } = await supabase
+              .from('maintenance_requests')
+              .select(`
+                *,
+                tenant:profiles!maintenance_requests_tenant_id_fkey(first_name, last_name)
+              `)
+              .eq('owner_id', ownerId);
+              
+            if (error) throw error;
+            
+            const maintenanceRequests: MaintenanceRequest[] = (data || []).map((m: any) => ({
+              id: m.id,
+              propertyId: m.property_id,
+              propertyTitle: 'Property', // Might need to join properties to get real title
+              tenantId: m.tenant_id,
+              tenantName: m.tenant ? `${m.tenant.first_name || ''} ${m.tenant.last_name || ''}`.trim() : 'Unknown Tenant',
+              title: m.title,
+              description: m.description,
+              category: m.category,
+              priority: m.priority as MaintenancePriority,
+              status: m.status as MaintenanceStatus,
+              images: m.images,
+              assignedTo: m.assigned_to,
+              estimatedCost: m.estimated_cost,
+              actualCost: m.actual_cost,
+              completedAt: m.completed_at ? new Date(m.completed_at) : undefined,
+              createdAt: new Date(m.created_at),
+              updatedAt: new Date(m.updated_at)
+            }));
+            
+            set({ maintenanceRequests, isLoadingMaintenance: false });
+          } catch (err) {
+            console.error('Error fetching maintenance requests:', err);
+            set({ maintenanceRequests: [], isLoadingMaintenance: false });
+          }
         },
         
         updateMaintenanceStatus: async (id: string, status: MaintenanceStatus, data?: Partial<MaintenanceRequest>) => {
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          set(state => ({
-            maintenanceRequests: state.maintenanceRequests.map(m => 
-              m.id === id ? { ...m, status, ...data, updatedAt: new Date() } : m
-            )
-          }));
+          try {
+            const updateData: any = { status: status as any, updated_at: new Date().toISOString() };
+            if (data?.assignedTo) updateData.assigned_to = data.assignedTo;
+            if (data?.estimatedCost) updateData.estimated_cost = data.estimatedCost;
+            if (data?.actualCost) updateData.actual_cost = data.actualCost;
+            if (status === MaintenanceStatus.COMPLETED) updateData.completed_at = new Date().toISOString();
+            
+            const { error } = await supabase
+              .from('maintenance_requests')
+              .update(updateData)
+              .eq('id', id);
+              
+            if (error) throw error;
+            
+            set(state => ({
+              maintenanceRequests: state.maintenanceRequests.map(m => 
+                m.id === id ? { ...m, status, ...data, updatedAt: new Date() } : m
+              )
+            }));
+          } catch (error) {
+            console.error('Error updating maintenance request:', error);
+          }
         },
         
         assignMaintenance: async (id: string, assignedTo: string) => {
