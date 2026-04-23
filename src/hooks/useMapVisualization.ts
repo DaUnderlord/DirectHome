@@ -141,7 +141,7 @@ export const useMapVisualization = ({
   const filteredProperties = useMemo(() => {
     return allProperties.filter(property => {
       // Property type filter
-      if (filters.propertyTypes.length > 0 && !filters.propertyTypes.includes(property.type)) {
+      if (filters.propertyTypes.length > 0 && property.propertyType && !filters.propertyTypes.includes(property.propertyType)) {
         return false;
       }
 

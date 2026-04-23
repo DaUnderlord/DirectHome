@@ -340,7 +340,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           }
         },
 
-        createSubscription: async (subscription) => {
+        createSubscription: async (_subscription) => {
           set({ isLoading: true, error: null });
           
           try {
@@ -644,7 +644,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         },
 
         // Transactions and billing
-        fetchTransactions: async (userId, query) => {
+        fetchTransactions: async (userId, _query) => {
           set({ isLoading: true, error: null });
           
           try {
@@ -683,7 +683,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           }
         },
 
-        fetchInvoices: async (userId) => {
+        fetchInvoices: async (_userId) => {
           set({ isLoading: true, error: null });
           
           try {

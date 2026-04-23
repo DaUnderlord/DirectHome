@@ -76,8 +76,11 @@ const LoginForm: React.FC = () => {
             </label>
             <input
               id="emailOrPhone"
+              type="text"
               placeholder="Enter your email or phone number"
-              className={`w-full px-3 py-2 border ${
+              autoComplete="username email tel"
+              inputMode="email"
+              className={`w-full px-3 py-3 min-h-[44px] text-base border ${
                 errors.emailOrPhone ? 'border-red-500' : 'border-gray-300'
               } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
               {...register('emailOrPhone')}
@@ -95,7 +98,8 @@ const LoginForm: React.FC = () => {
               id="password"
               type="password"
               placeholder="Enter your password"
-              className={`w-full px-3 py-2 border ${
+              autoComplete="current-password"
+              className={`w-full px-3 py-3 min-h-[44px] text-base border ${
                 errors.password ? 'border-red-500' : 'border-gray-300'
               } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
               {...register('password')}

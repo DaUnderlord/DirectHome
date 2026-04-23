@@ -313,7 +313,7 @@ export const mockPropertyService = {
   /**
    * Get similar properties
    */
-  getSimilarProperties: async (id: string, limit: number = 4) => {
+  getSimilarProperties: async (_id: string, limit: number = 4) => {
     const properties = generateMockProperties(limit);
 
     return {

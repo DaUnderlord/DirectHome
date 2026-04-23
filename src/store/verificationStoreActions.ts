@@ -15,7 +15,7 @@ import {
 // Verification actions
 export const verificationActions = (
   set: any,
-  get: any,
+  _get: any,
   mockUserVerifications: Record<string, UserVerification>,
   mockVerificationRequests: VerificationRequest[],
   mockVerificationDocuments: VerificationDocument[],
@@ -338,7 +338,7 @@ export const ratingActions = (
 });
 
 // Report actions
-export const reportActions = (set: any, get: any) => ({
+export const reportActions = (set: any, _get: any) => ({
   createReport: async (
     reporterId: string,
     reportedUserId: string,

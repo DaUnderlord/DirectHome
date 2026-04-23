@@ -64,9 +64,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [status, setStatus] = useState<AuthStatus>(AuthStatus.UNAUTHENTICATED);
   const [error, setError] = useState<AuthError | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [_token, setToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
-  const [expiresAt, setExpiresAt] = useState<number | null>(null);
+  const [_expiresAt, setExpiresAt] = useState<number | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const isHandlingSessionRef = useRef(false);
 
@@ -77,8 +77,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const initializeAuth = async () => {
       try {
-        // Get current session from Supabase
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // Get current session from Supabase with retry logic
+        let retries = 3;
+        let session = null;
+        let sessionError = null;
+
+        while (retries > 0 && !session) {
+          const result = await supabase.auth.getSession();
+          session = result.data.session;
+          sessionError = result.error;
+          
+          if (sessionError && retries > 1) {
+            console.warn(`Session fetch attempt failed, retrying... (${retries - 1} attempts left)`);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            retries--;
+          } else {
+            break;
+          }
+        }
 
         if (sessionError) {
           console.error('Session error:', sessionError);
@@ -100,10 +116,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
-    // Add timeout to prevent infinite loading (3 seconds max)
+    // Add timeout to prevent infinite loading (5 seconds max for mobile)
     timeoutId = setTimeout(() => {
-      setIsInitializing(false);
-    }, 3000);
+      if (isMounted) {
+        console.warn('Auth initialization timeout - proceeding as unauthenticated');
+        setIsInitializing(false);
+        setStatus(AuthStatus.UNAUTHENTICATED);
+      }
+    }, 5000);
 
     initializeAuth();
 
@@ -416,7 +436,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // Verify email function
-  const verifyEmail = async (code: string): Promise<void> => {
+  const verifyEmail = async (_code: string): Promise<void> => {
     setStatus(AuthStatus.AUTHENTICATING);
     setError(null);
     
@@ -443,7 +463,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // Verify phone function
-  const verifyPhone = async (code: string): Promise<void> => {
+  const verifyPhone = async (_code: string): Promise<void> => {
     setStatus(AuthStatus.AUTHENTICATING);
     setError(null);
     
@@ -495,7 +515,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // Confirm password reset function
-  const confirmResetPassword = async (confirmation: PasswordResetConfirmation): Promise<void> => {
+  const confirmResetPassword = async (_confirmation: PasswordResetConfirmation): Promise<void> => {
     setError(null);
     
     try {

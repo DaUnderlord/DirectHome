@@ -13,52 +13,8 @@ import {
   HostAvailability, 
   UpdateAppointmentDto 
 } from '../types/appointment';
-import { addDays, addMinutes, format, isSameDay, parseISO, setHours, setMinutes } from 'date-fns';
-
-// Mock data for testing
-const mockAppointments: Appointment[] = [
-  {
-    id: 'apt_1',
-    propertyId: 'property_1',
-    hostId: 'user_1',
-    attendeeId: 'current_user_id',
-    startTime: addDays(new Date(), 2),
-    endTime: addMinutes(addDays(new Date(), 2), 30),
-    status: AppointmentStatus.CONFIRMED,
-    type: AppointmentType.VIEWING,
-    notes: 'Looking forward to showing you the property!',
-    conversationId: 'conv_1',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: 'apt_2',
-    propertyId: 'property_2',
-    hostId: 'user_2',
-    attendeeId: 'current_user_id',
-    startTime: addDays(new Date(), 5),
-    endTime: addMinutes(addDays(new Date(), 5), 30),
-    status: AppointmentStatus.PENDING,
-    type: AppointmentType.VIEWING,
-    notes: 'Please confirm if this time works for you.',
-    conversationId: 'conv_2',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: 'apt_3',
-    propertyId: 'property_3',
-    hostId: 'current_user_id',
-    attendeeId: 'user_3',
-    startTime: addDays(new Date(), 1),
-    endTime: addMinutes(addDays(new Date(), 1), 30),
-    status: AppointmentStatus.PENDING,
-    type: AppointmentType.VIEWING,
-    conversationId: 'conv_3',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
-];
+import { addDays, addMinutes, format, isSameDay, setHours, setMinutes } from 'date-fns';
+import { appointmentService } from '../services/appointmentService';
 
 // Mock host availability
 const mockHostAvailability: HostAvailability = {
@@ -168,41 +124,15 @@ export const useAppointmentStore = create<AppointmentState>()(
           set({ isLoading: true, error: null, appointmentFilters: { ...get().appointmentFilters, ...filters } });
           
           try {
-            // In a real app, this would be an API call
-            await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
+            // Use real appointment service
+            const response = await appointmentService.fetchAppointments(filters);
             
-            // Filter appointments based on filters
-            let filtered = [...mockAppointments];
-            
-            if (filters.propertyId) {
-              filtered = filtered.filter(a => a.propertyId === filters.propertyId);
+            if (!response.success) {
+              set({ error: response.error || 'Failed to fetch appointments', isLoading: false });
+              return;
             }
             
-            if (filters.hostId) {
-              filtered = filtered.filter(a => a.hostId === filters.hostId);
-            }
-            
-            if (filters.attendeeId) {
-              filtered = filtered.filter(a => a.attendeeId === filters.attendeeId);
-            }
-            
-            if (filters.status) {
-              const statuses = Array.isArray(filters.status) ? filters.status : [filters.status];
-              filtered = filtered.filter(a => statuses.includes(a.status));
-            }
-            
-            if (filters.type) {
-              const types = Array.isArray(filters.type) ? filters.type : [filters.type];
-              filtered = filtered.filter(a => types.includes(a.type));
-            }
-            
-            if (filters.startDate) {
-              filtered = filtered.filter(a => a.startTime >= filters.startDate!);
-            }
-            
-            if (filters.endDate) {
-              filtered = filtered.filter(a => a.startTime <= filters.endDate!);
-            }
+            const filtered = response.appointments;
             
             // Create calendar events from appointments
             const events: CalendarEvent[] = filtered.map(appointment => ({
@@ -235,7 +165,7 @@ export const useAppointmentStore = create<AppointmentState>()(
             }));
             
             set({ 
-              appointments: mockAppointments,
+              appointments: response.appointments,
               filteredAppointments: filtered,
               calendarEvents: events,
               pagination: {
@@ -258,14 +188,12 @@ export const useAppointmentStore = create<AppointmentState>()(
           set({ isLoading: true, error: null });
           
           try {
-            // In a real app, this would be an API call
-            await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+            // Use real appointment service
+            const response = await appointmentService.fetchAppointmentById(id);
             
-            const appointment = mockAppointments.find(a => a.id === id);
-            
-            if (!appointment) {
+            if (!response.success || !response.appointment) {
               set({ 
-                error: 'Appointment not found',
+                error: response.error || 'Appointment not found',
                 isLoading: false 
               });
               return null;
@@ -276,7 +204,7 @@ export const useAppointmentStore = create<AppointmentState>()(
               isLoading: false 
             });
             
-            return appointment;
+            return response.appointment;
           } catch (error) {
             set({ 
               error: error instanceof Error ? error.message : 'Failed to fetch appointment',
@@ -290,50 +218,22 @@ export const useAppointmentStore = create<AppointmentState>()(
           set({ isLoading: true, error: null });
           
           try {
-            // In a real app, this would be an API call
-            await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
+            // Use real appointment service
+            const response = await appointmentService.createAppointment(data);
             
-            // Create a new appointment
-            const newAppointment: Appointment = {
-              id: `apt_${Date.now()}`,
-              ...data,
-              status: AppointmentStatus.PENDING,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            };
+            if (!response.success || !response.appointmentId) {
+              set({ 
+                error: response.error || 'Failed to create appointment',
+                isLoading: false 
+              });
+              return null;
+            }
             
-            // Update state
-            set(state => ({
-              appointments: [...state.appointments, newAppointment],
-              filteredAppointments: [...state.filteredAppointments, newAppointment],
-              isLoading: false
-            }));
+            // Refresh appointments list
+            await get().fetchAppointments(get().appointmentFilters);
             
-            // Add to calendar events
-            const newEvent: CalendarEvent = {
-              id: newAppointment.id,
-              title: newAppointment.type === AppointmentType.VIEWING 
-                ? 'Property Viewing' 
-                : newAppointment.type === AppointmentType.INSPECTION
-                  ? 'Property Inspection'
-                  : newAppointment.type === AppointmentType.HANDOVER
-                    ? 'Property Handover'
-                    : 'Appointment',
-              start: newAppointment.startTime,
-              end: newAppointment.endTime,
-              allDay: false,
-              color: '#FFC107', // Yellow for pending
-              description: newAppointment.notes || '',
-              appointmentId: newAppointment.id,
-              propertyId: newAppointment.propertyId,
-              status: newAppointment.status
-            };
-            
-            set(state => ({
-              calendarEvents: [...state.calendarEvents, newEvent]
-            }));
-            
-            return newAppointment.id;
+            set({ isLoading: false });
+            return response.appointmentId;
           } catch (error) {
             set({ 
               error: error instanceof Error ? error.message : 'Failed to create appointment',
@@ -347,62 +247,21 @@ export const useAppointmentStore = create<AppointmentState>()(
           set({ isLoading: true, error: null });
           
           try {
-            // In a real app, this would be an API call
-            await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+            // Use real appointment service
+            const response = await appointmentService.updateAppointment(id, data);
             
-            // Update appointment
-            set(state => {
-              const updatedAppointments = state.appointments.map(appointment => 
-                appointment.id === id
-                  ? { 
-                      ...appointment, 
-                      ...data,
-                      updatedAt: new Date()
-                    }
-                  : appointment
-              );
-              
-              const updatedFilteredAppointments = state.filteredAppointments.map(appointment => 
-                appointment.id === id
-                  ? { 
-                      ...appointment, 
-                      ...data,
-                      updatedAt: new Date()
-                    }
-                  : appointment
-              );
-              
-              // Update calendar event
-              const updatedCalendarEvents = state.calendarEvents.map(event => 
-                event.appointmentId === id
-                  ? { 
-                      ...event,
-                      start: data.startTime || event.start,
-                      end: data.endTime || event.end,
-                      status: data.status || event.status as AppointmentStatus,
-                      color: data.status === AppointmentStatus.CONFIRMED 
-                        ? '#4CAF50' // Green
-                        : data.status === AppointmentStatus.PENDING
-                          ? '#FFC107' // Yellow
-                          : data.status === AppointmentStatus.CANCELLED
-                            ? '#F44336' // Red
-                            : data.status === AppointmentStatus.RESCHEDULED
-                              ? '#2196F3' // Blue
-                              : data.status === AppointmentStatus.COMPLETED
-                                ? '#9E9E9E' // Gray
-                                : event.color
-                    }
-                  : event
-              );
-              
-              return {
-                appointments: updatedAppointments,
-                filteredAppointments: updatedFilteredAppointments,
-                calendarEvents: updatedCalendarEvents,
-                isLoading: false
-              };
-            });
+            if (!response.success) {
+              set({ 
+                error: response.error || 'Failed to update appointment',
+                isLoading: false 
+              });
+              return false;
+            }
             
+            // Refresh appointments list
+            await get().fetchAppointments(get().appointmentFilters);
+            
+            set({ isLoading: false });
             return true;
           } catch (error) {
             set({ 
@@ -417,54 +276,21 @@ export const useAppointmentStore = create<AppointmentState>()(
           set({ isLoading: true, error: null });
           
           try {
-            // In a real app, this would be an API call
-            await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+            // Use real appointment service
+            const response = await appointmentService.cancelAppointment(id, data);
             
-            // Cancel appointment
-            set(state => {
-              const updatedAppointments = state.appointments.map(appointment => 
-                appointment.id === id
-                  ? { 
-                      ...appointment, 
-                      status: AppointmentStatus.CANCELLED,
-                      cancelReason: data.cancelReason,
-                      cancelledBy: 'current_user_id', // In a real app, this would be the current user's ID
-                      updatedAt: new Date()
-                    }
-                  : appointment
-              );
-              
-              const updatedFilteredAppointments = state.filteredAppointments.map(appointment => 
-                appointment.id === id
-                  ? { 
-                      ...appointment, 
-                      status: AppointmentStatus.CANCELLED,
-                      cancelReason: data.cancelReason,
-                      cancelledBy: 'current_user_id',
-                      updatedAt: new Date()
-                    }
-                  : appointment
-              );
-              
-              // Update calendar event
-              const updatedCalendarEvents = state.calendarEvents.map(event => 
-                event.appointmentId === id
-                  ? { 
-                      ...event,
-                      status: AppointmentStatus.CANCELLED,
-                      color: '#F44336' // Red
-                    }
-                  : event
-              );
-              
-              return {
-                appointments: updatedAppointments,
-                filteredAppointments: updatedFilteredAppointments,
-                calendarEvents: updatedCalendarEvents,
-                isLoading: false
-              };
-            });
+            if (!response.success) {
+              set({ 
+                error: response.error || 'Failed to cancel appointment',
+                isLoading: false 
+              });
+              return false;
+            }
             
+            // Refresh appointments list
+            await get().fetchAppointments(get().appointmentFilters);
+            
+            set({ isLoading: false });
             return true;
           } catch (error) {
             set({ 
@@ -479,50 +305,21 @@ export const useAppointmentStore = create<AppointmentState>()(
           set({ isLoading: true, error: null });
           
           try {
-            // In a real app, this would be an API call
-            await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+            // Use real appointment service
+            const response = await appointmentService.confirmAppointment(id);
             
-            // Confirm appointment
-            set(state => {
-              const updatedAppointments = state.appointments.map(appointment => 
-                appointment.id === id
-                  ? { 
-                      ...appointment, 
-                      status: AppointmentStatus.CONFIRMED,
-                      updatedAt: new Date()
-                    }
-                  : appointment
-              );
-              
-              const updatedFilteredAppointments = state.filteredAppointments.map(appointment => 
-                appointment.id === id
-                  ? { 
-                      ...appointment, 
-                      status: AppointmentStatus.CONFIRMED,
-                      updatedAt: new Date()
-                    }
-                  : appointment
-              );
-              
-              // Update calendar event
-              const updatedCalendarEvents = state.calendarEvents.map(event => 
-                event.appointmentId === id
-                  ? { 
-                      ...event,
-                      status: AppointmentStatus.CONFIRMED,
-                      color: '#4CAF50' // Green
-                    }
-                  : event
-              );
-              
-              return {
-                appointments: updatedAppointments,
-                filteredAppointments: updatedFilteredAppointments,
-                calendarEvents: updatedCalendarEvents,
-                isLoading: false
-              };
-            });
+            if (!response.success) {
+              set({ 
+                error: response.error || 'Failed to confirm appointment',
+                isLoading: false 
+              });
+              return false;
+            }
             
+            // Refresh appointments list
+            await get().fetchAppointments(get().appointmentFilters);
+            
+            set({ isLoading: false });
             return true;
           } catch (error) {
             set({ 
@@ -537,56 +334,21 @@ export const useAppointmentStore = create<AppointmentState>()(
           set({ isLoading: true, error: null });
           
           try {
-            // In a real app, this would be an API call
-            await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+            // Use real appointment service
+            const response = await appointmentService.rescheduleAppointment(id, startTime, endTime);
             
-            // Reschedule appointment
-            set(state => {
-              const updatedAppointments = state.appointments.map(appointment => 
-                appointment.id === id
-                  ? { 
-                      ...appointment, 
-                      startTime,
-                      endTime,
-                      status: AppointmentStatus.RESCHEDULED,
-                      updatedAt: new Date()
-                    }
-                  : appointment
-              );
-              
-              const updatedFilteredAppointments = state.filteredAppointments.map(appointment => 
-                appointment.id === id
-                  ? { 
-                      ...appointment, 
-                      startTime,
-                      endTime,
-                      status: AppointmentStatus.RESCHEDULED,
-                      updatedAt: new Date()
-                    }
-                  : appointment
-              );
-              
-              // Update calendar event
-              const updatedCalendarEvents = state.calendarEvents.map(event => 
-                event.appointmentId === id
-                  ? { 
-                      ...event,
-                      start: startTime,
-                      end: endTime,
-                      status: AppointmentStatus.RESCHEDULED,
-                      color: '#2196F3' // Blue
-                    }
-                  : event
-              );
-              
-              return {
-                appointments: updatedAppointments,
-                filteredAppointments: updatedFilteredAppointments,
-                calendarEvents: updatedCalendarEvents,
-                isLoading: false
-              };
-            });
+            if (!response.success) {
+              set({ 
+                error: response.error || 'Failed to reschedule appointment',
+                isLoading: false 
+              });
+              return false;
+            }
             
+            // Refresh appointments list
+            await get().fetchAppointments(get().appointmentFilters);
+            
+            set({ isLoading: false });
             return true;
           } catch (error) {
             set({ 
@@ -609,7 +371,7 @@ export const useAppointmentStore = create<AppointmentState>()(
           set({ calendarDate: date });
         },
         
-        fetchHostAvailability: async (hostId) => {
+        fetchHostAvailability: async (_hostId) => {
           set({ isLoading: true, error: null });
           
           try {
@@ -654,7 +416,7 @@ export const useAppointmentStore = create<AppointmentState>()(
           }
         },
         
-        fetchAvailabilitySlots: async (hostId, date) => {
+        fetchAvailabilitySlots: async (_hostId, date) => {
           set({ isLoading: true, error: null });
           
           try {

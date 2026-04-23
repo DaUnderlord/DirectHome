@@ -14,6 +14,8 @@ export interface InputProps {
   required?: boolean;
   disabled?: boolean;
   className?: string;
+  autoComplete?: string;
+  inputMode?: 'text' | 'email' | 'tel' | 'url' | 'numeric' | 'decimal' | 'search';
 }
 
 const Input: React.FC<InputProps> = ({
@@ -27,11 +29,14 @@ const Input: React.FC<InputProps> = ({
   required = false,
   disabled = false,
   className = '',
+  autoComplete,
+  inputMode,
 }) => {
   const inputClasses = `
-    w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 
+    w-full px-3 py-3 min-h-[44px] border border-gray-300 rounded-md shadow-sm placeholder-gray-400 
     focus:outline-none focus:ring-blue-500 focus:border-blue-500
     disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed
+    text-base
     ${error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}
   `;
 
@@ -52,6 +57,8 @@ const Input: React.FC<InputProps> = ({
         placeholder={placeholder}
         disabled={disabled}
         required={required}
+        autoComplete={autoComplete}
+        inputMode={inputMode}
         className={inputClasses}
       />
       

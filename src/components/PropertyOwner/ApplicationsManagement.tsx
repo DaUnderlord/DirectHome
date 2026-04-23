@@ -33,7 +33,7 @@ const ApplicationsManagement: React.FC = () => {
   } = usePropertyOwnerStore();
 
   const [filter, setFilter] = useState<'all' | 'submitted' | 'under_review' | 'approved' | 'rejected'>('all');
-  const [selectedApplication, setSelectedApplication] = useState<TenantApplication | null>(null);
+  const [selectedApplication, _setSelectedApplication] = useState<TenantApplication | null>(null);
   const [isGeneratingContract, setIsGeneratingContract] = useState(false);
 
   useEffect(() => {

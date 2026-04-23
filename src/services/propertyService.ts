@@ -29,7 +29,7 @@ interface SearchFilters {
 }
 
 // Map database property to frontend Property type
-const mapDbPropertyToProperty = (dbProperty: any, images: any[] = []): Property => {
+export const mapDbPropertyToProperty = (dbProperty: any, images: any[] = []): Property => {
   const propertyImages = images.length > 0 
     ? images.map((img, index) => ({
         id: img.id,

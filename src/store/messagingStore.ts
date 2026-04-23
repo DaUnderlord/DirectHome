@@ -10,7 +10,30 @@ import {
   MessagePagination, 
   MessageSearchFilters 
 } from '../types/messaging';
-import { mockConversations, mockMessages } from '../services/mockMessagingData';
+import { messagingService } from '../services/messagingService';
+import { supabase } from '../lib/supabase';
+
+// Helper to map database message to frontend type (for search)
+const mapDbMessageToMessage = (dbMsg: any): Message => {
+  const readBy: Record<string, Date> = {};
+  (dbMsg.message_read_receipts || []).forEach((receipt: any) => {
+    readBy[receipt.user_id] = new Date(receipt.read_at);
+  });
+  
+  return {
+    id: dbMsg.id,
+    conversationId: dbMsg.conversation_id,
+    senderId: dbMsg.sender_id,
+    content: dbMsg.content,
+    type: dbMsg.type,
+    attachments: dbMsg.attachments || [],
+    readBy,
+    isDeleted: dbMsg.is_deleted || false,
+    deletedAt: dbMsg.deleted_at ? new Date(dbMsg.deleted_at) : undefined,
+    createdAt: new Date(dbMsg.created_at),
+    updatedAt: new Date(dbMsg.updated_at)
+  };
+};
 
 interface MessagingState {
   // Conversations
@@ -74,33 +97,19 @@ export const useMessagingStore = create<MessagingState>()(
           });
           
           try {
-            // In a real app, this would be an API call
-            // For now, we'll use mock data
-            await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
+            // Use real messaging service
+            const response = await messagingService.fetchConversations(filters);
             
-            // Filter conversations based on filters
-            let filteredConversations = [...mockConversations];
-            
-            if (filters.propertyId) {
-              filteredConversations = filteredConversations.filter(
-                c => c.propertyId === filters.propertyId
-              );
-            }
-            
-            if (filters.participantId) {
-              filteredConversations = filteredConversations.filter(
-                c => c.participants.includes(filters.participantId!)
-              );
-            }
-            
-            if (filters.status) {
-              filteredConversations = filteredConversations.filter(
-                c => c.status === filters.status
-              );
+            if (!response.success) {
+              set({ 
+                conversationError: response.error || 'Failed to fetch conversations',
+                isLoadingConversations: false 
+              });
+              return;
             }
             
             set({ 
-              conversations: filteredConversations,
+              conversations: response.conversations,
               isLoadingConversations: false 
             });
           } catch (error) {
@@ -127,35 +136,31 @@ export const useMessagingStore = create<MessagingState>()(
           }));
           
           try {
-            // In a real app, this would be an API call
-            // For now, we'll use mock data
-            await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+            // Use real messaging service
+            const response = await messagingService.fetchMessages(conversationId, page, limit);
             
-            // Filter messages for this conversation
-            const conversationMessages = mockMessages.filter(
-              m => m.conversationId === conversationId
-            );
-            
-            // Calculate pagination
-            const startIndex = (page - 1) * limit;
-            const endIndex = startIndex + limit;
-            const paginatedMessages = conversationMessages.slice(startIndex, endIndex);
-            const total = conversationMessages.length;
+            if (!response.success) {
+              set({ 
+                messageError: response.error || 'Failed to fetch messages',
+                isLoadingMessages: false 
+              });
+              return;
+            }
             
             set(state => ({ 
               messages: { 
                 ...state.messages,
                 [conversationId]: page === 1 
-                  ? paginatedMessages 
-                  : [...(state.messages[conversationId] || []), ...paginatedMessages]
+                  ? response.messages 
+                  : [...(state.messages[conversationId] || []), ...response.messages]
               },
               messagePagination: {
                 ...state.messagePagination,
                 [conversationId]: {
                   page,
                   limit,
-                  total,
-                  hasMore: endIndex < total
+                  total: response.total,
+                  hasMore: response.hasMore
                 }
               },
               isLoadingMessages: false 
@@ -174,28 +179,18 @@ export const useMessagingStore = create<MessagingState>()(
         },
         
         sendMessage: async (messageData) => {
-          const { conversationId, content, type, attachments } = messageData;
+          const { conversationId } = messageData;
           
           try {
-            // In a real app, this would be an API call
-            // For now, we'll simulate sending a message
-            await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+            // Use real messaging service
+            const response = await messagingService.sendMessage(messageData);
             
-            // Create a new message
-            const newMessage: Message = {
-              id: `msg_${Date.now()}`,
-              conversationId,
-              senderId: 'current_user_id', // In a real app, this would come from auth context
-              content,
-              type,
-              attachments: attachments?.map(a => ({
-                ...a,
-                id: `attachment_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-                createdAt: new Date()
-              })),
-              readBy: { 'current_user_id': new Date() },
-              createdAt: new Date()
-            };
+            if (!response.success || !response.message) {
+              set({ 
+                messageError: response.error || 'Failed to send message'
+              });
+              return;
+            }
             
             // Update the messages state
             set(state => ({
@@ -203,7 +198,7 @@ export const useMessagingStore = create<MessagingState>()(
                 ...state.messages,
                 [conversationId]: [
                   ...(state.messages[conversationId] || []),
-                  newMessage
+                  response.message!
                 ]
               }
             }));
@@ -212,7 +207,7 @@ export const useMessagingStore = create<MessagingState>()(
             set(state => ({
               conversations: state.conversations.map(conv => 
                 conv.id === conversationId
-                  ? { ...conv, lastMessage: newMessage, updatedAt: new Date() }
+                  ? { ...conv, lastMessage: response.message!, updatedAt: new Date() }
                   : conv
               )
             }));
@@ -224,55 +219,24 @@ export const useMessagingStore = create<MessagingState>()(
         },
         
         createConversation: async (data) => {
-          const { participantIds, propertyId, initialMessage } = data;
-          
           try {
-            // In a real app, this would be an API call
-            // For now, we'll simulate creating a conversation
-            await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
+            // Use real messaging service
+            const response = await messagingService.createConversation(data);
             
-            // Create a new message for the conversation
-            const newMessage: Message = {
-              id: `msg_${Date.now()}`,
-              conversationId: `conv_${Date.now()}`,
-              senderId: 'current_user_id', // In a real app, this would come from auth context
-              content: initialMessage.content,
-              type: initialMessage.type,
-              attachments: initialMessage.attachments?.map(a => ({
-                ...a,
-                id: `attachment_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-                createdAt: new Date()
-              })),
-              readBy: { 'current_user_id': new Date() },
-              createdAt: new Date()
-            };
+            if (!response.success || !response.conversationId) {
+              set({ 
+                conversationError: response.error || 'Failed to create conversation'
+              });
+              return null;
+            }
             
-            // Create a new conversation
-            const newConversation: Conversation = {
-              id: newMessage.conversationId,
-              participants: [...participantIds, 'current_user_id'], // Include current user
-              propertyId,
-              lastMessage: newMessage,
-              unreadCount: participantIds.reduce((acc, id) => {
-                acc[id] = 1;
-                return acc;
-              }, {} as Record<string, number>),
-              status: ConversationStatus.ACTIVE,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            };
+            // Refresh conversations list
+            await get().fetchConversations(get().conversationFilters);
             
-            // Update state
-            set(state => ({
-              conversations: [newConversation, ...state.conversations],
-              messages: {
-                ...state.messages,
-                [newConversation.id]: [newMessage]
-              },
-              activeConversationId: newConversation.id
-            }));
+            // Set as active conversation
+            set({ activeConversationId: response.conversationId });
             
-            return newConversation.id;
+            return response.conversationId;
           } catch (error) {
             set({ 
               conversationError: error instanceof Error ? error.message : 'Failed to create conversation'
@@ -283,37 +247,18 @@ export const useMessagingStore = create<MessagingState>()(
         
         markMessagesAsRead: async (conversationId) => {
           try {
-            // In a real app, this would be an API call
-            // For now, we'll simulate marking messages as read
-            await new Promise(resolve => setTimeout(resolve, 200)); // Simulate network delay
+            // Use real messaging service
+            const response = await messagingService.markMessagesAsRead(conversationId);
             
-            const currentUserId = 'current_user_id'; // In a real app, this would come from auth context
+            if (!response.success) {
+              set({ 
+                messageError: response.error || 'Failed to mark messages as read'
+              });
+              return;
+            }
             
-            // Update messages to mark them as read
-            set(state => ({
-              messages: {
-                ...state.messages,
-                [conversationId]: (state.messages[conversationId] || []).map(msg => ({
-                  ...msg,
-                  readBy: {
-                    ...msg.readBy,
-                    [currentUserId]: new Date()
-                  }
-                }))
-              },
-              // Update conversation unread count
-              conversations: state.conversations.map(conv => 
-                conv.id === conversationId
-                  ? { 
-                      ...conv, 
-                      unreadCount: {
-                        ...conv.unreadCount,
-                        [currentUserId]: 0
-                      }
-                    }
-                  : conv
-              )
-            }));
+            // Refresh conversations to update unread counts
+            await get().fetchConversations(get().conversationFilters);
           } catch (error) {
             set({ 
               messageError: error instanceof Error ? error.message : 'Failed to mark messages as read'
@@ -323,11 +268,17 @@ export const useMessagingStore = create<MessagingState>()(
         
         archiveConversation: async (conversationId) => {
           try {
-            // In a real app, this would be an API call
-            // For now, we'll simulate archiving a conversation
-            await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+            // Use real messaging service
+            const response = await messagingService.archiveConversation(conversationId);
             
-            // Update conversation status
+            if (!response.success) {
+              set({ 
+                conversationError: response.error || 'Failed to archive conversation'
+              });
+              return;
+            }
+            
+            // Update conversation status locally
             set(state => ({
               conversations: state.conversations.map(conv => 
                 conv.id === conversationId
@@ -348,11 +299,17 @@ export const useMessagingStore = create<MessagingState>()(
         
         deleteMessage: async (messageId, conversationId) => {
           try {
-            // In a real app, this would be an API call
-            // For now, we'll simulate deleting a message
-            await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+            // Use real messaging service
+            const response = await messagingService.deleteMessage(messageId);
             
-            // Mark the message as deleted
+            if (!response.success) {
+              set({ 
+                messageError: response.error || 'Failed to delete message'
+              });
+              return;
+            }
+            
+            // Mark the message as deleted locally
             set(state => ({
               messages: {
                 ...state.messages,
@@ -366,22 +323,9 @@ export const useMessagingStore = create<MessagingState>()(
             
             // If this was the last message in the conversation, update the conversation
             const conversation = get().conversations.find(c => c.id === conversationId);
-            if (conversation?.lastMessage.id === messageId) {
-              // Find the new last message
-              const conversationMessages = get().messages[conversationId] || [];
-              const newLastMessage = conversationMessages
-                .filter(m => !m.isDeleted && m.id !== messageId)
-                .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
-              
-              if (newLastMessage) {
-                set(state => ({
-                  conversations: state.conversations.map(conv => 
-                    conv.id === conversationId
-                      ? { ...conv, lastMessage: newLastMessage }
-                      : conv
-                  )
-                }));
-              }
+            if (conversation?.lastMessage?.id === messageId) {
+              // Refresh conversations to get updated last message
+              await get().fetchConversations(get().conversationFilters);
             }
           } catch (error) {
             set({ 
@@ -398,43 +342,44 @@ export const useMessagingStore = create<MessagingState>()(
           });
           
           try {
-            // In a real app, this would be an API call
-            // For now, we'll simulate searching messages
-            await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-            
-            // Get all messages for this conversation
-            const allMessages = mockMessages.filter(m => m.conversationId === conversationId);
+            // Build query
+            let query = supabase
+              .from('messages')
+              .select(`
+                *,
+                message_read_receipts (user_id, read_at)
+              `)
+              .eq('conversation_id', conversationId)
+              .eq('is_deleted', false);
             
             // Apply filters
-            let filteredMessages = [...allMessages];
-            
             if (filters.query) {
-              const query = filters.query.toLowerCase();
-              filteredMessages = filteredMessages.filter(
-                m => m.content.toLowerCase().includes(query)
-              );
+              query = query.ilike('content', `%${filters.query}%`);
             }
             
             if (filters.startDate) {
-              filteredMessages = filteredMessages.filter(
-                m => m.createdAt >= filters.startDate!
-              );
+              query = query.gte('created_at', filters.startDate.toISOString());
             }
             
             if (filters.endDate) {
-              filteredMessages = filteredMessages.filter(
-                m => m.createdAt <= filters.endDate!
-              );
+              query = query.lte('created_at', filters.endDate.toISOString());
             }
             
             if (filters.messageTypes && filters.messageTypes.length > 0) {
-              filteredMessages = filteredMessages.filter(
-                m => filters.messageTypes!.includes(m.type)
-              );
+              query = query.in('type', filters.messageTypes);
             }
             
-            // Sort by date (newest first)
-            filteredMessages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+            // Sort by date (oldest first)
+            query = query.order('created_at', { ascending: true });
+            
+            const { data, error } = await query;
+            
+            if (error) {
+              console.error('Error searching messages:', error);
+              throw error;
+            }
+            
+            const filteredMessages = (data || []).map(mapDbMessageToMessage);
             
             set(state => ({ 
               messages: { 

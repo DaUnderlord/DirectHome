@@ -2,15 +2,14 @@ import { User } from './auth';
 import { Property } from './property';
 
 /**
- * Enum for appointment status
+ * Enum for appointment status - aligned with database viewing_status
  */
 export enum AppointmentStatus {
   PENDING = 'pending',
   CONFIRMED = 'confirmed',
-  RESCHEDULED = 'rescheduled',
-  CANCELLED = 'cancelled',
   COMPLETED = 'completed',
-  MISSED = 'missed'
+  CANCELLED = 'cancelled',
+  NO_SHOW = 'no_show'
 }
 
 /**

@@ -182,7 +182,7 @@ export const useAdminStore = create<AdminState>()(
         },
 
         // Analytics actions
-        fetchUserAnalytics: async (dateRange) => {
+        fetchUserAnalytics: async (_dateRange) => {
           set({ isLoading: true, error: null });
           
           try {
@@ -229,7 +229,7 @@ export const useAdminStore = create<AdminState>()(
           }
         },
 
-        fetchPropertyAnalytics: async (dateRange) => {
+        fetchPropertyAnalytics: async (_dateRange) => {
           set({ isLoading: true, error: null });
           
           try {
@@ -291,7 +291,7 @@ export const useAdminStore = create<AdminState>()(
           }
         },
 
-        fetchRevenueAnalytics: async (dateRange) => {
+        fetchRevenueAnalytics: async (_dateRange) => {
           set({ isLoading: true, error: null });
           
           try {
@@ -331,7 +331,7 @@ export const useAdminStore = create<AdminState>()(
         },
 
         // Moderation actions
-        fetchModerationQueue: async (query) => {
+        fetchModerationQueue: async (_query) => {
           set({ isLoading: true, error: null });
           
           try {
@@ -552,14 +552,14 @@ export const useAdminStore = create<AdminState>()(
         },
 
         // Admin user management
-        fetchAdminUsers: async (query) => {
+        fetchAdminUsers: async (_query) => {
           set({ isLoading: true, error: null });
           
           try {
             const { data, error } = await supabase
               .from('profiles')
               .select('*')
-              .in('role', ['admin', 'super_admin', 'moderator', 'support']);
+              .in('role', ['admin']); // Only fetch admin users
               
             if (error) throw error;
             
@@ -585,7 +585,7 @@ export const useAdminStore = create<AdminState>()(
           }
         },
 
-        createAdminUser: async (userData) => {
+        createAdminUser: async (_userData) => {
           set({ isLoading: true, error: null });
           
           try {
@@ -663,7 +663,7 @@ export const useAdminStore = create<AdminState>()(
         },
 
         // Audit logs
-        fetchAuditLogs: async (query) => {
+        fetchAuditLogs: async (_query) => {
           set({ isLoading: true, error: null });
           
           try {

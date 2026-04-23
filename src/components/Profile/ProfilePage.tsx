@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
 import { 
   IconUser, 
   IconSettings, 
@@ -8,15 +9,157 @@ import {
   IconShield, 
   IconCreditCard,
   IconChevronRight,
-  IconLogout
+  IconLogout,
+  IconCheck,
+  IconX,
+  IconAlertTriangle
 } from '@tabler/icons-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Card from '../UI/Card';
+import Button from '../UI/Button';
+import ChangePasswordModal from './ChangePasswordModal';
+import DeleteAccountModal from './DeleteAccountModal';
 
 const ProfilePage: React.FC = () => {
-  const { user, profile, logout } = useAuth();
+  const { user, profile, logout, updateProfile } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const navigate = useNavigate();
+  
+  // Profile editing state
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    bio: profile?.bio || ''
+  });
+  
+  // Notification preferences state
+  const [preferences, setPreferences] = useState(
+    profile?.notificationPreferences || {
+      email: true,
+      sms: true,
+      push: true,
+      newMessages: true,
+      appointmentReminders: true,
+      marketingUpdates: false
+    }
+  );
+  const [isSavingPreferences, setIsSavingPreferences] = useState(false);
+  
+  // Modal states
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  
+  // Toast messages
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  
+  // Show toast message
+  const showToast = (message: string, type: 'success' | 'error') => {
+    if (type === 'success') {
+      setSuccessMessage(message);
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } else {
+      setErrorMessage(message);
+      setTimeout(() => setErrorMessage(''), 3000);
+    }
+  };
+  
+  // Profile editing handlers
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // Update Supabase profile
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          bio: formData.bio,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user!.id);
+
+      if (error) throw error;
+
+      // Update local state
+      await updateProfile({
+        bio: formData.bio
+      });
+
+      showToast('Profile updated successfully!', 'success');
+      setIsEditing(false);
+    } catch (error: any) {
+      console.error('Profile update failed:', error);
+      showToast('Failed to update profile. Please try again.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      firstName: user?.firstName || '',
+      lastName: user?.lastName || '',
+      bio: profile?.bio || ''
+    });
+    setIsEditing(false);
+  };
+  
+  // Notification preferences handlers
+  const handlePreferenceChange = (key: string, value: boolean) => {
+    setPreferences(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleUpdatePreferences = async () => {
+    setIsSavingPreferences(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          notification_preferences: preferences,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user!.id);
+
+      if (error) throw error;
+
+      await updateProfile({ notificationPreferences: preferences });
+      showToast('Preferences updated successfully!', 'success');
+    } catch (error: any) {
+      console.error('Failed to update preferences:', error);
+      showToast('Failed to update preferences. Please try again.', 'error');
+    } finally {
+      setIsSavingPreferences(false);
+    }
+  };
+  
+  // Email verification handler
+  const handleVerifyEmail = async () => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: user!.email
+      });
+      
+      if (error) throw error;
+      showToast('Verification email sent! Please check your inbox.', 'success');
+    } catch (error: any) {
+      console.error('Failed to send verification email:', error);
+      showToast('Failed to send verification email. Please try again.', 'error');
+    }
+  };
+  
+  // Delete account handler
+  const handleDeleteAccount = async () => {
+    await logout();
+    navigate('/');
+  };
   
   if (!user || !profile) {
     return (
@@ -28,6 +171,20 @@ const ProfilePage: React.FC = () => {
   
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Toast Messages */}
+      {successMessage && (
+        <div className="fixed top-4 right-4 z-50 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-slide-up">
+          <IconCheck size={20} />
+          <span>{successMessage}</span>
+        </div>
+      )}
+      
+      {errorMessage && (
+        <div className="fixed top-4 right-4 z-50 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-slide-up">
+          <IconX size={20} />
+          <span>{errorMessage}</span>
+        </div>
+      )}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">My Profile</h1>
         <p className="text-gray-600">Manage your account settings and preferences</p>
@@ -175,9 +332,12 @@ const ProfilePage: React.FC = () => {
                       </label>
                       <input
                         type="text"
-                        value={user.firstName}
-                        readOnly
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                        value={formData.firstName}
+                        onChange={(e) => handleInputChange('firstName', e.target.value)}
+                        disabled={!isEditing}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
+                          !isEditing ? 'bg-gray-50 text-gray-600' : 'bg-white'
+                        } focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                       />
                     </div>
                     
@@ -187,9 +347,12 @@ const ProfilePage: React.FC = () => {
                       </label>
                       <input
                         type="text"
-                        value={user.lastName}
-                        readOnly
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                        value={formData.lastName}
+                        onChange={(e) => handleInputChange('lastName', e.target.value)}
+                        disabled={!isEditing}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
+                          !isEditing ? 'bg-gray-50 text-gray-600' : 'bg-white'
+                        } focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                       />
                     </div>
                   </div>
@@ -198,38 +361,40 @@ const ProfilePage: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Email Address
                     </label>
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
                       <input
                         type="email"
                         value={user.email}
                         readOnly
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
                       />
                       {user.emailVerified && (
-                        <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           Verified
                         </span>
                       )}
                     </div>
+                    <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Phone Number
                     </label>
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
                       <input
                         type="tel"
                         value={user.phone}
                         readOnly
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
                       />
                       {user.phoneVerified && (
-                        <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           Verified
                         </span>
                       )}
                     </div>
+                    <p className="text-xs text-gray-500 mt-1">Phone cannot be changed</p>
                   </div>
                   
                   <div>
@@ -237,20 +402,47 @@ const ProfilePage: React.FC = () => {
                       Bio
                     </label>
                     <textarea
-                      value={profile.bio || ''}
-                      readOnly
+                      value={formData.bio}
+                      onChange={(e) => handleInputChange('bio', e.target.value)}
+                      disabled={!isEditing}
                       rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                      maxLength={500}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
+                        !isEditing ? 'bg-gray-50 text-gray-600' : 'bg-white'
+                      } focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                      placeholder="Tell us about yourself..."
                     />
+                    {isEditing && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {formData.bio.length}/500 characters
+                      </p>
+                    )}
                   </div>
                   
-                  <div className="pt-4 border-t border-gray-200">
-                    <button
-                      type="button"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    >
-                      Edit Profile
-                    </button>
+                  <div className="pt-4 border-t border-gray-200 flex gap-2">
+                    {!isEditing ? (
+                      <Button
+                        onClick={() => setIsEditing(true)}
+                      >
+                        Edit Profile
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          onClick={handleSave}
+                          disabled={isSaving}
+                        >
+                          {isSaving ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={handleCancel}
+                          disabled={isSaving}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -264,24 +456,25 @@ const ProfilePage: React.FC = () => {
                 </p>
                 
                 <div className="space-y-4">
-                  <div className="p-4 border border-gray-200 rounded-lg">
+                  <div className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">Password</h3>
                         <p className="text-xs text-gray-500 mt-1">
-                          Last changed: Never
+                          Change your password to keep your account secure
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200"
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowPasswordModal(true)}
                       >
                         Change Password
-                      </button>
+                      </Button>
                     </div>
                   </div>
                   
-                  <div className="p-4 border border-gray-200 rounded-lg">
+                  <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">Two-Factor Authentication</h3>
@@ -289,29 +482,23 @@ const ProfilePage: React.FC = () => {
                           Add an extra layer of security to your account
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200"
-                      >
-                        Enable
-                      </button>
+                      <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                        Coming Soon
+                      </span>
                     </div>
                   </div>
                   
-                  <div className="p-4 border border-gray-200 rounded-lg">
+                  <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">Login Sessions</h3>
                         <p className="text-xs text-gray-500 mt-1">
-                          Manage your active sessions
+                          Manage your active sessions across devices
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200"
-                      >
-                        View Sessions
-                      </button>
+                      <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                        Coming Soon
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -329,46 +516,46 @@ const ProfilePage: React.FC = () => {
                   <div>
                     <h3 className="text-sm font-medium text-gray-900 mb-3">Notification Channels</h3>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center">
                           <input
                             id="email-notifications"
                             type="checkbox"
-                            checked={profile.notificationPreferences?.email}
-                            readOnly
+                            checked={preferences.email}
+                            onChange={(e) => handlePreferenceChange('email', e.target.checked)}
                             className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                           />
-                          <label htmlFor="email-notifications" className="ml-2 block text-sm text-gray-700">
+                          <label htmlFor="email-notifications" className="ml-3 block text-sm text-gray-700">
                             Email Notifications
                           </label>
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center">
                           <input
                             id="sms-notifications"
                             type="checkbox"
-                            checked={profile.notificationPreferences?.sms}
-                            readOnly
+                            checked={preferences.sms}
+                            onChange={(e) => handlePreferenceChange('sms', e.target.checked)}
                             className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                           />
-                          <label htmlFor="sms-notifications" className="ml-2 block text-sm text-gray-700">
+                          <label htmlFor="sms-notifications" className="ml-3 block text-sm text-gray-700">
                             SMS Notifications
                           </label>
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center">
                           <input
                             id="push-notifications"
                             type="checkbox"
-                            checked={profile.notificationPreferences?.push}
-                            readOnly
+                            checked={preferences.push}
+                            onChange={(e) => handlePreferenceChange('push', e.target.checked)}
                             className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                           />
-                          <label htmlFor="push-notifications" className="ml-2 block text-sm text-gray-700">
+                          <label htmlFor="push-notifications" className="ml-3 block text-sm text-gray-700">
                             Push Notifications
                           </label>
                         </div>
@@ -379,47 +566,47 @@ const ProfilePage: React.FC = () => {
                   <div className="pt-4 border-t border-gray-200">
                     <h3 className="text-sm font-medium text-gray-900 mb-3">Notification Types</h3>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center">
                           <input
                             id="new-messages"
                             type="checkbox"
-                            checked={profile.notificationPreferences?.newMessages}
-                            readOnly
+                            checked={preferences.newMessages}
+                            onChange={(e) => handlePreferenceChange('newMessages', e.target.checked)}
                             className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                           />
-                          <label htmlFor="new-messages" className="ml-2 block text-sm text-gray-700">
+                          <label htmlFor="new-messages" className="ml-3 block text-sm text-gray-700">
                             New Messages
                           </label>
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center">
                           <input
                             id="appointment-reminders"
                             type="checkbox"
-                            checked={profile.notificationPreferences?.appointmentReminders}
-                            readOnly
+                            checked={preferences.appointmentReminders}
+                            onChange={(e) => handlePreferenceChange('appointmentReminders', e.target.checked)}
                             className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                           />
-                          <label htmlFor="appointment-reminders" className="ml-2 block text-sm text-gray-700">
+                          <label htmlFor="appointment-reminders" className="ml-3 block text-sm text-gray-700">
                             Appointment Reminders
                           </label>
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center">
                           <input
                             id="marketing-updates"
                             type="checkbox"
-                            checked={profile.notificationPreferences?.marketingUpdates}
-                            readOnly
+                            checked={preferences.marketingUpdates}
+                            onChange={(e) => handlePreferenceChange('marketingUpdates', e.target.checked)}
                             className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                           />
-                          <label htmlFor="marketing-updates" className="ml-2 block text-sm text-gray-700">
-                            Marketing Updates
+                          <label htmlFor="marketing-updates" className="ml-3 block text-sm text-gray-700">
+                            Marketing Updates and Newsletters
                           </label>
                         </div>
                       </div>
@@ -427,12 +614,12 @@ const ProfilePage: React.FC = () => {
                   </div>
                   
                   <div className="pt-4 border-t border-gray-200">
-                    <button
-                      type="button"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    <Button
+                      onClick={handleUpdatePreferences}
+                      disabled={isSavingPreferences}
                     >
-                      Update Preferences
-                    </button>
+                      {isSavingPreferences ? 'Updating...' : 'Update Preferences'}
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -446,7 +633,7 @@ const ProfilePage: React.FC = () => {
                 </p>
                 
                 <div className="space-y-4">
-                  <div className="p-4 border border-gray-200 rounded-lg">
+                  <div className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">Email Verification</h3>
@@ -456,20 +643,21 @@ const ProfilePage: React.FC = () => {
                       </div>
                       {user.emailVerified ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <IconCheck size={14} className="mr-1" />
                           Verified
                         </span>
                       ) : (
-                        <button
-                          type="button"
-                          className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+                        <Button
+                          size="sm"
+                          onClick={handleVerifyEmail}
                         >
-                          Verify Email
-                        </button>
+                          Send Verification Email
+                        </Button>
                       )}
                     </div>
                   </div>
                   
-                  <div className="p-4 border border-gray-200 rounded-lg">
+                  <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">Phone Verification</h3>
@@ -479,20 +667,18 @@ const ProfilePage: React.FC = () => {
                       </div>
                       {user.phoneVerified ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <IconCheck size={14} className="mr-1" />
                           Verified
                         </span>
                       ) : (
-                        <button
-                          type="button"
-                          className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
-                        >
-                          Verify Phone
-                        </button>
+                        <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                          Coming Soon
+                        </span>
                       )}
                     </div>
                   </div>
                   
-                  <div className="p-4 border border-gray-200 rounded-lg">
+                  <div className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">ID Verification</h3>
@@ -542,7 +728,7 @@ const ProfilePage: React.FC = () => {
                 </p>
                 
                 <div className="space-y-4">
-                  <div className="p-4 border border-gray-200 rounded-lg">
+                  <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">Language</h3>
@@ -551,17 +737,19 @@ const ProfilePage: React.FC = () => {
                         </p>
                       </div>
                       <select
-                        className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
+                        className="px-3 py-1.5 border border-gray-300 rounded-md text-sm bg-white"
                         defaultValue="en"
+                        disabled
                       >
                         <option value="en">English</option>
                         <option value="fr">French</option>
                         <option value="es">Spanish</option>
                       </select>
                     </div>
+                    <p className="text-xs text-gray-500 mt-2">Coming soon</p>
                   </div>
                   
-                  <div className="p-4 border border-gray-200 rounded-lg">
+                  <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">Time Zone</h3>
@@ -570,8 +758,9 @@ const ProfilePage: React.FC = () => {
                         </p>
                       </div>
                       <select
-                        className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
+                        className="px-3 py-1.5 border border-gray-300 rounded-md text-sm bg-white"
                         defaultValue="UTC"
+                        disabled
                       >
                         <option value="UTC">UTC (Coordinated Universal Time)</option>
                         <option value="GMT">GMT (Greenwich Mean Time)</option>
@@ -579,9 +768,10 @@ const ProfilePage: React.FC = () => {
                         <option value="PST">PST (Pacific Standard Time)</option>
                       </select>
                     </div>
+                    <p className="text-xs text-gray-500 mt-2">Coming soon</p>
                   </div>
                   
-                  <div className="p-4 border border-gray-200 rounded-lg">
+                  <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">Currency</h3>
@@ -590,8 +780,9 @@ const ProfilePage: React.FC = () => {
                         </p>
                       </div>
                       <select
-                        className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
+                        className="px-3 py-1.5 border border-gray-300 rounded-md text-sm bg-white"
                         defaultValue="NGN"
+                        disabled
                       >
                         <option value="NGN">NGN (Nigerian Naira)</option>
                         <option value="USD">USD (US Dollar)</option>
@@ -599,22 +790,25 @@ const ProfilePage: React.FC = () => {
                         <option value="GBP">GBP (British Pound)</option>
                       </select>
                     </div>
+                    <p className="text-xs text-gray-500 mt-2">Coming soon</p>
                   </div>
                   
-                  <div className="p-4 border border-gray-200 rounded-lg bg-red-50">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="text-sm font-medium text-red-900">Delete Account</h3>
-                        <p className="text-xs text-red-700 mt-1">
-                          Permanently delete your account and all data
+                  <div className="p-4 border-2 border-red-200 rounded-lg bg-red-50 mt-8">
+                    <div className="flex items-start gap-3">
+                      <IconAlertTriangle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="text-sm font-medium text-red-900 mb-1">Danger Zone</h3>
+                        <p className="text-xs text-red-700 mb-3">
+                          Once you delete your account, there is no going back. Please be certain.
                         </p>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => setShowDeleteModal(true)}
+                        >
+                          Delete My Account
+                        </Button>
                       </div>
-                      <button
-                        type="button"
-                        className="px-3 py-1.5 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
-                      >
-                        Delete Account
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -623,6 +817,18 @@ const ProfilePage: React.FC = () => {
           </Card>
         </div>
       </div>
+      
+      {/* Modals */}
+      <ChangePasswordModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+      />
+      
+      <DeleteAccountModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteAccount}
+      />
     </div>
   );
 };

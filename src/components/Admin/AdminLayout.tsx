@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import {
   IconDashboard,
   IconUsers,
@@ -23,19 +24,20 @@ const AdminLayout: React.FC = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  
-  // Mock user data
-  const user = {
-    firstName: 'Admin',
-    lastName: 'User'
-  };
+  const { user, logout } = useAuth();
   
   // Mock notification data
   const unreadNotificationCount = 2;
 
   const handleLogout = async () => {
-    // Mock logout functionality
-    navigate('/auth/login');
+    try {
+      await logout();
+      navigate('/auth/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Still navigate even if logout fails
+      navigate('/auth/login');
+    }
   };
 
   const navigationItems = [

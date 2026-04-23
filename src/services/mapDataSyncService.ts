@@ -279,7 +279,7 @@ class MapDataSyncService {
   /**
    * Mock property fetching (replace with real API call)
    */
-  private async mockFetchProperties(bounds: MapBounds): Promise<Property[]> {
+  private async mockFetchProperties(_bounds: MapBounds): Promise<Property[]> {
     // This would be replaced with actual API call
     return new Promise(resolve => {
       setTimeout(() => {

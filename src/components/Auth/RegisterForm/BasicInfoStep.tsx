@@ -43,6 +43,7 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onSubmit, defaultValues =
               id="firstName"
               label="First Name"
               placeholder="Enter your first name"
+              autoComplete="given-name"
               error={errors.firstName?.message}
               required
               {...field}
@@ -58,6 +59,7 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onSubmit, defaultValues =
               id="lastName"
               label="Last Name"
               placeholder="Enter your last name"
+              autoComplete="family-name"
               error={errors.lastName?.message}
               required
               {...field}
@@ -75,6 +77,8 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onSubmit, defaultValues =
             type="email"
             label="Email Address"
             placeholder="Enter your email address"
+            autoComplete="email"
+            inputMode="email"
             error={errors.email?.message}
             required
             {...field}
@@ -91,6 +95,8 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onSubmit, defaultValues =
             type="tel"
             label="Phone Number"
             placeholder="Enter your Nigerian phone number (e.g., 08012345678)"
+            autoComplete="tel"
+            inputMode="tel"
             error={errors.phone?.message}
             required
             {...field}
@@ -108,6 +114,7 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onSubmit, defaultValues =
               type="password"
               label="Password"
               placeholder="Create a strong password"
+              autoComplete="new-password"
               error={errors.password?.message}
               required
               {...field}
@@ -126,6 +133,7 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onSubmit, defaultValues =
             type="password"
             label="Confirm Password"
             placeholder="Confirm your password"
+            autoComplete="new-password"
             error={errors.confirmPassword?.message}
             required
             {...field}
@@ -156,7 +164,7 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onSubmit, defaultValues =
       
       <button
         type="submit"
-        className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        className="w-full py-3 px-4 min-h-[44px] text-base bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 touch-manipulation"
       >
         Continue
       </button>

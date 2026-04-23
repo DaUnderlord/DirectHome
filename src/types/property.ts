@@ -17,7 +17,7 @@ export enum ListingType {
   SALE = 'sale'
 }
 
-// Property Status
+// Property Status - aligned with database property_status enum
 export enum PropertyStatus {
   ACTIVE = 'active',
   PENDING = 'pending',
@@ -26,6 +26,9 @@ export enum PropertyStatus {
   INACTIVE = 'inactive',
   DRAFT = 'draft'
 }
+
+// Type alias for database compatibility
+export type DbPropertyStatus = 'active' | 'pending' | 'rented' | 'sold' | 'inactive' | 'draft';
 
 // Verification Status
 export enum PropertyVerificationStatus {

@@ -204,7 +204,7 @@ export const usePremiumStore = create<PremiumState>()(
         },
 
         // Promotions
-        fetchUserPromotions: async (userId, query) => {
+        fetchUserPromotions: async (userId, _query) => {
           set({ isLoading: true, error: null });
           
           try {
@@ -656,7 +656,7 @@ export const usePremiumStore = create<PremiumState>()(
         },
 
         // Payments
-        fetchPromotionPayments: async (userId) => {
+        fetchPromotionPayments: async (_userId) => {
           set({ isLoading: true, error: null });
           
           try {
@@ -669,7 +669,7 @@ export const usePremiumStore = create<PremiumState>()(
           }
         },
 
-        processPayment: async (promotionId, paymentMethodId) => {
+        processPayment: async (promotionId, _paymentMethodId) => {
           set({ isLoading: true, error: null });
           
           try {
