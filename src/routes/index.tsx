@@ -41,6 +41,9 @@ import SearchPage from '../components/Pages/SearchPage';
 // Import RentCalculator component
 import RentCalculator from '../components/RentCalculator/RentCalculator';
 
+// Import Construction Cost Estimator
+import { ConstructionCostEstimator } from '../components/Tools';
+
 // Import Page components
 import AboutPage from '../components/Pages/AboutPage';
 import ContactPage from '../components/Pages/ContactPage';
@@ -88,6 +91,9 @@ const AppRoutes: React.FC = () => {
 
           {/* Calculator Route */}
           <Route path="calculator" element={<CalculatorPage />} />
+          
+          {/* Construction Cost Estimator Route */}
+          <Route path="construction-estimator" element={<ConstructionCostEstimator />} />
 
           {/* Footer Routes */}
           <Route path="about" element={<AboutPage />} />

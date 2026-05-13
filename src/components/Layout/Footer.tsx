@@ -73,6 +73,7 @@ const Footer: React.FC = () => {
                 <FooterLink to="/auth/login?redirect=list-property" label="List Your Property" />
               )}
               <FooterLink to="/calculator" label="Rent Calculator" />
+              <FooterLink to="/construction-estimator" label="Construction Cost Estimator" />
               <FooterLink to="/verified-properties" label="Verified Properties" />
             </div>
           </div>
