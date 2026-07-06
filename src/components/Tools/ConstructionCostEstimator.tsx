@@ -18,9 +18,19 @@ import {
 } from '../../types/construction';
 import constructionCostService from '../../services/constructionCostService';
 
+const BREAKDOWN_BAR_COLORS: Record<string, string> = {
+  Materials: 'bg-blue-500',
+  Labor: 'bg-green-500',
+  'Professional Fees': 'bg-purple-500',
+  'Permits & Approvals': 'bg-yellow-500',
+  Contingency: 'bg-orange-500',
+  'VAT (7.5%)': 'bg-red-500',
+};
+
 const ConstructionCostEstimator: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [estimate, setEstimate] = useState<ConstructionEstimate | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   
   const [specs, setSpecs] = useState<ConstructionSpecs>({
     buildingType: BuildingType.BUNGALOW,
@@ -68,6 +78,21 @@ const ConstructionCostEstimator: React.FC = () => {
   ];
 
   const handleCalculate = () => {
+    if (
+      !Number.isFinite(specs.numberOfBedrooms) ||
+      specs.numberOfBedrooms < 1 ||
+      !Number.isFinite(specs.numberOfBathrooms) ||
+      specs.numberOfBathrooms < 1 ||
+      !Number.isFinite(specs.numberOfFloors) ||
+      specs.numberOfFloors < 1 ||
+      !Number.isFinite(specs.totalSquareMeters) ||
+      specs.totalSquareMeters < 50
+    ) {
+      setValidationError('Please enter valid building details before calculating.');
+      return;
+    }
+
+    setValidationError(null);
     const result = constructionCostService.calculateEstimate(specs);
     setEstimate(result);
     setCurrentStep(5);
@@ -208,7 +233,16 @@ specific site requirements, and material availability.
             min="1"
             max="10"
             value={specs.numberOfFloors}
-            onChange={(e) => setSpecs({ ...specs, numberOfFloors: parseInt(e.target.value) })}
+            onChange={(e) => {
+              const floors = parseInt(e.target.value);
+              setSpecs({
+                ...specs,
+                numberOfFloors: floors,
+                features: floors < 3
+                  ? { ...specs.features, hasElevator: false }
+                  : specs.features
+              });
+            }}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -302,22 +336,25 @@ specific site requirements, and material availability.
     </div>
   );
 
-  const renderStep4 = () => (
+  const renderStep4 = () => {
+    const optionalFeatures = [
+      { key: 'hasSwimmingPool', label: 'Swimming Pool' },
+      { key: 'hasBQ', label: 'Boys Quarters (BQ)' },
+      { key: 'hasGarage', label: 'Garage' },
+      { key: 'hasFence', label: 'Fence/Perimeter Wall' },
+      { key: 'hasGate', label: 'Gate' },
+      { key: 'hasGenerator', label: 'Generator' },
+      { key: 'hasSolarPanels', label: 'Solar Panels' },
+      { key: 'hasWaterTreatment', label: 'Water Treatment' },
+      ...(specs.numberOfFloors >= 3 ? [{ key: 'hasElevator', label: 'Elevator' }] : [])
+    ];
+
+    return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-gray-900">Additional Features</h3>
       
       <div className="grid grid-cols-2 gap-4">
-        {[
-          { key: 'hasSwimmingPool', label: 'Swimming Pool' },
-          { key: 'hasBQ', label: 'Boys Quarters (BQ)' },
-          { key: 'hasGarage', label: 'Garage' },
-          { key: 'hasFence', label: 'Fence/Perimeter Wall' },
-          { key: 'hasGate', label: 'Gate' },
-          { key: 'hasGenerator', label: 'Generator' },
-          { key: 'hasSolarPanels', label: 'Solar Panels' },
-          { key: 'hasWaterTreatment', label: 'Water Treatment' },
-          { key: 'hasElevator', label: 'Elevator' }
-        ].map(feature => (
+        {optionalFeatures.map(feature => (
           <label key={feature.key} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
             <input
               type="checkbox"
@@ -352,7 +389,8 @@ specific site requirements, and material availability.
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   const renderEstimate = () => {
     if (!estimate) return null;
@@ -409,7 +447,7 @@ specific site requirements, and material availability.
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
-                      className={`bg-${item.color}-500 h-2 rounded-full`}
+                      className={`${BREAKDOWN_BAR_COLORS[item.label] || 'bg-blue-500'} h-2 rounded-full`}
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
@@ -565,7 +603,13 @@ specific site requirements, and material availability.
 
           {/* Navigation Buttons */}
           {currentStep < 5 && (
-            <div className="flex justify-between mt-8">
+            <div className="mt-8">
+              {validationError && (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {validationError}
+                </div>
+              )}
+            <div className="flex justify-between">
               <button
                 onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
                 disabled={currentStep === 1}
@@ -591,6 +635,7 @@ specific site requirements, and material availability.
                   Calculate Estimate
                 </button>
               )}
+            </div>
             </div>
           )}
 

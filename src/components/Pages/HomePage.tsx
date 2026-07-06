@@ -29,6 +29,7 @@ import {
 } from '@tabler/icons-react';
 import { mockPropertyService } from '../../services/mockPropertyData';
 import { propertyDbService } from '../../services/propertyService';
+import { allowMockDataFallback } from '../../utils/env';
 import { Property } from '../../types/property';
 
 // Brand Colors extracted from DirectHome logo
@@ -81,23 +82,27 @@ const HomePage: React.FC = () => {
         const dbResponse = await propertyDbService.getFeaturedProperties(6);
         if (dbResponse.success && dbResponse.properties.length > 0) {
           setFeaturedProperties(dbResponse.properties);
-        } else {
-          // Fallback to mock data
+        } else if (allowMockDataFallback) {
           const response = await mockPropertyService.getFeaturedProperties();
           if (response.success) {
             setFeaturedProperties(response.properties.slice(0, 6));
           }
+        } else {
+          setFeaturedProperties([]);
         }
       } catch (error) {
         console.error('Error loading featured properties:', error);
-        // Fallback to mock data on error
-        try {
-          const response = await mockPropertyService.getFeaturedProperties();
-          if (response.success) {
-            setFeaturedProperties(response.properties.slice(0, 6));
+        if (allowMockDataFallback) {
+          try {
+            const response = await mockPropertyService.getFeaturedProperties();
+            if (response.success) {
+              setFeaturedProperties(response.properties.slice(0, 6));
+            }
+          } catch (e) {
+            console.error('Mock data fallback also failed:', e);
           }
-        } catch (e) {
-          console.error('Mock data fallback also failed:', e);
+        } else {
+          setFeaturedProperties([]);
         }
       } finally {
         setLoading(false);

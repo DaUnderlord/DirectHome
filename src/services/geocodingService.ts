@@ -1,5 +1,6 @@
-// Mapbox token from environment variables
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1Ijoic3VubGVzcyIsImEiOiJjbWRmM3ppMHEwOXg0MmpyMTVxdW1tZGFsIn0.kNLc04GFk9sj2ihfB0YV4A';
+import { mapboxToken } from '../utils/env';
+
+const MAPBOX_TOKEN = mapboxToken || '';
 
 // Nigeria bounds for validation
 const NIGERIA_BOUNDS = {

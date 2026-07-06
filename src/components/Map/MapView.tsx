@@ -3,9 +3,9 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { IconAlertCircle } from '@tabler/icons-react';
 import { Property } from '../../types/property';
+import { mapboxToken } from '../../utils/env';
 
-// Mapbox token from environment variables or use the provided token
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1Ijoic3VubGVzcyIsImEiOiJjbWRmM3ppMHEwOXg0MmpyMTVxdW1tZGFsIn0.kNLc04GFk9sj2ihfB0YV4A';
+const MAPBOX_TOKEN = mapboxToken || '';
 
 // Set Mapbox performance options
 mapboxgl.setRTLTextPlugin(

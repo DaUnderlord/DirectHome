@@ -13,9 +13,9 @@ import {
   IconMaximize,
   IconMinimize
 } from '@tabler/icons-react';
+import { mapboxToken } from '../../utils/env';
 
-// Mapbox token
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1Ijoic3VubGVzcyIsImEiOiJjbWRmM3ppMHEwOXg0MmpyMTVxdW1tZGFsIn0.kNLc04GFk9sj2ihfB0YV4A';
+const MAPBOX_TOKEN = mapboxToken || '';
 
 export interface MapFilters {
   propertyTypes: string[];

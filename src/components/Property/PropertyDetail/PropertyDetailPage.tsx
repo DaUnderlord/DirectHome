@@ -14,6 +14,8 @@ import {
   IconMessage
 } from '@tabler/icons-react';
 import { mockDataService } from '../../../services/mockData';
+import { propertyDbService } from '../../../services/propertyService';
+import { allowMockDataFallback } from '../../../utils/env';
 import { Property } from '../../../types/property';
 import PropertyInfo from './PropertyInfo';
 import PropertyGallery from './PropertyGallery';
@@ -37,13 +39,50 @@ const PropertyDetailPage: React.FC = () => {
   const scheduleFormRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Simulate API call to fetch property details
-    setLoading(true);
-    setTimeout(() => {
-      const foundProperty = mockDataService.getProperty(id || '');
-      setProperty(foundProperty || null);
-      setLoading(false);
-    }, 500);
+    let cancelled = false;
+
+    const fetchProperty = async () => {
+      if (!id) {
+        setProperty(null);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const response = await propertyDbService.getProperty(id);
+
+        if (cancelled) return;
+
+        if (response.success && response.property) {
+          setProperty(response.property);
+        } else if (allowMockDataFallback) {
+          setProperty(mockDataService.getProperty(id) || null);
+        } else {
+          setProperty(null);
+        }
+      } catch (error) {
+        console.error('Error loading property:', error);
+        if (!cancelled) {
+          if (allowMockDataFallback) {
+            setProperty(mockDataService.getProperty(id) || null);
+          } else {
+            setProperty(null);
+          }
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchProperty();
+
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const toggleFavorite = () => {

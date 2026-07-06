@@ -12,7 +12,7 @@ import {
 
 /**
  * Comprehensive Construction Cost Estimator for Nigeria
- * Prices are in Nigerian Naira (₦) as of 2024
+ * Prices are in Nigerian Naira (₦) — updated per client review
  */
 
 // Material prices database (prices vary by location tier)
@@ -21,19 +21,19 @@ const MATERIAL_PRICES: MaterialPriceDatabase = {
   cement: {
     name: 'Cement (Dangote/BUA)',
     unit: 'bag (50kg)',
-    prices: { tier_1: 5500, tier_2: 5200, tier_3: 4800, rural: 4500 },
+    prices: { tier_1: 10500, tier_2: 9500, tier_3: 9500, rural: 8500 },
     category: MaterialCategory.FOUNDATION
   },
   sharp_sand: {
     name: 'Sharp Sand',
     unit: 'ton',
-    prices: { tier_1: 25000, tier_2: 20000, tier_3: 15000, rural: 12000 },
+    prices: { tier_1: 4500, tier_2: 4500, tier_3: 4500, rural: 4000 },
     category: MaterialCategory.FOUNDATION
   },
   granite: {
     name: 'Granite (3/4 inch)',
     unit: 'ton',
-    prices: { tier_1: 35000, tier_2: 30000, tier_3: 25000, rural: 20000 },
+    prices: { tier_1: 8500, tier_2: 8500, tier_3: 8500, rural: 7500 },
     category: MaterialCategory.FOUNDATION
   },
   laterite: {
@@ -47,19 +47,19 @@ const MATERIAL_PRICES: MaterialPriceDatabase = {
   iron_rods_12mm: {
     name: 'Iron Rods (12mm)',
     unit: 'length (12m)',
-    prices: { tier_1: 6500, tier_2: 6200, tier_3: 5800, rural: 5500 },
+    prices: { tier_1: 9800, tier_2: 9800, tier_3: 9800, rural: 9800 },
     category: MaterialCategory.STRUCTURE
   },
   iron_rods_16mm: {
     name: 'Iron Rods (16mm)',
     unit: 'length (12m)',
-    prices: { tier_1: 11000, tier_2: 10500, tier_3: 10000, rural: 9500 },
+    prices: { tier_1: 10200, tier_2: 10200, tier_3: 10200, rural: 10200 },
     category: MaterialCategory.STRUCTURE
   },
   binding_wire: {
     name: 'Binding Wire',
     unit: 'kg',
-    prices: { tier_1: 800, tier_2: 750, tier_3: 700, rural: 650 },
+    prices: { tier_1: 4650, tier_2: 4650, tier_3: 4650, rural: 4650 },
     category: MaterialCategory.STRUCTURE
   },
   
@@ -67,13 +67,13 @@ const MATERIAL_PRICES: MaterialPriceDatabase = {
   blocks_6inch: {
     name: 'Concrete Blocks (6 inch)',
     unit: 'piece',
-    prices: { tier_1: 350, tier_2: 300, tier_3: 250, rural: 200 },
+    prices: { tier_1: 550, tier_2: 450, tier_3: 400, rural: 350 },
     category: MaterialCategory.WALLS
   },
   blocks_9inch: {
     name: 'Concrete Blocks (9 inch)',
     unit: 'piece',
-    prices: { tier_1: 450, tier_2: 400, tier_3: 350, rural: 300 },
+    prices: { tier_1: 750, tier_2: 750, tier_3: 700, rural: 650 },
     category: MaterialCategory.WALLS
   },
   
@@ -81,19 +81,19 @@ const MATERIAL_PRICES: MaterialPriceDatabase = {
   roofing_sheets_longspan: {
     name: 'Long Span Aluminum Roofing Sheets',
     unit: 'sheet',
-    prices: { tier_1: 4500, tier_2: 4200, tier_3: 3800, rural: 3500 },
+    prices: { tier_1: 7500, tier_2: 7500, tier_3: 7000, rural: 6500 },
     category: MaterialCategory.ROOFING
   },
   roofing_sheets_stone_coated: {
     name: 'Stone Coated Roofing Sheets',
     unit: 'sheet',
-    prices: { tier_1: 8500, tier_2: 8000, tier_3: 7500, rural: 7000 },
+    prices: { tier_1: 5700, tier_2: 5700, tier_3: 5700, rural: 5700 },
     category: MaterialCategory.ROOFING
   },
   ceiling_board_pop: {
     name: 'POP Ceiling Board',
     unit: 'sqm',
-    prices: { tier_1: 3500, tier_2: 3200, tier_3: 2800, rural: 2500 },
+    prices: { tier_1: 6900, tier_2: 5900, tier_3: 4100, rural: 3700 },
     category: MaterialCategory.ROOFING
   },
   
@@ -101,19 +101,19 @@ const MATERIAL_PRICES: MaterialPriceDatabase = {
   tiles_basic: {
     name: 'Floor Tiles (Basic)',
     unit: 'sqm',
-    prices: { tier_1: 4500, tier_2: 4000, tier_3: 3500, rural: 3000 },
+    prices: { tier_1: 18000, tier_2: 12000, tier_3: 10000, rural: 9000 },
     category: MaterialCategory.FLOORING
   },
   tiles_premium: {
     name: 'Floor Tiles (Premium)',
     unit: 'sqm',
-    prices: { tier_1: 12000, tier_2: 11000, tier_3: 10000, rural: 9000 },
+    prices: { tier_1: 27500, tier_2: 27500, tier_3: 27500, rural: 27500 },
     category: MaterialCategory.FLOORING
   },
   marble: {
     name: 'Marble Flooring',
     unit: 'sqm',
-    prices: { tier_1: 25000, tier_2: 23000, tier_3: 20000, rural: 18000 },
+    prices: { tier_1: 65000, tier_2: 45000, tier_3: 30000, rural: 27000 },
     category: MaterialCategory.FLOORING
   },
   
@@ -121,13 +121,13 @@ const MATERIAL_PRICES: MaterialPriceDatabase = {
   pvc_pipes_4inch: {
     name: 'PVC Pipes (4 inch)',
     unit: 'length (3m)',
-    prices: { tier_1: 3500, tier_2: 3200, tier_3: 2800, rural: 2500 },
+    prices: { tier_1: 9500, tier_2: 9500, tier_3: 5800, rural: 5200 },
     category: MaterialCategory.PLUMBING
   },
   water_tank_1000l: {
     name: 'Water Tank (1000L)',
     unit: 'piece',
-    prices: { tier_1: 45000, tier_2: 42000, tier_3: 38000, rural: 35000 },
+    prices: { tier_1: 160000, tier_2: 145000, tier_3: 100000, rural: 90000 },
     category: MaterialCategory.PLUMBING
   },
   
@@ -135,7 +135,7 @@ const MATERIAL_PRICES: MaterialPriceDatabase = {
   electrical_cables: {
     name: 'Electrical Cables (per meter)',
     unit: 'meter',
-    prices: { tier_1: 450, tier_2: 420, tier_3: 380, rural: 350 },
+    prices: { tier_1: 130000, tier_2: 75000, tier_3: 36000, rural: 32000 },
     category: MaterialCategory.ELECTRICAL
   },
   
@@ -143,19 +143,19 @@ const MATERIAL_PRICES: MaterialPriceDatabase = {
   door_flush: {
     name: 'Flush Door',
     unit: 'piece',
-    prices: { tier_1: 35000, tier_2: 32000, tier_3: 28000, rural: 25000 },
+    prices: { tier_1: 220000, tier_2: 115000, tier_3: 85000, rural: 75000 },
     category: MaterialCategory.DOORS_WINDOWS
   },
   door_security: {
     name: 'Security Door (Steel)',
     unit: 'piece',
-    prices: { tier_1: 85000, tier_2: 80000, tier_3: 75000, rural: 70000 },
+    prices: { tier_1: 420000, tier_2: 150000, tier_3: 75000, rural: 65000 },
     category: MaterialCategory.DOORS_WINDOWS
   },
   windows_aluminum: {
     name: 'Aluminum Windows',
     unit: 'sqm',
-    prices: { tier_1: 18000, tier_2: 16000, tier_3: 14000, rural: 12000 },
+    prices: { tier_1: 135000, tier_2: 80000, tier_3: 40000, rural: 35000 },
     category: MaterialCategory.DOORS_WINDOWS
   },
   
@@ -163,26 +163,33 @@ const MATERIAL_PRICES: MaterialPriceDatabase = {
   paint_emulsion: {
     name: 'Emulsion Paint',
     unit: 'liter',
-    prices: { tier_1: 3500, tier_2: 3200, tier_3: 2800, rural: 2500 },
+    prices: { tier_1: 8500, tier_2: 8500, tier_3: 8300, rural: 8000 },
     category: MaterialCategory.PAINTING
   },
   paint_gloss: {
     name: 'Gloss Paint',
     unit: 'liter',
-    prices: { tier_1: 4500, tier_2: 4200, tier_3: 3800, rural: 3500 },
+    prices: { tier_1: 9500, tier_2: 9500, tier_3: 9300, rural: 9000 },
     category: MaterialCategory.PAINTING
   }
 };
 
+const FINISHING_QUALITY_RANK: Record<FinishingQuality, number> = {
+  [FinishingQuality.BASIC]: 0,
+  [FinishingQuality.STANDARD]: 1,
+  [FinishingQuality.PREMIUM]: 2,
+  [FinishingQuality.LUXURY]: 3,
+};
+
 // Labor rates per day (skilled workers)
 const LABOR_RATES = {
-  mason: { tier_1: 8000, tier_2: 6500, tier_3: 5000, rural: 4000 },
-  carpenter: { tier_1: 7500, tier_2: 6000, tier_3: 4500, rural: 3500 },
-  plumber: { tier_1: 7000, tier_2: 5500, tier_3: 4000, rural: 3000 },
-  electrician: { tier_1: 7000, tier_2: 5500, tier_3: 4000, rural: 3000 },
-  tiler: { tier_1: 6500, tier_2: 5000, tier_3: 3500, rural: 2500 },
-  painter: { tier_1: 6000, tier_2: 4500, tier_3: 3000, rural: 2000 },
-  laborer: { tier_1: 3500, tier_2: 2500, tier_3: 2000, rural: 1500 }
+  mason: { tier_1: 13000, tier_2: 12000, tier_3: 8000, rural: 7000 },
+  carpenter: { tier_1: 14000, tier_2: 10000, tier_3: 7000, rural: 6000 },
+  plumber: { tier_1: 14000, tier_2: 10000, tier_3: 7500, rural: 6500 },
+  electrician: { tier_1: 15000, tier_2: 12000, tier_3: 8000, rural: 7000 },
+  tiler: { tier_1: 12000, tier_2: 10000, tier_3: 7000, rural: 6000 },
+  painter: { tier_1: 10000, tier_2: 9000, tier_3: 6000, rural: 5000 },
+  laborer: { tier_1: 7500, tier_2: 6000, tier_3: 4500, rural: 4000 }
 };
 
 class ConstructionCostService {
@@ -311,9 +318,10 @@ class ConstructionCostService {
     ));
     
     // Roofing materials
-    const roofingType = specs.finishingQuality >= FinishingQuality.PREMIUM 
-      ? 'roofing_sheets_stone_coated' 
-      : 'roofing_sheets_longspan';
+    const roofingType =
+      FINISHING_QUALITY_RANK[specs.finishingQuality] >= FINISHING_QUALITY_RANK[FinishingQuality.PREMIUM]
+        ? 'roofing_sheets_stone_coated'
+        : 'roofing_sheets_longspan';
     
     costs.push(this.createCostItem(
       MATERIAL_PRICES[roofingType].name,

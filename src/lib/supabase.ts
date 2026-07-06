@@ -1,10 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../types/database';
+import { supabaseUrl, supabaseAnonKey } from '../utils/env';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://fwjbyxvxnuldoowoxowf.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3amJ5eHZ4bnVsZG9vd294b3dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5MDk2MjMsImV4cCI6MjA4MTQ4NTYyM30.PsepIR8a4T-PRBINFq0THwU8hfy9PAWKSHcIKlolrWk';
+if (import.meta.env.PROD && (!supabaseUrl || !supabaseAnonKey)) {
+  console.error(
+    'DirectHome: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in production.'
+  );
+}
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient<Database>(supabaseUrl || '', supabaseAnonKey || '', {
   auth: {
     autoRefreshToken: true,
     persistSession: true,

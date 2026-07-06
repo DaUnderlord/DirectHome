@@ -114,10 +114,13 @@ export const propertyDbService = {
     try {
       let query = supabase
         .from('properties')
-        .select(`
+        .select(
+          `
           *,
           property_images (*)
-        `)
+        `,
+          { count: 'exact' }
+        )
         .eq('status', 'active');
 
       // Apply search filter (title, description, address)

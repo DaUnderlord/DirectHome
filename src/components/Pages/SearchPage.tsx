@@ -30,6 +30,7 @@ import {
 } from '@tabler/icons-react';
 import { mockDataService } from '../../services/mockData';
 import { propertyDbService } from '../../services/propertyService';
+import { allowMockDataFallback } from '../../utils/env';
 import { Property, PropertyType, ListingType } from '../../types/property';
 
 // Brand Colors
@@ -133,18 +134,20 @@ const SearchPage: React.FC = () => {
           sortBy,
         });
         
-        if (response.success && response.properties.length > 0) {
+        if (response.success) {
           setProperties(response.properties);
+        } else if (allowMockDataFallback) {
+          setProperties(mockDataService.getProperties());
         } else {
-          // Fallback to mock data if database is empty or fails
-          const mockProperties = mockDataService.getProperties();
-          setProperties(mockProperties);
+          setProperties([]);
         }
       } catch (error) {
         console.error('Error fetching properties:', error);
-        // Fallback to mock data on error
-        const mockProperties = mockDataService.getProperties();
-        setProperties(mockProperties);
+        if (allowMockDataFallback) {
+          setProperties(mockDataService.getProperties());
+        } else {
+          setProperties([]);
+        }
       } finally {
         setLoading(false);
       }

@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Property } from '../../../types/property';
+import { useAuth } from '../../../context/AuthContext';
+import propertyInteractionService from '../../../services/propertyInteractionService';
 
 interface ContactOwnerProps {
   property: Property;
@@ -7,28 +10,78 @@ interface ContactOwnerProps {
 }
 
 const ContactOwner: React.FC<ContactOwnerProps> = ({ property, onClose }) => {
-  const [message, setMessage] = useState<string>(`Hi, I'm interested in your property "${property.title}". Is it still available?`);
-  const [name, setName] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
-  const [phone, setPhone] = useState<string>('');
+  const { user, isAuthenticated } = useAuth();
+  const [message, setMessage] = useState<string>(
+    `Hi, I'm interested in your property "${property.title}". Is it still available?`
+  );
+  const [name, setName] = useState<string>(
+    user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : ''
+  );
+  const [email, setEmail] = useState<string>(user?.email || '');
+  const [phone, setPhone] = useState<string>(user?.phone || '');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitted, setSubmitted] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isAuthenticated) {
+      setError('Please sign in to contact the property owner.');
+      return;
+    }
+
+    if (!property.ownerId) {
+      setError('Unable to identify the property owner. Please try again later.');
+      return;
+    }
+
     setIsSubmitting(true);
-    
-    // Simulate API call
+    setError(null);
+
+    const contactDetails = [
+      name && `Name: ${name}`,
+      email && `Email: ${email}`,
+      phone && `Phone: ${phone}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const fullMessage = contactDetails ? `${contactDetails}\n\n${message}` : message;
+
+    const result = await propertyInteractionService.submitEnquiry({
+      propertyId: property.id,
+      ownerId: property.ownerId,
+      subject: `Enquiry about ${property.title}`,
+      message: fullMessage,
+    });
+
+    setIsSubmitting(false);
+
+    if (!result.success) {
+      setError(result.error || 'Failed to send message.');
+      return;
+    }
+
+    setSubmitted(true);
     setTimeout(() => {
-      setIsSubmitting(false);
-      setSubmitted(true);
-      
-      // Close the form after a delay
-      setTimeout(() => {
-        onClose();
-      }, 3000);
-    }, 1000);
+      onClose();
+    }, 3000);
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="text-center py-6">
+        <p className="text-gray-600 mb-4">Sign in to send a message to the property owner.</p>
+        <Link
+          to="/auth/login"
+          className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md"
+        >
+          Sign In
+        </Link>
+      </div>
+    );
+  }
 
   if (submitted) {
     return (
@@ -49,6 +102,12 @@ const ContactOwner: React.FC<ContactOwnerProps> = ({ property, onClose }) => {
   return (
     <form onSubmit={handleSubmit}>
       <div className="space-y-4">
+        {error && (
+          <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
             Your Name*
@@ -62,7 +121,7 @@ const ContactOwner: React.FC<ContactOwnerProps> = ({ property, onClose }) => {
             required
           />
         </div>
-        
+
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
             Email Address*
@@ -76,7 +135,7 @@ const ContactOwner: React.FC<ContactOwnerProps> = ({ property, onClose }) => {
             required
           />
         </div>
-        
+
         <div>
           <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
             Phone Number
@@ -89,7 +148,7 @@ const ContactOwner: React.FC<ContactOwnerProps> = ({ property, onClose }) => {
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        
+
         <div>
           <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
             Message*
@@ -103,7 +162,7 @@ const ContactOwner: React.FC<ContactOwnerProps> = ({ property, onClose }) => {
             required
           ></textarea>
         </div>
-        
+
         <div className="flex items-center">
           <input
             id="terms"
@@ -115,7 +174,7 @@ const ContactOwner: React.FC<ContactOwnerProps> = ({ property, onClose }) => {
             I agree to the terms and privacy policy
           </label>
         </div>
-        
+
         <button
           type="submit"
           disabled={isSubmitting}

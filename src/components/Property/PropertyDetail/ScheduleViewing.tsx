@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Property } from '../../../types/property';
+import { useAuth } from '../../../context/AuthContext';
+import propertyInteractionService from '../../../services/propertyInteractionService';
 
 interface ScheduleViewingProps {
   property: Property;
@@ -7,50 +10,96 @@ interface ScheduleViewingProps {
 }
 
 const ScheduleViewing: React.FC<ScheduleViewingProps> = ({ property, onClose }) => {
+  const { user, isAuthenticated } = useAuth();
   const [date, setDate] = useState<string>('');
   const [time, setTime] = useState<string>('');
-  const [name, setName] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
-  const [phone, setPhone] = useState<string>('');
+  const [name, setName] = useState<string>(
+    user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : ''
+  );
+  const [email, setEmail] = useState<string>(user?.email || '');
+  const [phone, setPhone] = useState<string>(user?.phone || '');
   const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitted, setSubmitted] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Generate available dates (next 14 days)
   const availableDates = Array.from({ length: 14 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() + i + 1);
-    return date;
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + i + 1);
+    return nextDate;
   });
 
-  // Generate available time slots
   const availableTimeSlots = [
-    '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'
+    '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
   ];
 
-  const formatDate = (date: Date): string => {
-    return date.toLocaleDateString('en-US', {
+  const formatDate = (value: Date): string => {
+    return value.toLocaleDateString('en-US', {
       weekday: 'short',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isAuthenticated) {
+      setError('Please sign in to schedule a viewing.');
+      return;
+    }
+
+    if (!property.ownerId) {
+      setError('Unable to identify the property owner. Please try again later.');
+      return;
+    }
+
     setIsSubmitting(true);
-    
-    // Simulate API call
+    setError(null);
+
+    const contactNotes = [
+      name && `Name: ${name}`,
+      email && `Email: ${email}`,
+      phone && `Phone: ${phone}`,
+      notes,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const result = await propertyInteractionService.scheduleViewing({
+      propertyId: property.id,
+      ownerId: property.ownerId,
+      date,
+      time,
+      notes: contactNotes || undefined,
+    });
+
+    setIsSubmitting(false);
+
+    if (!result.success) {
+      setError(result.error || 'Failed to schedule viewing.');
+      return;
+    }
+
+    setSubmitted(true);
     setTimeout(() => {
-      setIsSubmitting(false);
-      setSubmitted(true);
-      
-      // Close the form after a delay
-      setTimeout(() => {
-        onClose();
-      }, 3000);
-    }, 1000);
+      onClose();
+    }, 3000);
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="text-center py-6">
+        <p className="text-gray-600 mb-4">Sign in to schedule a property viewing.</p>
+        <Link
+          to="/auth/login"
+          className="inline-flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md"
+        >
+          Sign In
+        </Link>
+      </div>
+    );
+  }
 
   if (submitted) {
     return (
@@ -71,6 +120,12 @@ const ScheduleViewing: React.FC<ScheduleViewingProps> = ({ property, onClose }) 
   return (
     <form onSubmit={handleSubmit}>
       <div className="space-y-4">
+        {error && (
+          <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         <div>
           <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
             Preferred Date*
@@ -83,14 +138,14 @@ const ScheduleViewing: React.FC<ScheduleViewingProps> = ({ property, onClose }) 
             required
           >
             <option value="">Select a date</option>
-            {availableDates.map((date, index) => (
-              <option key={index} value={date.toISOString().split('T')[0]}>
-                {formatDate(date)}
+            {availableDates.map((availableDate, index) => (
+              <option key={index} value={availableDate.toISOString().split('T')[0]}>
+                {formatDate(availableDate)}
               </option>
             ))}
           </select>
         </div>
-        
+
         <div>
           <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-1">
             Preferred Time*
@@ -110,7 +165,7 @@ const ScheduleViewing: React.FC<ScheduleViewingProps> = ({ property, onClose }) 
             ))}
           </select>
         </div>
-        
+
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
             Your Name*
@@ -124,7 +179,7 @@ const ScheduleViewing: React.FC<ScheduleViewingProps> = ({ property, onClose }) 
             required
           />
         </div>
-        
+
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
             Email Address*
@@ -138,7 +193,7 @@ const ScheduleViewing: React.FC<ScheduleViewingProps> = ({ property, onClose }) 
             required
           />
         </div>
-        
+
         <div>
           <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
             Phone Number*
@@ -152,7 +207,7 @@ const ScheduleViewing: React.FC<ScheduleViewingProps> = ({ property, onClose }) 
             required
           />
         </div>
-        
+
         <div>
           <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
             Additional Notes
@@ -166,7 +221,7 @@ const ScheduleViewing: React.FC<ScheduleViewingProps> = ({ property, onClose }) 
             placeholder="Any specific questions or requirements for the viewing?"
           ></textarea>
         </div>
-        
+
         <button
           type="submit"
           disabled={isSubmitting}
