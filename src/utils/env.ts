@@ -1,5 +1,8 @@
-/** Whether mock data fallback is allowed when the database is empty or unavailable. */
-export const allowMockDataFallback = import.meta.env.DEV;
+/** Whether mock data fallback is allowed when the database is empty/unavailable. */
+export const allowMockDataFallback =
+  import.meta.env.DEV ||
+  !import.meta.env.VITE_SUPABASE_URL ||
+  !import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /** Supabase project URL — required in production builds. */
 export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
