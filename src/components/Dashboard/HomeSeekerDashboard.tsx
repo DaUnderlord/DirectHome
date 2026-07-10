@@ -139,7 +139,7 @@ const HomeSeekerDashboard: React.FC<HomeSeekerDashboardProps> = ({
           value={upcomingAppointments.length}
           icon={IconCalendar}
           color="green"
-          onClick={() => window.location.href = '/appointments'}
+          onClick={() => window.location.href = '/dashboard/homeseeker'}
           change={5}
           trend="up"
           subtitle="Next 7 days"
@@ -150,7 +150,7 @@ const HomeSeekerDashboard: React.FC<HomeSeekerDashboardProps> = ({
           value={unreadMessages}
           icon={IconMessage}
           color="purple"
-          onClick={() => window.location.href = '/messages'}
+          onClick={() => window.location.href = '/search'}
           subtitle="From owners"
         />
         
@@ -186,7 +186,7 @@ const HomeSeekerDashboard: React.FC<HomeSeekerDashboardProps> = ({
           </Link>
 
           <Link
-            to="/appointments"
+            to="/dashboard/homeseeker"
             className="group relative overflow-hidden glass-card hover:shadow-lg text-gray-700 hover:text-gray-900 py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center border border-white/30"
           >
             <IconCalendar className="h-5 w-5 mr-2" />
@@ -288,7 +288,7 @@ const HomeSeekerDashboard: React.FC<HomeSeekerDashboardProps> = ({
       <div className="glass-card rounded-2xl p-6 border border-white/20 shadow-lg backdrop-blur-xl">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold text-gray-900">Upcoming Appointments</h3>
-          <Link to="/appointments" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+          <Link to="/dashboard/homeseeker" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
             View All
           </Link>
         </div>

@@ -39,34 +39,38 @@ const ContactOwner: React.FC<ContactOwnerProps> = ({ property, onClose }) => {
     setIsSubmitting(true);
     setError(null);
 
-    const contactDetails = [
-      name && `Name: ${name}`,
-      email && `Email: ${email}`,
-      phone && `Phone: ${phone}`,
-    ]
-      .filter(Boolean)
-      .join('\n');
+    try {
+      const contactDetails = [
+        name && `Name: ${name}`,
+        email && `Email: ${email}`,
+        phone && `Phone: ${phone}`,
+      ]
+        .filter(Boolean)
+        .join('\n');
 
-    const fullMessage = contactDetails ? `${contactDetails}\n\n${message}` : message;
+      const fullMessage = contactDetails ? `${contactDetails}\n\n${message}` : message;
 
-    const result = await propertyInteractionService.submitEnquiry({
-      propertyId: property.id,
-      ownerId: property.ownerId,
-      subject: `Enquiry about ${property.title}`,
-      message: fullMessage,
-    });
+      const result = await propertyInteractionService.submitEnquiry({
+        propertyId: property.id,
+        ownerId: property.ownerId,
+        subject: `Enquiry about ${property.title}`,
+        message: fullMessage,
+      });
 
-    setIsSubmitting(false);
+      if (!result.success) {
+        setError(result.error || 'Failed to send message.');
+        return;
+      }
 
-    if (!result.success) {
-      setError(result.error || 'Failed to send message.');
-      return;
+      setSubmitted(true);
+      setTimeout(() => {
+        onClose();
+      }, 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send message.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setSubmitted(true);
-    setTimeout(() => {
-      onClose();
-    }, 3000);
   };
 
   if (!isAuthenticated) {

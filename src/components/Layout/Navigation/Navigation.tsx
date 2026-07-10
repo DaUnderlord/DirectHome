@@ -4,8 +4,6 @@ import {
   IconHome,
   IconSearch,
   IconBuildingEstate,
-  IconMessage,
-  IconCalendarEvent,
   IconHeart,
   IconChevronDown,
   IconCalculator,
@@ -147,27 +145,9 @@ const Navigation: React.FC = () => {
         <NavItem
           icon={<IconHeart size={18} />}
           label="Saved Properties"
-          to="/dashboard/homeseeker"
-          active={isActive('/dashboard/homeseeker')}
+          to="/favorites"
+          active={isActive('/favorites')}
         />
-      )}
-
-      {isAuthenticated && (
-        <>
-          <NavItem
-            icon={<IconMessage size={18} />}
-            label="Messages"
-            to="/messages"
-            active={isActive('/messages')}
-          />
-
-          <NavItem
-            icon={<IconCalendarEvent size={18} />}
-            label="Appointments"
-            to="/appointments"
-            active={isActive('/appointments')}
-          />
-        </>
       )}
 
       <NavItem

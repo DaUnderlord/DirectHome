@@ -706,16 +706,10 @@ const ProfilePage: React.FC = () => {
                 </p>
                 
                 <div className="p-6 border border-gray-200 rounded-lg bg-gray-50 text-center">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Subscription</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Premium Plans Coming Soon</h3>
                   <p className="text-gray-600 mb-4">
-                    Upgrade to a premium plan to unlock additional features.
+                    Paid subscription plans are not available yet. All core features are free during launch.
                   </p>
-                  <Link
-                    to="/premium"
-                    className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    View Premium Plans
-                  </Link>
                 </div>
               </div>
             )}

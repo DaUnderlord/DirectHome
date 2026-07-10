@@ -14,7 +14,7 @@ import VerificationPage from '../components/Auth/VerificationPage';
 import UnauthorizedPage from '../components/Auth/UnauthorizedPage';
 
 // Property Components
-import { PropertyDetailPage, PropertyGrid } from '../components/Property';
+import { PropertyDetailPage, PropertyGrid, FavoriteProperties } from '../components/Property';
 import PropertyListingGuard from '../components/Property/PropertyListingGuard';
 import VerificationFlow from '../components/Verification/VerificationFlow';
 import VerificationPending from '../components/Verification/VerificationPending';
@@ -94,6 +94,16 @@ const AppRoutes: React.FC = () => {
           
           {/* Construction Cost Estimator Route */}
           <Route path="construction-estimator" element={<ConstructionCostEstimator />} />
+
+          {/* Favorites */}
+          <Route
+            path="favorites"
+            element={
+              <ProtectedRoute>
+                <FavoriteProperties />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Footer Routes */}
           <Route path="about" element={<AboutPage />} />

@@ -57,34 +57,38 @@ const ScheduleViewing: React.FC<ScheduleViewingProps> = ({ property, onClose }) 
     setIsSubmitting(true);
     setError(null);
 
-    const contactNotes = [
-      name && `Name: ${name}`,
-      email && `Email: ${email}`,
-      phone && `Phone: ${phone}`,
-      notes,
-    ]
-      .filter(Boolean)
-      .join('\n');
+    try {
+      const contactNotes = [
+        name && `Name: ${name}`,
+        email && `Email: ${email}`,
+        phone && `Phone: ${phone}`,
+        notes,
+      ]
+        .filter(Boolean)
+        .join('\n');
 
-    const result = await propertyInteractionService.scheduleViewing({
-      propertyId: property.id,
-      ownerId: property.ownerId,
-      date,
-      time,
-      notes: contactNotes || undefined,
-    });
+      const result = await propertyInteractionService.scheduleViewing({
+        propertyId: property.id,
+        ownerId: property.ownerId,
+        date,
+        time,
+        notes: contactNotes || undefined,
+      });
 
-    setIsSubmitting(false);
+      if (!result.success) {
+        setError(result.error || 'Failed to schedule viewing.');
+        return;
+      }
 
-    if (!result.success) {
-      setError(result.error || 'Failed to schedule viewing.');
-      return;
+      setSubmitted(true);
+      setTimeout(() => {
+        onClose();
+      }, 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to schedule viewing.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setSubmitted(true);
-    setTimeout(() => {
-      onClose();
-    }, 3000);
   };
 
   if (!isAuthenticated) {

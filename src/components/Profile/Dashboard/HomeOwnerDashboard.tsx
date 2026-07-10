@@ -392,7 +392,7 @@ const HomeOwnerDashboard: React.FC = () => {
                   ))}
                   {upcomingAppointments.length > 3 && (
                     <div className="pt-2 text-center">
-                      <Link to="/appointments" className="text-sm text-blue-600 hover:text-blue-800">
+                      <Link to="/owner/viewings" className="text-sm text-blue-600 hover:text-blue-800">
                         View all appointments
                       </Link>
                     </div>
@@ -422,7 +422,7 @@ const HomeOwnerDashboard: React.FC = () => {
                   <span className="text-sm font-medium text-gray-900">Add Property</span>
                 </Link>
                 <Link 
-                  to="/messages" 
+                  to="/owner/enquiries" 
                   className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
                 >
                   <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mb-2">
@@ -431,7 +431,7 @@ const HomeOwnerDashboard: React.FC = () => {
                   <span className="text-sm font-medium text-gray-900">Messages</span>
                 </Link>
                 <Link 
-                  to="/appointments" 
+                  to="/owner/viewings" 
                   className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
                 >
                   <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center mb-2">

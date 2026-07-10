@@ -27,6 +27,11 @@ const BREAKDOWN_BAR_COLORS: Record<string, string> = {
   'VAT (7.5%)': 'bg-red-500',
 };
 
+const parsePositiveInt = (value: string, fallback: number, min = 1): number => {
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed >= min ? parsed : fallback;
+};
+
 const ConstructionCostEstimator: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [estimate, setEstimate] = useState<ConstructionEstimate | null>(null);
@@ -203,7 +208,7 @@ specific site requirements, and material availability.
             min="1"
             max="20"
             value={specs.numberOfBedrooms}
-            onChange={(e) => setSpecs({ ...specs, numberOfBedrooms: parseInt(e.target.value) })}
+            onChange={(e) => setSpecs({ ...specs, numberOfBedrooms: parsePositiveInt(e.target.value, specs.numberOfBedrooms) })}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -217,7 +222,7 @@ specific site requirements, and material availability.
             min="1"
             max="20"
             value={specs.numberOfBathrooms}
-            onChange={(e) => setSpecs({ ...specs, numberOfBathrooms: parseInt(e.target.value) })}
+            onChange={(e) => setSpecs({ ...specs, numberOfBathrooms: parsePositiveInt(e.target.value, specs.numberOfBathrooms) })}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -234,7 +239,7 @@ specific site requirements, and material availability.
             max="10"
             value={specs.numberOfFloors}
             onChange={(e) => {
-              const floors = parseInt(e.target.value);
+              const floors = parsePositiveInt(e.target.value, specs.numberOfFloors);
               setSpecs({
                 ...specs,
                 numberOfFloors: floors,
@@ -256,7 +261,7 @@ specific site requirements, and material availability.
             min="50"
             max="5000"
             value={specs.totalSquareMeters}
-            onChange={(e) => setSpecs({ ...specs, totalSquareMeters: parseInt(e.target.value) })}
+            onChange={(e) => setSpecs({ ...specs, totalSquareMeters: parsePositiveInt(e.target.value, specs.totalSquareMeters, 50) })}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -382,7 +387,7 @@ specific site requirements, and material availability.
             value={specs.features.numberOfParkingSpaces}
             onChange={(e) => setSpecs({
               ...specs,
-              features: { ...specs.features, numberOfParkingSpaces: parseInt(e.target.value) }
+              features: { ...specs.features, numberOfParkingSpaces: parsePositiveInt(e.target.value, specs.features.numberOfParkingSpaces) }
             })}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />

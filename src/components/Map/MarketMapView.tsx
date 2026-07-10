@@ -75,6 +75,11 @@ const MarketMapView: React.FC<MarketMapViewProps> = ({
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
+    if (!MAPBOX_TOKEN) {
+      setError('Mapbox token is missing. Add VITE_MAPBOX_TOKEN to enable the market map.');
+      return;
+    }
+
     try {
       mapboxgl.accessToken = MAPBOX_TOKEN;
       

@@ -404,7 +404,7 @@ const HomeSeekerDashboard: React.FC = () => {
                   ))}
                   {upcomingAppointments.length > 3 && (
                     <div className="pt-2 text-center">
-                      <Link to="/appointments" className="text-sm text-blue-600 hover:text-blue-800">
+                      <Link to="/dashboard/homeseeker" className="text-sm text-blue-600 hover:text-blue-800">
                         View all appointments
                       </Link>
                     </div>

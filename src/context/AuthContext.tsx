@@ -494,17 +494,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
     
     try {
-      // This would be replaced with an actual API call
-      // For now, we'll simulate a successful request
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // In a real implementation, this would send a reset email/SMS
-      // For now, we'll just log a success message
-      console.log(`Password reset requested for: ${request.emailOrPhone}`);
+      const email = request.emailOrPhone.trim();
+      if (!email.includes('@')) {
+        const authError: AuthError = {
+          type: AuthErrorType.UNKNOWN_ERROR,
+          message: 'Please enter a valid email address to reset your password.'
+        };
+        setError(authError);
+        throw authError;
+      }
+
+      const redirectTo = `${window.location.origin}/auth/reset-password`;
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo,
+      });
+
+      if (resetError) {
+        throw resetError;
+      }
     } catch (error) {
       console.error('Password reset request failed:', error);
+      if ((error as AuthError)?.type) {
+        throw error;
+      }
       const authError: AuthError = {
         type: AuthErrorType.SERVER_ERROR,
         message: 'Password reset request failed. Please try again.'
@@ -515,19 +527,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // Confirm password reset function
-  const confirmResetPassword = async (_confirmation: PasswordResetConfirmation): Promise<void> => {
+  const confirmResetPassword = async (confirmation: PasswordResetConfirmation): Promise<void> => {
     setError(null);
     
     try {
-      // This would be replaced with an actual API call
-      // For now, we'll simulate a successful confirmation
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // In a real implementation, this would update the user's password
-      // For now, we'll just log a success message
-      console.log('Password reset confirmed successfully');
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: confirmation.newPassword,
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
     } catch (error) {
       console.error('Password reset confirmation failed:', error);
       const authError: AuthError = {

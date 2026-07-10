@@ -134,7 +134,13 @@ const HomePage: React.FC = () => {
   };
 
   const locations = ['Lagos', 'Abuja', 'Port Harcourt', 'Ibadan', 'Kano', 'Enugu'];
-  const propertyTypes = ['Apartment', 'Duplex', 'Bungalow', 'Self-Contain', 'Mini Flat'];
+  const propertyTypes = [
+    { value: 'apartment', label: 'Apartment' },
+    { value: 'duplex', label: 'Duplex' },
+    { value: 'bungalow', label: 'Bungalow' },
+    { value: 'self-contain', label: 'Self-Contain' },
+    { value: 'mini-flat', label: 'Mini Flat' },
+  ];
 
   const testimonials = [
     {
@@ -399,7 +405,7 @@ const HomePage: React.FC = () => {
                     >
                       <option value="">Type</option>
                       {propertyTypes.map(type => (
-                        <option key={type} value={type}>{type}</option>
+                        <option key={type.value} value={type.value}>{type.label}</option>
                       ))}
                     </select>
                     <IconChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />

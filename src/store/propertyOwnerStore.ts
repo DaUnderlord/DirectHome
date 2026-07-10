@@ -613,58 +613,8 @@ export const usePropertyOwnerStore = create<PropertyOwnerState>()(
             
             if (error) {
               console.error('Error creating property:', error);
-              // Fall back to local creation
-              const newProperty: PropertyOnboarding = {
-                id: `prop-${Date.now()}`,
-                ownerId: property.ownerId || 'owner-1',
-                basicInfo: property.basicInfo || {
-                  title: '',
-                  propertyType: NigerianPropertyType.THREE_BEDROOM,
-                  category: PropertyCategory.RENT,
-                  description: '',
-                  size: 0,
-                  landmarks: []
-                },
-                location: property.location || {
-                  fullAddress: '',
-                  state: '',
-                  lga: '',
-                  accessRoute: ''
-                },
-                features: property.features || {
-                  bedrooms: 1,
-                  bathrooms: 1,
-                  toilets: 1,
-                  kitchenType: KitchenType.CLOSED,
-                  parkingSpaces: 0,
-                  powerSupply: PowerSupplyType.NEPA_ONLY,
-                  waterSource: WaterSource.MAINS,
-                  securityFeatures: [],
-                  amenities: [],
-                  accessibilityOptions: []
-                },
-                condition: property.condition || {
-                  furnishingStatus: FurnishingStatus.UNFURNISHED,
-                  buildingCondition: BuildingCondition.GOOD,
-                  maintenanceStatus: 'Good'
-                },
-                media: property.media || { images: [], videos: [] },
-                pricing: property.pricing || {
-                  rentPrice: 0,
-                  paymentCycle: PaymentCycle.YEARLY,
-                  negotiable: false
-                },
-                status: 'draft',
-                createdAt: new Date(),
-                updatedAt: new Date()
-              };
-              
-              set(state => ({
-                properties: [...state.properties, newProperty],
-                isLoadingProperties: false
-              }));
-              
-              return newProperty;
+              set({ isLoadingProperties: false });
+              throw new Error(error.message || 'Failed to create property. Please try again.');
             }
             
             // Transform returned data to PropertyOnboarding format

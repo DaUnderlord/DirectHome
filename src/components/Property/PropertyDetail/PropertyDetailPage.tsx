@@ -17,6 +17,7 @@ import { mockDataService } from '../../../services/mockData';
 import { propertyDbService } from '../../../services/propertyService';
 import { allowMockDataFallback } from '../../../utils/env';
 import { Property } from '../../../types/property';
+import { usePropertyFavorites } from '../../../hooks/usePropertyFavorites';
 import PropertyInfo from './PropertyInfo';
 import PropertyGallery from './PropertyGallery';
 import ContactOwner from './ContactOwner';
@@ -29,10 +30,10 @@ const PropertyDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('description');
   const [showContactForm, setShowContactForm] = useState<boolean>(false);
   const [showScheduleForm, setShowScheduleForm] = useState<boolean>(false);
+  const { isFavorite, toggleFavorite, markAsViewed } = usePropertyFavorites();
   
   // Refs for scrolling to forms
   const contactFormRef = useRef<HTMLDivElement>(null);
@@ -57,8 +58,11 @@ const PropertyDetailPage: React.FC = () => {
 
         if (response.success && response.property) {
           setProperty(response.property);
+          markAsViewed(response.property);
         } else if (allowMockDataFallback) {
-          setProperty(mockDataService.getProperty(id) || null);
+          const mockProperty = mockDataService.getProperty(id) || null;
+          setProperty(mockProperty);
+          if (mockProperty) markAsViewed(mockProperty);
         } else {
           setProperty(null);
         }
@@ -85,9 +89,10 @@ const PropertyDetailPage: React.FC = () => {
     };
   }, [id]);
 
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
-    // In a real app, you would call an API to save the favorite status
+  const handleToggleFavorite = () => {
+    if (property) {
+      toggleFavorite(property);
+    }
   };
 
   const formatPrice = (price: number, currency: string = 'NGN', frequency?: string): string => {
@@ -434,19 +439,19 @@ const PropertyDetailPage: React.FC = () => {
                 Schedule Viewing
               </button>
               <button
-                onClick={toggleFavorite}
+                onClick={handleToggleFavorite}
                 className={`w-full py-3 px-4 ${
-                  isFavorite 
+                  isFavorite(property.id) 
                     ? 'bg-red-50 text-red-600 border border-red-200' 
                     : 'bg-gray-50 text-gray-700 border border-gray-200'
                 } hover:bg-gray-100 font-medium rounded-lg flex items-center justify-center`}
               >
-                {isFavorite ? (
+                {isFavorite(property.id) ? (
                   <IconHeartFilled size={18} className="mr-2" />
                 ) : (
                   <IconHeart size={18} className="mr-2" />
                 )}
-                {isFavorite ? 'Saved to Favorites' : 'Save to Favorites'}
+                {isFavorite(property.id) ? 'Saved to Favorites' : 'Save to Favorites'}
               </button>
             </div>
           </div>

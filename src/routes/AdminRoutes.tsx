@@ -24,7 +24,8 @@ import AdminRoute from '../components/Auth/AdminRoute';
 const AdminRoutes: React.FC = () => {
   return (
     <Routes>
-      <Route path="/" element={<AdminLayout />}>
+      {/* Nested under /admin/* — use relative paths so /admin/users etc. resolve correctly */}
+      <Route element={<AdminLayout />}>
         {/* Dashboard - accessible to all admin roles */}
         <Route 
           index 
