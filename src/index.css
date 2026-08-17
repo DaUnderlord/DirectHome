@@ -89,6 +89,7 @@ body {
   position: relative;
   min-height: 52vh;
   overflow: hidden;
+  background: #1c1916;
 }
 
 .lookbook-plan {
@@ -102,18 +103,63 @@ body {
 }
 
 .lookbook-plate img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   min-height: 52vh;
   object-fit: cover;
   display: block;
-  transform: scale(1.04);
-  transition: transform 8s ease-out;
+  opacity: 0;
+  transform: scale(1.08);
+  transition: opacity 1.15s ease;
+  z-index: 0;
 }
 
-.lookbook-hero.revealing .lookbook-plate img,
-.lookbook-hero.done .lookbook-plate img {
-  transform: scale(1);
+.lookbook-plate img.is-active {
+  opacity: 1;
+  z-index: 1;
+  animation: plateKen 7.2s ease-out forwards;
+}
+
+.plate-index {
+  position: absolute;
+  left: 1.15rem;
+  bottom: 1.2rem;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.plate-index.is-ready {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.6s 0.35s ease;
+}
+
+.plate-index button {
+  width: 1.65rem;
+  height: 2px;
+  padding: 0.55rem 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.plate-index button::after {
+  content: '';
+  display: block;
+  height: 2px;
+  background: rgba(243, 238, 228, 0.38);
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.plate-index button.is-on::after {
+  background: #F3EEE4;
+  transform: scaleX(1.12);
 }
 
 .plate-caption {
@@ -138,7 +184,7 @@ body {
   max-width: 36rem;
   opacity: 0;
   transform: translateY(22px);
-  transition: opacity 0.9s 0.12s ease, transform 1s 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.95s 0.4s ease, transform 1.05s 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .lookbook-copy.is-in {
@@ -155,29 +201,58 @@ body {
   font-weight: 600;
 }
 
-.lookbook-curtain {
+.intro-bleed {
   position: absolute;
   inset: 0;
-  z-index: 20;
-  background: var(--paper);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  pointer-events: none;
-  transition: opacity 0.75s ease;
+  z-index: 24;
+  overflow: hidden;
+  clip-path: inset(0px 0px 0px 0px);
+  transition: clip-path 1.35s cubic-bezier(0.76, 0, 0.24, 1);
+  will-change: clip-path;
 }
 
-.lookbook-hero.revealing .lookbook-curtain,
-.lookbook-curtain.is-lifting {
+.intro-bleed img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1.08);
+  animation: introKen 7s ease-out forwards;
+}
+
+.intro-bleed-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(28, 25, 22, 0.22) 0%, rgba(28, 25, 22, 0.38) 100%);
+  transition: opacity 0.85s 0.1s ease;
+}
+
+.lookbook-hero.revealing .intro-bleed-scrim {
+  opacity: 0;
+}
+
+.intro-bleed-plan {
+  position: absolute;
+  inset: 0;
+  background-image: url('/compound-plan.png');
+  background-size: 640px;
+  background-position: 50% 42%;
+  opacity: 0.14;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  animation: introPlan 1.4s ease both;
+  transition: opacity 0.7s ease;
+}
+
+.lookbook-hero.revealing .intro-bleed-plan {
   opacity: 0;
 }
 
 .cinematic-stage {
   position: absolute;
   inset: 0;
-  z-index: 22;
+  z-index: 60;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -186,24 +261,78 @@ body {
   pointer-events: none;
 }
 
+.intro-folio {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(22.5rem, calc(100% - 2.5rem));
+  height: min(28rem, 72vh);
+  background: var(--paper);
+  border: 1px solid rgba(154, 123, 79, 0.38);
+  box-shadow: 0 28px 70px rgba(28, 25, 22, 0.28);
+  pointer-events: none;
+  animation: introFolio 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: opacity 0.55s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.intro-folio.is-leaving {
+  opacity: 0;
+  transform: translate(-50%, calc(-50% - 12px)) scale(0.96);
+}
+
+.intro-stamp {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 9.5rem;
+  height: 9.5rem;
+  margin-bottom: 0.15rem;
+}
+
+.intro-ring {
+  position: absolute;
+  inset: 0.85rem;
+  border: 1px solid rgba(154, 123, 79, 0.55);
+  border-radius: 50%;
+  animation: introRing 1.7s 0.55s ease-out both;
+  pointer-events: none;
+}
+
+.intro-ring-late {
+  inset: 0.15rem;
+  animation-delay: 0.9s;
+}
+
+.intro-ring.is-leaving {
+  opacity: 0;
+  animation: none;
+}
+
 .cinematic-pin {
-  width: 92px;
-  height: 118px;
+  width: 88px;
+  height: 114px;
   z-index: 9;
   will-change: transform, opacity;
-  transition: transform 1.25s cubic-bezier(0.76, 0, 0.24, 1), opacity 0.45s 0.85s ease;
-  animation: introPin 1.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform 1.25s cubic-bezier(0.76, 0, 0.24, 1), opacity 0.18s 1.15s linear;
+  animation: introPin 1.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.cinematic-pin.is-docking {
+  opacity: 0;
 }
 
 .cinematic-wordmark {
+  position: relative;
+  z-index: 2;
   font-family: Fraunces, Georgia, serif;
   font-weight: 600;
   font-size: clamp(2rem, 5vw, 3.1rem);
   letter-spacing: 0.04em;
   color: var(--ink);
-  margin: 0.85rem 0 0;
-  animation: introWord 1.2s 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-  transition: opacity 0.55s ease, transform 0.7s ease;
+  margin: 0.35rem 0 0;
+  animation: introWord 1.15s 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: opacity 0.45s ease, transform 0.6s ease;
 }
 
 .cinematic-wordmark span {
@@ -213,50 +342,62 @@ body {
 }
 
 .cinematic-line {
+  position: relative;
+  z-index: 2;
   display: block;
   width: 4.5rem;
   height: 1px;
-  margin: 1.25rem auto 1rem;
+  margin: 1.15rem auto 0.95rem;
   background: var(--brass);
   transform-origin: center;
-  animation: introLine 0.85s 0.95s cubic-bezier(0.22, 1, 0.36, 1) both;
-  transition: opacity 0.4s ease;
+  animation: introLine 0.85s 1.05s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: opacity 0.35s ease;
 }
 
 .cinematic-kicker {
+  position: relative;
+  z-index: 2;
   margin: 0;
   font-size: 0.7rem;
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--ink-soft);
-  animation: introWord 0.9s 1.15s ease both;
-  transition: opacity 0.4s ease;
+  animation: introWord 0.9s 1.25s ease both;
+  transition: opacity 0.35s ease;
 }
 
 .cinematic-wordmark.is-leaving,
 .cinematic-line.is-leaving,
 .cinematic-kicker.is-leaving {
   opacity: 0;
-  transform: translateY(-12px);
+  transform: translateY(-10px);
+}
+
+.lookbook-hero.revealing .intro-skip {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .intro-skip {
   position: absolute;
   bottom: 1.75rem;
   right: 1.5rem;
-  z-index: 30;
-  font-size: 0.7rem;
+  z-index: 61;
+  font-size: 0.68rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--ink-soft);
-  background: none;
-  border: 0;
+  color: var(--paper-bright);
+  background: rgba(28, 25, 22, 0.35);
+  border: 1px solid rgba(243, 238, 228, 0.35);
+  padding: 0.45rem 0.8rem;
   cursor: pointer;
   pointer-events: auto;
+  border-radius: 2px;
 }
 
 .intro-skip:hover {
-  color: var(--courtyard);
+  color: var(--paper);
+  background: rgba(28, 25, 22, 0.55);
 }
 
 .btn-courtyard {
@@ -590,8 +731,9 @@ body {
 }
 
 @keyframes introPin {
-  from { opacity: 0; transform: translateY(18px) scale(0.9); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  0% { opacity: 0; transform: translateY(-46px) scale(0.72); }
+  62% { opacity: 1; transform: translateY(7px) scale(1.05); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes introWord {
@@ -604,8 +746,40 @@ body {
   to { transform: scaleX(1); opacity: 1; }
 }
 
+@keyframes plateKen {
+  from { transform: scale(1.08); }
+  to { transform: scale(1); }
+}
+
+@keyframes introKen {
+  from { transform: scale(1.12); }
+  to { transform: scale(1.04); }
+}
+
+@keyframes introPlan {
+  from { opacity: 0; transform: scale(1.06); }
+  to { opacity: 0.14; transform: scale(1); }
+}
+
+@keyframes introFolio {
+  from { opacity: 0; transform: translate(-50%, -44%) scale(0.97); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes introRing {
+  from { transform: scale(0.45); opacity: 0.7; }
+  to { transform: scale(1.12); opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .lookbook-plate img,
+  .lookbook-plate img {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .intro-bleed img,
+  .intro-folio,
+  .intro-ring,
   .cinematic-pin,
   .cinematic-wordmark,
   .cinematic-line,

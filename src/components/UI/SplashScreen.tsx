@@ -1,55 +1,62 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import PinMark from './PinMark';
-import { useIntro } from '../../context/IntroContext';
 
-const SplashScreen: React.FC = () => {
-  const { phase, beginReveal, complete, skip } = useIntro();
+interface SplashScreenProps {
+  phase: 'playing' | 'revealing' | 'done';
+  image: string;
+  pinRef: React.RefObject<SVGSVGElement | null>;
+  bleedRef: React.RefObject<HTMLDivElement | null>;
+  onSkip: () => void;
+}
 
-  useEffect(() => {
-    if (phase !== 'playing') return;
-
-    const revealTimer = window.setTimeout(beginReveal, 2100);
-    return () => window.clearTimeout(revealTimer);
-  }, [phase, beginReveal]);
-
-  useEffect(() => {
-    const lock = phase === 'playing';
-    document.body.style.overflow = lock ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [phase]);
-
-  useEffect(() => {
-    if (phase !== 'revealing') return;
-    const doneTimer = window.setTimeout(complete, 1100);
-    return () => window.clearTimeout(doneTimer);
-  }, [phase, complete]);
-
+const SplashScreen: React.FC<SplashScreenProps> = ({
+  phase,
+  image,
+  pinRef,
+  bleedRef,
+  onSkip,
+}) => {
   if (phase === 'done') return null;
 
+  const leaving = phase === 'revealing';
+
   return (
-    <div
-      className={`lookbook-curtain ${phase === 'revealing' ? 'is-lifting' : ''}`}
-      role="dialog"
-      aria-label="DirectHome introduction"
-      aria-live="polite"
-      style={{ position: 'fixed', zIndex: 60 }}
-    >
-      <div className="paper-grain" />
-      <div className="cinematic-stage" style={{ position: 'relative' }}>
-        <PinMark className="cinematic-pin" />
-        <p className="cinematic-wordmark">
-          Direct<span>Home</span>
-        </p>
-        <span className="cinematic-line" />
-        <p className="cinematic-kicker">Nigeria · Build · Rent · Direct</p>
+    <>
+      <div ref={bleedRef} className="intro-bleed" aria-hidden>
+        <img src={image} alt="" />
+        <div className="intro-bleed-scrim" />
+        <div className="intro-bleed-plan" />
       </div>
 
-      <button type="button" className="intro-skip" onClick={skip}>
+      <div
+        className="cinematic-stage"
+        role="dialog"
+        aria-label="DirectHome introduction"
+        aria-live="polite"
+      >
+        <div className={`intro-folio ${leaving ? 'is-leaving' : ''}`}>
+          <div className="paper-grain" />
+        </div>
+
+        <div className="intro-stamp">
+          <span className={`intro-ring ${leaving ? 'is-leaving' : ''}`} />
+          <span className={`intro-ring intro-ring-late ${leaving ? 'is-leaving' : ''}`} />
+          <PinMark ref={pinRef} className={`cinematic-pin ${leaving ? 'is-docking' : ''}`} />
+        </div>
+
+        <p className={`cinematic-wordmark ${leaving ? 'is-leaving' : ''}`}>
+          Direct<span>Home</span>
+        </p>
+        <span className={`cinematic-line ${leaving ? 'is-leaving' : ''}`} />
+        <p className={`cinematic-kicker ${leaving ? 'is-leaving' : ''}`}>
+          Nigeria · Build · Rent
+        </p>
+      </div>
+
+      <button type="button" className="intro-skip" onClick={onSkip}>
         Skip
       </button>
-    </div>
+    </>
   );
 };
 

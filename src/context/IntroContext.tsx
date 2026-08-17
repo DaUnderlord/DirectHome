@@ -9,7 +9,7 @@ interface IntroContextValue {
   skip: () => void;
 }
 
-const STORAGE_KEY = 'dh-intro-v3';
+const STORAGE_KEY = 'dh-intro-v4';
 const TTL_MS = 18 * 60 * 60 * 1000;
 
 const IntroContext = createContext<IntroContextValue>({

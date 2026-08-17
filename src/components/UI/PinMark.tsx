@@ -7,8 +7,8 @@ interface PinMarkProps {
 
 const PinMark = React.forwardRef<SVGSVGElement, PinMarkProps>(
   ({ className = '', inverted = false }, ref) => {
-    const metal = inverted ? '#F6F1E8' : '#9A7B4F';
-    const cut = inverted ? '#17382F' : '#F3EEE4';
+    const pin = inverted ? '#F6F1E8' : '#1F4A3E';
+    const house = inverted ? '#1A3D34' : '#F3EEE4';
 
     return (
       <svg
@@ -20,18 +20,13 @@ const PinMark = React.forwardRef<SVGSVGElement, PinMarkProps>(
         focusable="false"
       >
         <path
-          fill={metal}
-          d="M32 83c0 0-27-30.2-27-54.5C5 13.3 17.1 1 32 1s27 12.3 27 27.5C59 52.8 32 83 32 83z"
+          fill={pin}
+          d="M32 83c0 0-26-29.4-26-54.2C6 13.6 17.6 2 32 2s26 11.6 26 26.8C58 53.6 32 83 32 83z"
         />
-        <circle cx="32" cy="28.5" r="16.2" fill={cut} />
         <path
-          fill={metal}
-          d="M32 16.2l13.2 10.1v14.4H36.6V32.2h-9.2v8.5H18.8V26.3L32 16.2z"
+          fill={house}
+          d="M32 14.8L46.4 26.6V42.2h-8.6V31.2H26.2v11H17.6V26.6L32 14.8z"
         />
-        <rect x="28.4" y="28.8" width="3.2" height="3.2" fill={cut} />
-        <rect x="32.4" y="28.8" width="3.2" height="3.2" fill={cut} />
-        <rect x="28.4" y="32.8" width="3.2" height="3.2" fill={cut} />
-        <rect x="32.4" y="32.8" width="3.2" height="3.2" fill={cut} />
       </svg>
     );
   }
