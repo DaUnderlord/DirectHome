@@ -21,14 +21,14 @@ const Button: React.FC<ButtonProps> = ({
   disabled = false,
   className = '',
 }) => {
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation';
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation';
   
   const variantClasses = {
-    primary: 'bg-gold-500 hover:bg-gold-400 text-charcoal-950 focus:ring-gold-500',
-    secondary: 'bg-charcoal-700 hover:bg-charcoal-600 text-stone-100 focus:ring-gold-500',
-    outline: 'border border-charcoal-600 bg-transparent hover:bg-charcoal-800 text-stone-200 focus:ring-gold-500',
-    ghost: 'hover:bg-charcoal-800 text-stone-300 focus:ring-gold-500',
-    danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500'
+    primary: 'bg-courtyard-700 hover:bg-courtyard-600 text-paper-50 focus:ring-courtyard-500',
+    secondary: 'bg-paper-200 hover:bg-paper-300 text-ink-950 focus:ring-brass-500',
+    outline: 'border border-paper-300 bg-transparent hover:border-courtyard-700 hover:text-courtyard-700 text-ink-800 focus:ring-courtyard-500',
+    ghost: 'hover:bg-paper-200 text-ink-600 focus:ring-courtyard-500',
+    danger: 'bg-laterite-500 hover:bg-laterite-600 text-white focus:ring-laterite-500'
   };
   
   const sizeClasses = {

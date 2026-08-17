@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import AuthLayout from './AuthLayout';
 
+const fieldClass =
+  'mt-1 w-full px-3 py-2.5 rounded-sm bg-paper-50 border border-paper-300 text-ink-950 focus:ring-2 focus:ring-courtyard-500 focus:border-courtyard-700';
+
 const ForgotPasswordPage: React.FC = () => {
   const { resetPassword, error } = useAuth();
   const [email, setEmail] = useState('');
@@ -30,23 +33,23 @@ const ForgotPasswordPage: React.FC = () => {
     >
       {submitted ? (
         <div className="text-center space-y-4">
-          <div className="rounded-xl border border-gold-500/30 bg-gold-500/10 px-4 py-3 text-sm text-gold-200">
+          <div className="border border-courtyard-100 bg-courtyard-50 px-4 py-3 text-sm text-courtyard-800">
             If an account exists for <strong>{email}</strong>, a reset link has been sent.
             Check your inbox and spam folder.
           </div>
-          <Link to="/auth/login" className="text-gold-400 hover:text-gold-300 text-sm font-medium">
+          <Link to="/auth/login" className="text-courtyard-700 hover:text-courtyard-600 text-sm font-medium">
             Back to sign in
           </Link>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            <div className="border border-laterite-500/30 bg-laterite-500/10 px-4 py-3 text-sm text-laterite-600">
               {error.message}
             </div>
           )}
 
-          <label htmlFor="email" className="block text-sm text-stone-300">
+          <label htmlFor="email" className="block text-sm text-ink-800">
             Email address
             <input
               id="email"
@@ -54,7 +57,7 @@ const ForgotPasswordPage: React.FC = () => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full px-3 py-2.5 rounded-xl bg-charcoal-900 border border-charcoal-600 text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+              className={fieldClass}
               placeholder="you@example.com"
             />
           </label>
@@ -62,13 +65,13 @@ const ForgotPasswordPage: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 rounded-full bg-gold-500 text-charcoal-950 font-semibold hover:bg-gold-400 disabled:opacity-50"
+            className="w-full py-3 rounded-sm bg-courtyard-700 text-paper-50 font-semibold hover:bg-courtyard-600 disabled:opacity-50"
           >
             {isSubmitting ? 'Sending…' : 'Send reset link'}
           </button>
 
           <div className="text-center">
-            <Link to="/auth/login" className="text-sm text-gold-400 hover:text-gold-300">
+            <Link to="/auth/login" className="text-sm text-courtyard-700 hover:text-courtyard-600">
               Back to sign in
             </Link>
           </div>

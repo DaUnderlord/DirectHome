@@ -68,7 +68,7 @@ const AnalyticsDashboard = React.lazy(() =>
 );
 
 const PageLoader = () => (
-  <div className="min-h-[50vh] flex items-center justify-center bg-charcoal-950 text-stone-300">
+  <div className="min-h-[50vh] flex items-center justify-center bg-paper-100 text-ink-600 font-display">
     Loading…
   </div>
 );

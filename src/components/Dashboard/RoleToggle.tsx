@@ -89,7 +89,7 @@ const RoleToggle: React.FC<RoleToggleProps> = ({
       <div className="relative">
         {/* Background slider */}
         <div className={`
-          absolute inset-y-0 w-1/2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg
+          absolute inset-y-0 w-1/2 bg-courtyard-700
           transition-transform duration-300 ease-out
           ${activeRole === UserRole.HOME_SEEKER ? 'translate-x-full' : 'translate-x-0'}
           ${isAnimating ? 'scale-95' : 'scale-100'}

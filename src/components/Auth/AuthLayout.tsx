@@ -1,6 +1,6 @@
 import React from 'react';
 import Logo from '../UI/Logo';
-import heroLagos from '../../assets/hero-lagos-night.png';
+import courtyard from '../../assets/hero-courtyard-day.png';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -22,33 +22,33 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
   heroContent,
 }) => {
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-charcoal-950 text-stone-100">
-      <div className="w-full md:w-1/2 flex flex-col p-6 md:p-12 justify-center">
-        <div className="mb-10">
-          <Logo size="lg" />
-        </div>
-
-        <div className="max-w-md w-full mx-auto">
-          <h1 className="font-display text-3xl font-bold mb-2 text-stone-50">{title}</h1>
-          {subtitle && <p className="text-stone-400 mb-8">{subtitle}</p>}
+    <div className="min-h-screen grid lg:grid-cols-[minmax(0,28rem)_1fr] xl:grid-cols-[minmax(0,34rem)_1fr] bg-paper-100 text-ink-950">
+      <div className="relative flex flex-col justify-center px-5 py-10 sm:px-10 lg:px-12 xl:px-16">
+        <div className="paper-grain" />
+        <div className="relative z-10 w-full max-w-md mx-auto lg:mx-0">
+          <div className="mb-8">
+            <Logo size="lg" />
+          </div>
+          <h1 className="font-display text-3xl sm:text-4xl font-semibold mb-2 text-ink-950">{title}</h1>
+          {subtitle && <p className="text-ink-600 mb-8">{subtitle}</p>}
           <div className="dh-tool">{children}</div>
         </div>
       </div>
 
-      <div className="hidden md:block w-1/2 relative overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroImage || heroLagos})` }}
+      <div className="relative hidden md:block min-h-[40vh] lg:min-h-screen overflow-hidden">
+        <img
+          src={heroImage || courtyard}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950 via-charcoal-950/55 to-charcoal-950/20" />
-        <div className="relative h-full flex flex-col justify-end p-12">
+        <div className="absolute inset-x-0 bottom-0 bg-paper-100/95 border-t border-paper-200 px-6 py-6 lg:px-10 lg:py-8">
           {heroContent ? (
             heroContent
           ) : (
             <>
-              <p className="text-gold-400 text-[11px] tracking-[0.28em] uppercase mb-4">DirectHome</p>
-              <h2 className="font-display text-4xl font-bold mb-4">{heroTitle}</h2>
-              <p className="text-lg text-stone-300 max-w-md">{heroSubtitle}</p>
+              <p className="text-courtyard-700 text-[11px] tracking-[0.28em] uppercase mb-2">DirectHome</p>
+              <h2 className="font-display text-2xl lg:text-3xl font-semibold mb-2 text-ink-950">{heroTitle}</h2>
+              <p className="text-ink-600 max-w-lg">{heroSubtitle}</p>
             </>
           )}
         </div>

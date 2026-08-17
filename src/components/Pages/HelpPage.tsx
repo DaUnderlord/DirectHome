@@ -94,7 +94,7 @@ const HelpPage: React.FC = () => {
       title={
         <>
           Answers before you{' '}
-          <span className="text-gold-400">need support</span>
+          <span className="italic text-courtyard-700">need support</span>
         </>
       }
       subtitle="Search common questions about the tools, accounts, and the listings launch."

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   IconHammer,
@@ -21,26 +21,14 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ toggle }) => {
   const { isAuthenticated } = useAuth();
   const { phase } = useIntro();
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handle = () => setScrolled(window.scrollY > 24);
-    window.addEventListener('scroll', handle, { passive: true });
-    return () => window.removeEventListener('scroll', handle);
-  }, []);
-
   const navLink =
-    'flex items-center space-x-2 text-stone-300/90 text-sm tracking-wide font-medium hover:text-gold-400 transition-colors';
-  const navLinkMobile = 'p-2 rounded-xl text-stone-300 hover:bg-charcoal-800 transition';
+    'flex items-center space-x-2 text-ink-600 text-sm tracking-wide font-medium hover:text-courtyard-700 transition-colors';
+  const navLinkMobile = 'p-2 rounded-sm text-ink-800 hover:bg-paper-200 transition';
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 h-[4.5rem] transition-all duration-700 ${
+      className={`fixed top-0 left-0 right-0 z-50 h-[4.5rem] bg-paper-100 border-b border-paper-200 transition-all duration-700 ${
         phase === 'playing' ? 'opacity-0 pointer-events-none -translate-y-2' : 'opacity-100 translate-y-0'
-      } ${
-        scrolled
-          ? 'bg-charcoal-950/90 backdrop-blur-xl border-b border-gold-500/15'
-          : 'bg-transparent border-b border-white/5'
       }`}
     >
       <div className="h-full flex items-center justify-between px-4 sm:px-6 max-w-screen-2xl mx-auto">
@@ -83,7 +71,7 @@ const Header: React.FC<HeaderProps> = ({ toggle }) => {
           <Link to="/search" className={navLink}>
             <IconBuildingSkyscraper size={16} />
             <span>Listings</span>
-            <span className="text-[9px] uppercase tracking-[0.18em] text-gold-500 font-semibold ml-0.5">Soon</span>
+            <span className="text-[9px] uppercase tracking-[0.18em] text-brass-500 font-semibold ml-0.5">Soon</span>
           </Link>
 
           {isAuthenticated ? (
@@ -100,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({ toggle }) => {
           ) : (
             <Link
               to="/auth/login"
-              className="flex items-center space-x-2 px-5 py-2 bg-gold-500 hover:bg-gold-400 active:scale-[0.98] text-charcoal-950 text-sm font-semibold rounded-full transition-all duration-200"
+              className="flex items-center space-x-2 px-5 py-2 bg-courtyard-700 hover:bg-courtyard-600 active:scale-[0.98] text-paper-50 text-sm font-semibold rounded-sm transition-all duration-200"
             >
               <IconLogin size={16} />
               <span>Login</span>

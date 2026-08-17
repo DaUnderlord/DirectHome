@@ -15,8 +15,8 @@ const LoginPage: React.FC = () => {
     <AuthLayout title="Sign In" subtitle="Welcome back! Please sign in to continue.">
       <div className="max-w-md w-full">
         {showListPropertyMessage && (
-          <div className="mb-4 p-4 bg-gold-500/10 border border-gold-500/25 rounded-xl">
-            <p className="text-sm text-gold-200">
+          <div className="mb-4 p-4 bg-courtyard-50 border border-courtyard-100">
+            <p className="text-sm text-courtyard-800">
               Please sign in or create an account to list your property on DirectHome.
             </p>
           </div>

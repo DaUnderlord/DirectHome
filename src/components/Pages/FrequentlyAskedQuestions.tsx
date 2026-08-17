@@ -37,7 +37,7 @@ const FrequentlyAskedQuestions: React.FC = () => {
       title={
         <>
           Straight answers,{' '}
-          <span className="text-gold-400">no agent-speak</span>
+          <span className="italic text-courtyard-700">no agent-speak</span>
         </>
       }
       subtitle="The questions we get most about the tools and the marketplace launch."

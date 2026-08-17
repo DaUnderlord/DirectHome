@@ -10,7 +10,7 @@ const CookiesPage: React.FC = () => {
         path: '/cookies',
       }}
       eyebrow="Legal"
-      title={<>Cookie <span className="text-gold-400">policy</span></>}
+      title={<>Cookie <span className="italic text-courtyard-700">policy</span></>}
       subtitle="What cookies we use, why we use them, and how you can control them."
     >
         <div>

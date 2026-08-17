@@ -25,7 +25,7 @@ const FooterLink: React.FC<FooterLinkProps> = ({ label, to }) => {
     <Link
       to={to}
       onClick={handleClick}
-      className="text-stone-400 hover:text-gold-400 transition-colors duration-200 block"
+      className="text-paper-300 hover:text-paper-50 transition-colors duration-200 block"
     >
       {label}
     </Link>
@@ -36,15 +36,15 @@ const Footer: React.FC = () => {
   const { isAuthenticated } = useAuth();
 
   return (
-    <footer className="bg-charcoal-950 border-t border-gold-500/10 pt-16 pb-10">
+    <footer className="bg-courtyard-800 pt-16 pb-10 text-paper-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-5 gap-8 mb-12">
           <div className="md:col-span-2">
             <div className="mb-4">
-              <Logo size="lg" />
+              <Logo size="lg" inverted />
             </div>
-            <p className="text-stone-400 mb-6 leading-relaxed max-w-sm">
-              Free construction and rent calculators for Nigeria. Property listings launching soon — direct connections, no middlemen.
+            <p className="text-paper-300 mb-6 leading-relaxed max-w-sm">
+              Tools for the Nigerian house — construction estimates, rent affordability, and a marketplace launching without middlemen.
             </p>
             <div className="flex space-x-4">
               {[
@@ -56,16 +56,16 @@ const Footer: React.FC = () => {
                 <a
                   key={i}
                   href="#"
-                  className="w-10 h-10 bg-charcoal-800 hover:bg-charcoal-700 rounded-full flex items-center justify-center transition-colors duration-200"
+                  className="w-10 h-10 border border-white/15 hover:border-paper-50 rounded-sm flex items-center justify-center transition-colors duration-200"
                 >
-                  <Icon className="w-5 h-5 text-stone-400" />
+                  <Icon className="w-5 h-5 text-paper-200" />
                 </a>
               ))}
             </div>
           </div>
 
           <div>
-            <h4 className="text-lg font-semibold text-stone-200 mb-4">Tools</h4>
+            <h4 className="text-sm tracking-[0.2em] uppercase text-paper-200 mb-4">Tools</h4>
             <div className="space-y-2">
               <FooterLink to="/construction-estimator" label="Construction Cost Estimator" />
               <FooterLink to="/calculator" label="Rent Calculator" />
@@ -74,7 +74,7 @@ const Footer: React.FC = () => {
           </div>
 
           <div>
-            <h4 className="text-lg font-semibold text-stone-200 mb-4">Company</h4>
+            <h4 className="text-sm tracking-[0.2em] uppercase text-paper-200 mb-4">Company</h4>
             <div className="space-y-2">
               <FooterLink to="/about" label="About Us" />
               <FooterLink to="/careers" label="Careers" />
@@ -83,7 +83,7 @@ const Footer: React.FC = () => {
           </div>
 
           <div>
-            <h4 className="text-lg font-semibold text-stone-200 mb-4">Support</h4>
+            <h4 className="text-sm tracking-[0.2em] uppercase text-paper-200 mb-4">Support</h4>
             <div className="space-y-2">
               <FooterLink to="/help" label="Help Center" />
               <FooterLink to="/faq" label="FAQ" />
@@ -94,19 +94,19 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        <div className="border-t border-charcoal-800 pt-8">
+        <div className="border-t border-white/10 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-stone-500 mb-4 md:mb-0">
+            <p className="text-paper-300/80 mb-4 md:mb-0 text-sm">
               © {new Date().getFullYear()} DirectHome. All rights reserved.
             </p>
             <div className="flex space-x-6">
-              <Link to="/terms" className="text-stone-500 hover:text-gold-400 transition-colors text-sm">
+              <Link to="/terms" className="text-paper-300 hover:text-paper-50 transition-colors text-sm">
                 Terms
               </Link>
-              <Link to="/privacy" className="text-stone-500 hover:text-gold-400 transition-colors text-sm">
+              <Link to="/privacy" className="text-paper-300 hover:text-paper-50 transition-colors text-sm">
                 Privacy
               </Link>
-              <Link to="/cookies" className="text-stone-500 hover:text-gold-400 transition-colors text-sm">
+              <Link to="/cookies" className="text-paper-300 hover:text-paper-50 transition-colors text-sm">
                 Cookies
               </Link>
             </div>

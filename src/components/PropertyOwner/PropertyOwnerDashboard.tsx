@@ -192,34 +192,34 @@ const PropertyOwnerDashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-charcoal-950 flex items-center justify-center">
+      <div className="min-h-screen bg-paper-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500 mx-auto mb-4"></div>
-          <p className="text-stone-400">Loading your dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-courtyard-700 mx-auto mb-4"></div>
+          <p className="text-ink-600">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-charcoal-950">
+    <div className="min-h-screen bg-paper-100">
       <Container size="xl" className="py-8">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 gap-4">
           <div>
-            <h1 className="font-display text-3xl font-bold text-stone-100 mb-2">
+            <h1 className="font-display text-2xl sm:text-3xl font-semibold text-ink-950 mb-2">
               Welcome back, {user?.firstName || 'Property Owner'}!
             </h1>
-            <p className="text-gray-600">
+            <p className="text-ink-600">
               Manage your properties, viewings, and tenant applications all in one place.
             </p>
           </div>
-          <div className="flex items-center space-x-4 mt-4 lg:mt-0">
+          <div className="flex items-center space-x-3">
             <button 
-              className="relative p-3 bg-white rounded-xl shadow-sm border border-gray-200 hover:bg-gray-50"
+              className="relative p-3 bg-paper-50 border border-paper-200 hover:bg-paper-100"
               onClick={() => navigate('/owner/notifications')}
             >
-              <IconBell size={24} className="text-gray-600" />
+              <IconBell size={24} className="text-ink-600" />
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
                   {unreadCount}
@@ -228,7 +228,7 @@ const PropertyOwnerDashboard: React.FC = () => {
             </button>
             <button 
               onClick={() => navigate('/owner/properties/new')}
-              className="flex items-center px-6 py-3 bg-gold-500 text-charcoal-950 rounded-xl hover:bg-gold-400 transition-all font-semibold"
+              className="flex items-center px-5 py-3 bg-courtyard-700 text-paper-50 hover:bg-courtyard-600 transition-all font-semibold rounded-sm"
             >
               <IconPlus size={20} className="mr-2" />
               Add Property
@@ -463,25 +463,25 @@ const PropertyOwnerDashboard: React.FC = () => {
         </div>
 
         {/* Quick Actions Footer */}
-        <div className="mt-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-            <div className="mb-6 lg:mb-0">
-              <h2 className="text-2xl font-bold mb-2">Ready to list a new property?</h2>
-              <p className="text-blue-100">
+        <div className="mt-8 bg-courtyard-800 p-6 sm:p-8 text-paper-50">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+              <h2 className="font-display text-2xl font-semibold mb-2">Ready to list a new property?</h2>
+              <p className="text-paper-300">
                 Get your property in front of thousands of potential tenants today.
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <button 
                 onClick={() => navigate('/owner/properties/new')}
-                className="px-6 py-3 bg-white text-blue-600 rounded-xl font-semibold hover:bg-blue-50 transition-colors"
+                className="px-6 py-3 bg-paper-50 text-courtyard-800 font-semibold hover:bg-paper-100"
               >
                 <IconPlus size={20} className="inline mr-2" />
                 Add New Property
               </button>
               <button 
                 onClick={() => navigate('/owner/analytics')}
-                className="px-6 py-3 bg-blue-500 text-white rounded-xl font-semibold hover:bg-blue-400 transition-colors"
+                className="px-6 py-3 border border-white/30 text-paper-50 font-semibold hover:bg-white/10"
               >
                 <IconChartBar size={20} className="inline mr-2" />
                 View Analytics

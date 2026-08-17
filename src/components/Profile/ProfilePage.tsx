@@ -186,8 +186,8 @@ const ProfilePage: React.FC = () => {
         </div>
       )}
       <div className="mb-8">
-        <h1 className="font-display text-3xl font-bold text-stone-100 mb-2">My Profile</h1>
-        <p className="text-stone-400">Manage your account settings and preferences</p>
+        <h1 className="font-display text-3xl font-semibold text-ink-950 mb-2">My Profile</h1>
+        <p className="text-ink-600">Manage your account settings and preferences</p>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -196,7 +196,7 @@ const ProfilePage: React.FC = () => {
           <Card padding="none" className="overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center">
-                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-courtyard-50 flex items-center justify-center">
                   {profile.avatar ? (
                     <img 
                       src={profile.avatar} 
@@ -204,7 +204,7 @@ const ProfilePage: React.FC = () => {
                       className="w-16 h-16 rounded-full object-cover"
                     />
                   ) : (
-                    <span className="text-2xl font-bold text-blue-600">
+                    <span className="text-2xl font-bold text-courtyard-700">
                       {user.firstName.charAt(0)}{user.lastName.charAt(0)}
                     </span>
                   )}

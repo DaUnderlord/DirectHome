@@ -1,6 +1,7 @@
 import React from 'react';
 import ToolShell from '../UI/ToolShell';
 import RentCalculator from '../RentCalculator/RentCalculator';
+import plateRent from '../../assets/plate-rent.png';
 
 const ESTIMATOR_FAQ = [
   {
@@ -37,14 +38,14 @@ const RentCalculatorPage: React.FC = () => {
       heroTitle={
         <>
           Rent Calculator for{' '}
-          <span className="text-gold-400">Nigeria</span>
+          <span className="italic text-courtyard-700">Nigeria</span>
         </>
       }
       heroSubtitle="Know what you can afford, what move-in really costs, and how properties stack up — before you pay an agent."
-      heroImage="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=1920&h=1080&fit=crop"
+      heroImage={plateRent}
       faq={ESTIMATOR_FAQ}
     >
-      <RentCalculator variant="dark" />
+      <RentCalculator variant="light" />
     </ToolShell>
   );
 };

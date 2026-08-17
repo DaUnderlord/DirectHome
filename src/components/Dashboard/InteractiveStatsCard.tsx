@@ -69,46 +69,46 @@ const InteractiveStatsCard: React.FC<InteractiveStatsCardProps> = ({
   const getColorClasses = () => {
     const colors = {
       blue: {
-        bg: 'from-charcoal-800 to-charcoal-900',
-        iconBg: 'bg-gold-500',
-        text: 'text-gold-400',
-        border: 'border-charcoal-700',
-        hover: 'hover:from-charcoal-700 hover:to-charcoal-800'
+        bg: 'bg-paper-50',
+        iconBg: 'bg-courtyard-700',
+        text: 'text-courtyard-700',
+        border: 'border-paper-200',
+        hover: 'hover:border-courtyard-500'
       },
       green: {
-        bg: 'from-charcoal-800 to-charcoal-900',
-        iconBg: 'bg-emerald-600',
-        text: 'text-emerald-400',
-        border: 'border-charcoal-700',
-        hover: 'hover:from-charcoal-700 hover:to-charcoal-800'
+        bg: 'bg-paper-50',
+        iconBg: 'bg-courtyard-600',
+        text: 'text-courtyard-700',
+        border: 'border-paper-200',
+        hover: 'hover:border-courtyard-500'
       },
       yellow: {
-        bg: 'from-charcoal-800 to-charcoal-900',
-        iconBg: 'bg-gold-500',
-        text: 'text-gold-400',
-        border: 'border-charcoal-700',
-        hover: 'hover:from-charcoal-700 hover:to-charcoal-800'
+        bg: 'bg-paper-50',
+        iconBg: 'bg-brass-500',
+        text: 'text-brass-600',
+        border: 'border-paper-200',
+        hover: 'hover:border-brass-500'
       },
       purple: {
-        bg: 'from-charcoal-800 to-charcoal-900',
-        iconBg: 'bg-charcoal-600',
-        text: 'text-stone-200',
-        border: 'border-charcoal-700',
-        hover: 'hover:from-charcoal-700 hover:to-charcoal-800'
+        bg: 'bg-paper-50',
+        iconBg: 'bg-ink-800',
+        text: 'text-ink-800',
+        border: 'border-paper-200',
+        hover: 'hover:border-ink-600'
       },
       red: {
-        bg: 'from-charcoal-800 to-charcoal-900',
-        iconBg: 'bg-red-600',
-        text: 'text-red-400',
-        border: 'border-charcoal-700',
-        hover: 'hover:from-charcoal-700 hover:to-charcoal-800'
+        bg: 'bg-paper-50',
+        iconBg: 'bg-laterite-500',
+        text: 'text-laterite-600',
+        border: 'border-paper-200',
+        hover: 'hover:border-laterite-500'
       },
       indigo: {
-        bg: 'from-charcoal-800 to-charcoal-900',
-        iconBg: 'bg-gold-500',
-        text: 'text-gold-400',
-        border: 'border-charcoal-700',
-        hover: 'hover:from-charcoal-700 hover:to-charcoal-800'
+        bg: 'bg-paper-50',
+        iconBg: 'bg-courtyard-700',
+        text: 'text-courtyard-700',
+        border: 'border-paper-200',
+        hover: 'hover:border-courtyard-500'
       }
     };
     return colors[color];
@@ -141,12 +141,12 @@ const InteractiveStatsCard: React.FC<InteractiveStatsCardProps> = ({
   return (
     <div
       className={`
-        relative overflow-hidden rounded-2xl p-6 
-        bg-gradient-to-br ${colorClasses.bg} ${colorClasses.hover}
+        relative overflow-hidden p-5 sm:p-6
+        ${colorClasses.bg} ${colorClasses.hover}
         border ${colorClasses.border}
         transition-all duration-300 ease-out
-        ${onClick ? 'cursor-pointer hover:shadow-lg hover:scale-105' : ''}
-        ${isHovered ? 'shadow-lg' : 'shadow-sm'}
+        ${onClick ? 'cursor-pointer hover:shadow-folio' : ''}
+        ${isHovered ? 'shadow-folio' : 'shadow-sm'}
       `}
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
@@ -160,8 +160,8 @@ const InteractiveStatsCard: React.FC<InteractiveStatsCardProps> = ({
       <div className="relative z-10">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
-          <div className={`p-3 ${colorClasses.iconBg} rounded-xl shadow-lg`}>
-            <Icon className="text-charcoal-950" size={24} />
+          <div className={`p-3 ${colorClasses.iconBg}`}>
+            <Icon className="text-paper-50" size={22} />
           </div>
           
           {onClick && (
@@ -188,10 +188,10 @@ const InteractiveStatsCard: React.FC<InteractiveStatsCardProps> = ({
             </div>
           ) : (
             <>
-              <div className="text-3xl font-bold text-stone-100 mb-1">
+              <div className="text-3xl font-display font-semibold text-ink-950 mb-1">
                 {prefix}{displayValue}{suffix}
               </div>
-              <p className="text-sm font-medium text-stone-400">
+              <p className="text-sm font-medium text-ink-600">
                 {title}
               </p>
             </>

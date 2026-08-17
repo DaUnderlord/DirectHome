@@ -207,11 +207,10 @@ const HomeOwnerDashboard: React.FC<HomeOwnerDashboardProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link 
             to="/property/create" 
-            className="group relative overflow-hidden bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="group bg-courtyard-700 hover:bg-courtyard-600 text-paper-50 py-4 px-6 flex items-center justify-center"
           >
             <IconPlus className="h-5 w-5 mr-2" />
             <span className="font-semibold">Add New Property</span>
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 to-white/20 transform translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
           </Link>
           
           <Link 

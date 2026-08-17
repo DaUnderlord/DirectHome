@@ -10,7 +10,7 @@ const PrivacyPage: React.FC = () => {
         path: '/privacy',
       }}
       eyebrow="Legal"
-      title={<>Privacy <span className="text-gold-400">policy</span></>}
+      title={<>Privacy <span className="italic text-courtyard-700">policy</span></>}
       subtitle="How we collect, use, and protect information on DirectHome."
     >
         <div>

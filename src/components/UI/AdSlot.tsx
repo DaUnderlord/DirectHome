@@ -19,7 +19,7 @@ const AdSlot: React.FC<AdSlotProps> = ({ slot, label = 'Advertisement', classNam
 
   return (
     <div
-      className={`ad-slot min-h-[90px] rounded-xl border border-dashed border-charcoal-600/40 bg-charcoal-800/30 flex items-center justify-center ${className}`}
+      className={`ad-slot min-h-[90px] border border-dashed border-paper-300 bg-paper-50 flex items-center justify-center ${className}`}
       aria-label={label}
     >
       <ins

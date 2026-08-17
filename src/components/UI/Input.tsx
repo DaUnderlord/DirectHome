@@ -33,19 +33,19 @@ const Input: React.FC<InputProps> = ({
   inputMode,
 }) => {
   const inputClasses = `
-    w-full px-3 py-3 min-h-[44px] border border-gray-300 rounded-md shadow-sm placeholder-gray-400 
-    focus:outline-none focus:ring-blue-500 focus:border-blue-500
-    disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed
+    w-full px-3 py-3 min-h-[44px] border border-paper-300 rounded-sm bg-paper-50 text-ink-950 placeholder-ink-400
+    focus:outline-none focus:ring-2 focus:ring-courtyard-500 focus:border-courtyard-700
+    disabled:bg-paper-100 disabled:text-ink-400 disabled:cursor-not-allowed
     text-base
-    ${error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}
+    ${error ? 'border-laterite-500 focus:ring-laterite-500 focus:border-laterite-500' : ''}
   `;
 
   return (
     <div className={`mb-4 ${className}`}>
       {label && (
-        <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={id} className="block text-sm font-medium text-ink-800 mb-1">
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-courtyard-700 ml-1">*</span>}
         </label>
       )}
       
@@ -63,7 +63,7 @@ const Input: React.FC<InputProps> = ({
       />
       
       {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
+        <p className="mt-1 text-sm text-laterite-600">{error}</p>
       )}
     </div>
   );

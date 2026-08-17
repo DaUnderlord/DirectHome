@@ -74,7 +74,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-ink-950/40 backdrop-blur-sm z-40 transition-opacity duration-300 ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={onClose}
@@ -82,16 +82,18 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
       />
 
       <nav
-        className={`fixed top-0 left-0 h-full w-80 max-w-[85vw] z-50 bg-charcoal-900 border-r border-charcoal-700 transform transition-transform duration-300 ease-out ${
+        className={`fixed top-0 left-0 h-full w-80 max-w-[85vw] z-50 bg-paper-50 border-r border-paper-200 transform transition-transform duration-300 ease-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         aria-label="Mobile navigation"
       >
-        <div className="flex items-center justify-between p-6 border-b border-charcoal-700">
-          <h2 className="text-xl font-display font-bold text-gold-400">DirectHome</h2>
+        <div className="flex items-center justify-between p-6 border-b border-paper-200">
+          <h2 className="text-xl font-display font-semibold text-ink-950">
+            Direct<span className="italic text-courtyard-700">Home</span>
+          </h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-stone-400 hover:bg-charcoal-800 transition"
+            className="p-2 rounded-sm text-ink-600 hover:bg-paper-200 transition"
             aria-label="Close menu"
           >
             <IconX size={20} />
@@ -110,10 +112,10 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   <li key={item.path}>
                     <Link
                       to={item.path}
-                      className={`flex items-center space-x-4 px-4 py-3 rounded-xl transition-colors ${
+                      className={`flex items-center space-x-4 px-4 py-3 rounded-sm transition-colors ${
                         isActive
-                          ? 'bg-gold-500/15 text-gold-400 border border-gold-500/30'
-                          : 'text-stone-300 hover:bg-charcoal-800'
+                          ? 'bg-courtyard-50 text-courtyard-700 border border-courtyard-100'
+                          : 'text-ink-800 hover:bg-paper-100'
                       }`}
                     >
                       <Icon size={20} />
@@ -126,10 +128,10 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
         </div>
 
         {isAuthenticated && (
-          <div className="p-4 border-t border-charcoal-700">
+          <div className="p-4 border-t border-paper-200">
             <button
               onClick={handleLogout}
-              className="flex items-center space-x-4 w-full px-4 py-3 rounded-xl text-red-400 hover:bg-charcoal-800 transition"
+              className="flex items-center space-x-4 w-full px-4 py-3 rounded-sm text-laterite-600 hover:bg-paper-100 transition"
             >
               <IconLogout size={20} />
               <span className="font-medium">Logout</span>

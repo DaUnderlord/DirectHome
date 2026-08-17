@@ -6,46 +6,40 @@ interface StepIndicatorProps {
   currentStep: number;
 }
 
-const StepIndicator: React.FC<StepIndicatorProps> = ({ steps, currentStep }) => {
+const StepIndicator: React.FC<StepIndicatorProps> = ({ steps }) => {
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between">
         {steps.map((step, index) => (
           <React.Fragment key={step.step}>
-            {/* Step Circle */}
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center min-w-0">
               <div
-                className={`flex items-center justify-center w-8 h-8 rounded-full ${
+                className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
                   step.isCompleted
-                    ? 'bg-green-500 text-white'
+                    ? 'bg-courtyard-700 text-paper-50'
                     : step.isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-500'
-                } transition-colors duration-200`}
+                    ? 'bg-courtyard-700 text-paper-50'
+                    : 'bg-paper-200 text-ink-400'
+                }`}
               >
                 {step.isCompleted ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 ) : (
-                  <span className="text-sm font-medium">{step.step}</span>
+                  <span>{step.step}</span>
                 )}
               </div>
-              <span className={`mt-2 text-xs ${
-                step.isActive ? 'text-blue-600 font-medium' : 'text-gray-500'
+              <span className={`mt-2 text-[11px] sm:text-xs truncate max-w-[4.5rem] sm:max-w-none text-center ${
+                step.isActive ? 'text-courtyard-700 font-medium' : 'text-ink-400'
               }`}>
                 {step.title}
               </span>
             </div>
             
-            {/* Connector Line (except after the last step) */}
             {index < steps.length - 1 && (
               <div className="flex-1 mx-2">
-                <div
-                  className={`h-1 ${
-                    step.isCompleted ? 'bg-green-500' : 'bg-gray-200'
-                  }`}
-                ></div>
+                <div className={`h-px ${step.isCompleted ? 'bg-courtyard-700' : 'bg-paper-300'}`} />
               </div>
             )}
           </React.Fragment>

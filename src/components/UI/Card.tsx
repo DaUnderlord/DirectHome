@@ -28,7 +28,7 @@ const Card: React.FC<CardProps> = ({
     none: '',
     sm: 'shadow-sm',
     md: 'shadow-md',
-    lg: 'shadow-lg'
+    lg: 'shadow-folio'
   };
 
   const roundedClasses = {
@@ -43,12 +43,12 @@ const Card: React.FC<CardProps> = ({
   return (
     <div 
       className={`
-        bg-charcoal-900
-        text-stone-100 
+        bg-paper-50
+        text-ink-950 
         ${paddingClasses[padding]} 
         ${shadowClasses[shadow]} 
         ${roundedClasses[rounded]} 
-        ${border ? 'border border-charcoal-700' : ''} 
+        ${border ? 'border border-paper-200' : ''} 
         ${className}
       `}
     >

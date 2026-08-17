@@ -4,7 +4,7 @@ import RegisterForm from './RegisterForm';
 
 const RegisterPage: React.FC = () => {
   return (
-    <AuthLayout title="Create an Account" subtitle="Join DirectHome to find your perfect property">
+    <AuthLayout title="Create an account" subtitle="Join DirectHome to plan a build, check rent, and get ready for listings.">
       <RegisterForm />
     </AuthLayout>
   );

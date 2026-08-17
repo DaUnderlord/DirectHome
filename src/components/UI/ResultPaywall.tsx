@@ -77,41 +77,41 @@ const ResultPaywall: React.FC<ResultPaywallProps> = ({
   };
 
   return (
-    <div className="mt-8 rounded-2xl border border-gold-500/25 bg-charcoal-800/60 p-6 md:p-8 text-center">
-      <p className="text-gold-400 text-[11px] tracking-[0.28em] uppercase mb-3">Unlock report</p>
-      <h3 className="font-display text-2xl font-bold text-stone-100 mb-2">{title}</h3>
-      <p className="text-stone-400 max-w-md mx-auto mb-6">
-        Your estimate is ready. Pay <span className="text-gold-400 font-semibold">₦{TOOL_REPORT_PRICE_NGN}</span> to
+    <div className="mt-8 border border-brass-500/30 bg-paper-100 p-6 md:p-8 text-center">
+      <p className="text-courtyard-700 text-[11px] tracking-[0.28em] uppercase mb-3">Unlock report</p>
+      <h3 className="font-display text-2xl font-semibold text-ink-950 mb-2">{title}</h3>
+      <p className="text-ink-600 max-w-md mx-auto mb-6">
+        Your estimate is ready. Pay <span className="text-courtyard-700 font-semibold">₦{TOOL_REPORT_PRICE_NGN}</span> to
         view the full breakdown. One payment unlocks this tool for the rest of your session.
       </p>
 
       <form onSubmit={handlePay} className="max-w-sm mx-auto space-y-3 text-left">
-        <label className="block text-sm text-stone-300">
+        <label className="block text-sm text-ink-800">
           Email
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full px-3 py-2.5 rounded-xl bg-charcoal-900 border border-charcoal-600 text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+            className="mt-1 w-full px-3 py-2.5 rounded-sm bg-paper-50 border border-paper-300 text-ink-950 focus:ring-2 focus:ring-courtyard-500 focus:border-courtyard-700"
             placeholder="you@email.com"
           />
         </label>
-        <label className="block text-sm text-stone-300">
-          Name <span className="text-stone-500">(optional)</span>
+        <label className="block text-sm text-ink-800">
+          Name <span className="text-ink-400">(optional)</span>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-1 w-full px-3 py-2.5 rounded-xl bg-charcoal-900 border border-charcoal-600 text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+            className="mt-1 w-full px-3 py-2.5 rounded-sm bg-paper-50 border border-paper-300 text-ink-950 focus:ring-2 focus:ring-courtyard-500 focus:border-courtyard-700"
             placeholder="Full name"
           />
         </label>
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-laterite-600">{error}</p>}
         <button
           type="submit"
           disabled={busy}
-          className="w-full mt-2 py-3 rounded-full bg-gold-500 text-charcoal-950 font-semibold hover:bg-gold-400 disabled:opacity-50"
+          className="w-full mt-2 py-3 rounded-sm bg-courtyard-700 text-paper-50 font-semibold hover:bg-courtyard-600 disabled:opacity-50"
         >
           {busy ? 'Opening checkout…' : `Pay ₦${TOOL_REPORT_PRICE_NGN}`}
         </button>

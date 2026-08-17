@@ -10,7 +10,7 @@ const TermsPage: React.FC = () => {
         path: '/terms',
       }}
       eyebrow="Legal"
-      title={<>Terms & <span className="text-gold-400">conditions</span></>}
+      title={<>Terms & <span className="italic text-courtyard-700">conditions</span></>}
       subtitle="The rules for using DirectHome — calculators now, marketplace next."
     >
         <div>

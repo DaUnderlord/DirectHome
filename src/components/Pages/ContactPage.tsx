@@ -21,7 +21,7 @@ const ContactPage: React.FC = () => {
       title={
         <>
           Talk to us. We actually{' '}
-          <span className="text-gold-400">read this</span>
+          <span className="italic text-courtyard-700">read this</span>
         </>
       }
       subtitle="Questions about the tools, the marketplace launch, or working together — send a note."
@@ -34,7 +34,7 @@ const ContactPage: React.FC = () => {
           </p>
 
           {sent ? (
-            <div className="rounded-xl border border-gold-500/30 bg-gold-500/10 px-4 py-3 text-sm text-gold-200">
+            <div className="rounded-sm border border-courtyard-100 bg-courtyard-50 px-4 py-3 text-sm text-courtyard-800">
               Thanks — we have your message and will get back to you soon.
             </div>
           ) : (

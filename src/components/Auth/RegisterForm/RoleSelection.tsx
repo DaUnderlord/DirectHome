@@ -22,17 +22,17 @@ const RoleSelection: React.FC<RoleSelectionProps> = ({
         <div
           className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
             selectedRole === UserRole.HOME_OWNER
-              ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500 ring-opacity-50'
-              : 'border-gray-200 hover:border-blue-300'
+              ? 'border-courtyard-700 bg-courtyard-50 ring-1 ring-courtyard-700'
+              : 'border-paper-200 hover:border-courtyard-500'
           }`}
           onClick={() => onSelectRole(UserRole.HOME_OWNER)}
         >
           <div className="flex items-center mb-3">
             <div className={`p-2 rounded-full ${
-              selectedRole === UserRole.HOME_OWNER ? 'bg-blue-100' : 'bg-gray-100'
+              selectedRole === UserRole.HOME_OWNER ? 'bg-courtyard-100' : 'bg-paper-200'
             }`}>
               <Home className={`h-6 w-6 ${
-                selectedRole === UserRole.HOME_OWNER ? 'text-blue-600' : 'text-gray-600'
+                selectedRole === UserRole.HOME_OWNER ? 'text-courtyard-700' : 'text-ink-600'
               }`} />
             </div>
             <h4 className="ml-3 text-lg font-medium">Home Owner</h4>
@@ -68,17 +68,17 @@ const RoleSelection: React.FC<RoleSelectionProps> = ({
         <div
           className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
             selectedRole === UserRole.HOME_SEEKER
-              ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500 ring-opacity-50'
-              : 'border-gray-200 hover:border-blue-300'
+              ? 'border-courtyard-700 bg-courtyard-50 ring-1 ring-courtyard-700'
+              : 'border-paper-200 hover:border-courtyard-500'
           }`}
           onClick={() => onSelectRole(UserRole.HOME_SEEKER)}
         >
           <div className="flex items-center mb-3">
             <div className={`p-2 rounded-full ${
-              selectedRole === UserRole.HOME_SEEKER ? 'bg-blue-100' : 'bg-gray-100'
+              selectedRole === UserRole.HOME_SEEKER ? 'bg-courtyard-100' : 'bg-paper-200'
             }`}>
               <Search className={`h-6 w-6 ${
-                selectedRole === UserRole.HOME_SEEKER ? 'text-blue-600' : 'text-gray-600'
+                selectedRole === UserRole.HOME_SEEKER ? 'text-courtyard-700' : 'text-ink-600'
               }`} />
             </div>
             <h4 className="ml-3 text-lg font-medium">Home Seeker</h4>

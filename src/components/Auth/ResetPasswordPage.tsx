@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import AuthLayout from './AuthLayout';
 
+const fieldClass =
+  'mt-1 w-full px-3 py-2.5 rounded-sm bg-paper-50 border border-paper-300 text-ink-950 focus:ring-2 focus:ring-courtyard-500 focus:border-courtyard-700';
+
 const ResetPasswordPage: React.FC = () => {
   const { confirmResetPassword, error } = useAuth();
   const navigate = useNavigate();
@@ -47,22 +50,22 @@ const ResetPasswordPage: React.FC = () => {
     <AuthLayout title="Reset password" subtitle="Choose a new password for your account.">
       {success ? (
         <div className="text-center space-y-4">
-          <div className="rounded-xl border border-gold-500/30 bg-gold-500/10 px-4 py-3 text-sm text-gold-200">
+          <div className="border border-courtyard-100 bg-courtyard-50 px-4 py-3 text-sm text-courtyard-800">
             Password updated. Redirecting to sign in…
           </div>
-          <Link to="/auth/login" className="text-gold-400 hover:text-gold-300 text-sm font-medium">
+          <Link to="/auth/login" className="text-courtyard-700 hover:text-courtyard-600 text-sm font-medium">
             Go to sign in
           </Link>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {(localError || error) && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            <div className="border border-laterite-500/30 bg-laterite-500/10 px-4 py-3 text-sm text-laterite-600">
               {localError || error?.message}
             </div>
           )}
 
-          <label htmlFor="password" className="block text-sm text-stone-300">
+          <label htmlFor="password" className="block text-sm text-ink-800">
             New password
             <input
               id="password"
@@ -71,11 +74,11 @@ const ResetPasswordPage: React.FC = () => {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full px-3 py-2.5 rounded-xl bg-charcoal-900 border border-charcoal-600 text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+              className={fieldClass}
             />
           </label>
 
-          <label htmlFor="confirmPassword" className="block text-sm text-stone-300">
+          <label htmlFor="confirmPassword" className="block text-sm text-ink-800">
             Confirm password
             <input
               id="confirmPassword"
@@ -84,14 +87,14 @@ const ResetPasswordPage: React.FC = () => {
               minLength={8}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="mt-1 w-full px-3 py-2.5 rounded-xl bg-charcoal-900 border border-charcoal-600 text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+              className={fieldClass}
             />
           </label>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 rounded-full bg-gold-500 text-charcoal-950 font-semibold hover:bg-gold-400 disabled:opacity-50"
+            className="w-full py-3 rounded-sm bg-courtyard-700 text-paper-50 font-semibold hover:bg-courtyard-600 disabled:opacity-50"
           >
             {isSubmitting ? 'Updating…' : 'Update password'}
           </button>

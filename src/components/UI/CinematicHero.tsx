@@ -1,13 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { IconHammer, IconCalculator } from '@tabler/icons-react';
-import pinMark from '../../assets/dh-pin-mark.png';
-import heroImage from '../../assets/hero-lagos-night.png';
+import PinMark from './PinMark';
+import heroImage from '../../assets/hero-courtyard-day.png';
 import { useIntro } from '../../context/IntroContext';
 
 const CinematicHero: React.FC = () => {
   const { phase, beginReveal, complete, skip } = useIntro();
-  const pinRef = useRef<HTMLImageElement>(null);
+  const pinRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     const lock = phase === 'playing';
@@ -48,58 +48,58 @@ const CinematicHero: React.FC = () => {
   const introActive = phase !== 'done';
 
   return (
-    <section className={`cinematic-hero ${phase}`}>
-      <div className="cinematic-photo" style={{ backgroundImage: `url(${heroImage})` }} />
-      <div className="cinematic-shade" />
-      <div className="cinematic-gold" />
-      <div className="film-grain" />
+    <section className={`lookbook-hero ${phase}`}>
+      <div className="lookbook-paper">
+        <div className="paper-grain" />
+        <div className="lookbook-plan" />
 
-      {introActive && (
-        <div className="cinematic-stage" aria-hidden={phase === 'done'}>
-          <img
-            ref={pinRef}
-            src={pinMark}
-            alt=""
-            className={`cinematic-pin ${phase === 'revealing' ? 'is-docking' : ''}`}
-          />
-          <p className={`cinematic-wordmark ${phase === 'revealing' ? 'is-leaving' : ''}`}>
-            Direct<span>Home</span>
+        <div className={`lookbook-copy ${phase !== 'playing' ? 'is-in' : ''}`}>
+          <p className="lookbook-kicker">Built for Nigeria</p>
+          <h1 className="font-display text-[2.6rem] md:text-5xl lg:text-[4.15rem] font-semibold text-ink-950 leading-[1.08] tracking-tight">
+            Tools for the
+            <br />
+            <span className="italic text-courtyard-700">Nigerian house.</span>
+          </h1>
+          <span className="brass-rule mt-7 mb-6" />
+          <p className="text-lg md:text-xl text-ink-600 leading-relaxed max-w-xl">
+            A construction cost estimator and rent calculator priced for Lagos, Abuja, Port Harcourt,
+            and the rest of the country — before you break ground or sign a lease.
           </p>
-          <span className={`cinematic-line ${phase === 'revealing' ? 'is-leaving' : ''}`} />
-          <p className={`cinematic-kicker ${phase === 'revealing' ? 'is-leaving' : ''}`}>
-            Nigeria · Build · Rent · Direct
-          </p>
-        </div>
-      )}
-
-      <div className={`cinematic-copy ${phase !== 'playing' ? 'is-in' : ''}`}>
-        <h1 className="font-display text-4xl md:text-5xl lg:text-[4.35rem] font-bold text-stone-50 leading-[1.05] tracking-tight">
-          Plan your build.
-          <br />
-          <span className="text-gold-400">Budget your rent.</span>
-        </h1>
-        <span className="gold-rule mt-7 mb-6" />
-        <p className="text-lg md:text-xl text-stone-300/90 leading-relaxed max-w-2xl">
-          Two flagship tools you won&apos;t find anywhere else — a Construction Cost Estimator and
-          Rent Calculator tuned for Nigerian prices, locations, and market realities.
-        </p>
-        <div className="mt-10 flex flex-wrap gap-4">
-          <Link
-            to="/construction-estimator"
-            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-gold-500 text-charcoal-950 font-semibold hover:bg-gold-400 transition-colors"
-          >
-            <IconHammer size={18} />
-            Estimate Build Cost
-          </Link>
-          <Link
-            to="/calculator"
-            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-stone-400/30 text-stone-100 font-semibold hover:border-gold-500/50 hover:text-gold-300 transition-colors backdrop-blur-sm"
-          >
-            <IconCalculator size={18} />
-            Rent Calculator
-          </Link>
+          <div className="mt-10 flex flex-wrap gap-3">
+            <Link to="/construction-estimator" className="btn-courtyard">
+              <IconHammer size={18} />
+              Estimate a build
+            </Link>
+            <Link to="/calculator" className="btn-outline-ink">
+              <IconCalculator size={18} />
+              Rent calculator
+            </Link>
+          </div>
         </div>
       </div>
+
+      <div className="lookbook-plate">
+        <img src={heroImage} alt="Tropical-modern courtyard house in afternoon light" />
+      </div>
+
+      {introActive && (
+        <>
+          <div className="lookbook-curtain" aria-hidden />
+          <div className="cinematic-stage" aria-hidden="true">
+            <PinMark
+              ref={pinRef}
+              className={`cinematic-pin ${phase === 'revealing' ? 'is-docking' : ''}`}
+            />
+            <p className={`cinematic-wordmark ${phase === 'revealing' ? 'is-leaving' : ''}`}>
+              Direct<span>Home</span>
+            </p>
+            <span className={`cinematic-line ${phase === 'revealing' ? 'is-leaving' : ''}`} />
+            <p className={`cinematic-kicker ${phase === 'revealing' ? 'is-leaving' : ''}`}>
+              Nigeria · Build · Rent · Direct
+            </p>
+          </div>
+        </>
+      )}
 
       {introActive && (
         <button type="button" className="intro-skip" onClick={skip}>

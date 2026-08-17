@@ -13,7 +13,7 @@ const CareersPage: React.FC = () => {
       title={
         <>
           Help us take the agent out of{' '}
-          <span className="text-gold-400">housing</span>
+          <span className="italic text-courtyard-700">housing</span>
         </>
       }
       subtitle="We are a small team. If you care about real estate, product, and Nigeria, we want to hear from you."

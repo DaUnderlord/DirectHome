@@ -85,23 +85,23 @@ const VerificationPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-charcoal-950 dh-app flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+    <div className="min-h-screen bg-paper-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md px-4">
         <div className="flex justify-center">
-          <div className="w-16 h-16 bg-gold-500/15 border border-gold-500/30 rounded-full flex items-center justify-center">
-            <IconMail className="w-8 h-8 text-gold-400" />
+          <div className="w-16 h-16 bg-courtyard-50 border border-courtyard-100 flex items-center justify-center">
+            <IconMail className="w-8 h-8 text-courtyard-700" />
           </div>
         </div>
-        <h2 className="mt-6 text-center font-display text-3xl font-bold text-stone-100">
+        <h2 className="mt-6 text-center font-display text-3xl font-semibold text-ink-950">
           Verify your account
         </h2>
-        <p className="mt-2 text-center text-sm text-stone-400">
+        <p className="mt-2 text-center text-sm text-ink-600">
           We've sent verification codes to secure your account
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-charcoal-900/80 border border-charcoal-700 py-8 px-4 shadow sm:rounded-2xl sm:px-10">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
+        <div className="bg-paper-50 border border-paper-200 py-8 px-4 sm:px-10">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-600">{error}</p>
@@ -127,7 +127,7 @@ const VerificationPage: React.FC = () => {
                     value={emailCode}
                     onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="000000"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-center text-lg font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-paper-300 rounded-sm bg-paper-50 text-center text-lg font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-courtyard-500 focus:border-courtyard-700"
                     maxLength={6}
                   />
                 </div>
@@ -137,7 +137,7 @@ const VerificationPage: React.FC = () => {
                     type="button"
                     onClick={() => handleResendCode('email')}
                     disabled={resendCooldown > 0}
-                    className="text-sm text-blue-600 hover:text-blue-500 disabled:text-gray-400 flex items-center"
+                    className="text-sm text-courtyard-700 hover:text-courtyard-600 disabled:text-ink-400 flex items-center"
                   >
                     <IconRefresh className="w-4 h-4 mr-1" />
                     {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
@@ -147,7 +147,7 @@ const VerificationPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={emailCode.length !== 6 || isVerifyingEmail}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex justify-center py-2 px-4 rounded-sm text-sm font-medium text-paper-50 bg-courtyard-700 hover:bg-courtyard-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isVerifyingEmail ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -188,7 +188,7 @@ const VerificationPage: React.FC = () => {
                     value={phoneCode}
                     onChange={(e) => setPhoneCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="000000"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-center text-lg font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-paper-300 rounded-sm bg-paper-50 text-center text-lg font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-courtyard-500 focus:border-courtyard-700"
                     maxLength={6}
                   />
                 </div>
@@ -198,7 +198,7 @@ const VerificationPage: React.FC = () => {
                     type="button"
                     onClick={() => handleResendCode('phone')}
                     disabled={resendCooldown > 0}
-                    className="text-sm text-blue-600 hover:text-blue-500 disabled:text-gray-400 flex items-center"
+                    className="text-sm text-courtyard-700 hover:text-courtyard-600 disabled:text-ink-400 flex items-center"
                   >
                     <IconRefresh className="w-4 h-4 mr-1" />
                     {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
@@ -208,7 +208,7 @@ const VerificationPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={phoneCode.length !== 6 || isVerifyingPhone}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex justify-center py-2 px-4 rounded-sm text-sm font-medium text-paper-50 bg-courtyard-700 hover:bg-courtyard-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isVerifyingPhone ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

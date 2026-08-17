@@ -80,14 +80,14 @@ const ViewingManagement: React.FC = () => {
 
   if (isLoadingViewings) {
     return (
-      <div className="min-h-screen bg-charcoal-950 flex items-center justify-center">
+      <div className="min-h-screen bg-paper-100 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-charcoal-950 py-8">
+    <div className="min-h-screen bg-paper-100 py-8">
       <Container size="xl">
         {/* Header */}
         <div className="mb-8">

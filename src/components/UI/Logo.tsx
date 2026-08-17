@@ -1,33 +1,35 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import pinMark from '../../assets/dh-pin-mark.png';
+import PinMark from './PinMark';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
   withText?: boolean;
   markTarget?: boolean;
+  inverted?: boolean;
 }
 
-const Logo: React.FC<LogoProps> = ({ size = 'md', markTarget = false }) => {
+const Logo: React.FC<LogoProps> = ({ size = 'md', markTarget = false, inverted = false }) => {
   const pinSizes = {
-    sm: 'h-8 w-8',
-    md: 'h-10 w-10',
-    lg: 'h-12 w-12',
+    sm: 'h-8 w-6',
+    md: 'h-10 w-8',
+    lg: 'h-12 w-9',
   };
 
   return (
     <Link
       to="/"
-      className="flex items-center gap-2.5 no-underline"
+      className="flex items-center gap-2 no-underline"
       id={markTarget ? 'dh-logo-target' : undefined}
     >
-      <img
-        src={pinMark}
-        alt=""
-        className={`${pinSizes[size]} object-contain mix-blend-lighten`}
-      />
-      <span className="font-display font-bold tracking-[0.18em] uppercase text-[11px] sm:text-xs text-stone-100">
-        Direct<span className="text-gold-400">Home</span>
+      <PinMark inverted={inverted} className={`${pinSizes[size]} shrink-0`} />
+      <span
+        className={`font-display font-semibold text-[1.05rem] sm:text-lg leading-none ${
+          inverted ? 'text-paper-50' : 'text-ink-950'
+        }`}
+      >
+        Direct
+        <span className={`italic ${inverted ? 'text-paper-200' : 'text-courtyard-700'}`}>Home</span>
       </span>
     </Link>
   );
