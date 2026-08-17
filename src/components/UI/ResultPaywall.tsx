@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import {
+  createPaymentRef,
   isFlutterwaveConfigured,
   openFlutterwaveCheckout,
+  verifyPaidReport,
 } from '../../services/flutterwave';
 import {
   PaidToolId,
@@ -9,6 +11,7 @@ import {
   isToolUnlocked,
   unlockTool,
 } from '../../constants/toolPricing';
+import { useAuth } from '../../context/AuthContext';
 
 interface ResultPaywallProps {
   toolId: PaidToolId;
@@ -21,8 +24,11 @@ const ResultPaywall: React.FC<ResultPaywallProps> = ({
   title = 'Unlock your results',
   onUnlocked,
 }) => {
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
+  const { user } = useAuth();
+  const [email, setEmail] = useState(user?.email || '');
+  const [name, setName] = useState(
+    [user?.firstName, user?.lastName].filter(Boolean).join(' ')
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,18 +38,13 @@ const ResultPaywall: React.FC<ResultPaywallProps> = ({
 
     const trimmed = email.trim();
     if (!trimmed || !trimmed.includes('@')) {
-      setError('Enter a valid email so we can send your receipt.');
+      setError('Enter a valid email so Flutterwave can send your receipt.');
       return;
     }
 
     setBusy(true);
     try {
       if (!isFlutterwaveConfigured()) {
-        if (import.meta.env.DEV) {
-          unlockTool(toolId);
-          onUnlocked();
-          return;
-        }
         setError('Payments are not configured yet. Add a Flutterwave public key.');
         return;
       }
@@ -54,21 +55,36 @@ const ResultPaywall: React.FC<ResultPaywallProps> = ({
         name: name.trim() || 'DirectHome customer',
         title: 'DirectHome',
         description: `${title} — ₦${TOOL_REPORT_PRICE_NGN}`,
-        meta: { toolId },
+        txRef: createPaymentRef(toolId),
+        meta: { toolId, userId: user?.id || '' },
       });
-
-      if (result.status === 'successful') {
-        unlockTool(toolId);
-        onUnlocked();
-        return;
-      }
 
       if (result.status === 'cancelled') {
         setError('Payment was cancelled. Results stay locked until payment is complete.');
         return;
       }
 
-      setError('Payment did not go through. Try again.');
+      if (result.status !== 'successful' || !result.transactionId) {
+        setError('Payment did not go through. Try again.');
+        return;
+      }
+
+      const verified = await verifyPaidReport({
+        transactionId: result.transactionId,
+        txRef: result.txRef,
+        toolId,
+        customerEmail: trimmed,
+        customerName: name.trim() || undefined,
+        userId: user?.id,
+      });
+
+      if (!verified.ok) {
+        setError(verified.error || 'Payment could not be verified. If you were charged, contact support.');
+        return;
+      }
+
+      unlockTool(toolId);
+      onUnlocked();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Payment failed. Try again.');
     } finally {

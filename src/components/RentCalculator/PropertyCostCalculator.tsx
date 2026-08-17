@@ -8,6 +8,7 @@ import {
 import { useRentCalculator } from '../../hooks/useRentCalculator';
 import { AdditionalCost, RentPaymentFrequency } from '../../types/rentCalculator';
 import { PaidResultsGate } from '../UI/ResultPaywall';
+import NumberField from '../UI/NumberField';
 
 const PropertyCostCalculator: React.FC = () => {
   const {
@@ -34,8 +35,8 @@ const PropertyCostCalculator: React.FC = () => {
     
     if (type === 'checkbox') {
       setPropertyCostInput({ [name]: (e.target as HTMLInputElement).checked });
-    } else if (type === 'number') {
-      setPropertyCostInput({ [name]: parseFloat(value) || 0 });
+    } else if (type === 'number' || e.target.getAttribute('inputmode') === 'decimal' || e.target.getAttribute('inputmode') === 'numeric') {
+      setPropertyCostInput({ [name]: value === '' ? 0 : Number(value) || 0 });
     } else {
       setPropertyCostInput({ [name]: value });
     }
@@ -47,8 +48,8 @@ const PropertyCostCalculator: React.FC = () => {
     
     if (type === 'checkbox') {
       setNewCost({ ...newCost, [name]: (e.target as HTMLInputElement).checked });
-    } else if (type === 'number') {
-      setNewCost({ ...newCost, [name]: parseFloat(value) || 0 });
+    } else if (type === 'number' || e.target.getAttribute('inputmode') === 'decimal' || e.target.getAttribute('inputmode') === 'numeric') {
+      setNewCost({ ...newCost, [name]: value === '' ? 0 : Number(value) || 0 });
     } else {
       setNewCost({ ...newCost, [name]: value });
     }
@@ -115,26 +116,16 @@ const PropertyCostCalculator: React.FC = () => {
       
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Base Rent/Price
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500">₦</span>
-              </div>
-              <input
-                type="number"
-                name="baseRent"
-                value={propertyCostInput.baseRent || ''}
-                onChange={handleInputChange}
-                placeholder="e.g., 200000"
-                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <p className="mt-1 text-xs text-gray-500">Base rent or purchase price</p>
-          </div>
+          <NumberField
+            name="baseRent"
+            label="Base Rent/Price"
+            prefix="₦"
+            value={propertyCostInput.baseRent}
+            min={0}
+            placeholder="e.g., 200000"
+            hint="Base rent or purchase price"
+            onChange={(baseRent) => setPropertyCostInput({ baseRent })}
+          />
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -155,41 +146,25 @@ const PropertyCostCalculator: React.FC = () => {
             <p className="mt-1 text-xs text-gray-500">How often you pay the base amount</p>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Security Deposit
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500">₦</span>
-              </div>
-              <input
-                type="number"
-                name="securityDeposit"
-                value={propertyCostInput.securityDeposit || ''}
-                onChange={handleInputChange}
-                placeholder="e.g., 400000"
-                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <p className="mt-1 text-xs text-gray-500">Refundable security deposit</p>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Lease Term (months)
-            </label>
-            <input
-              type="number"
-              name="leaseTermMonths"
-              value={propertyCostInput.leaseTermMonths || ''}
-              onChange={handleInputChange}
-              placeholder="e.g., 12"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              min="1"
-            />
-            <p className="mt-1 text-xs text-gray-500">Length of the lease in months</p>
-          </div>
+          <NumberField
+            name="securityDeposit"
+            label="Security Deposit"
+            prefix="₦"
+            value={propertyCostInput.securityDeposit}
+            min={0}
+            placeholder="e.g., 400000"
+            hint="Refundable security deposit"
+            onChange={(securityDeposit) => setPropertyCostInput({ securityDeposit })}
+          />
+          <NumberField
+            name="leaseTermMonths"
+            label="Lease Term (months)"
+            value={propertyCostInput.leaseTermMonths || 12}
+            min={1}
+            placeholder="e.g., 12"
+            hint="Length of the lease in months"
+            onChange={(leaseTermMonths) => setPropertyCostInput({ leaseTermMonths })}
+          />
           
           <div className="flex items-center space-x-6">
             <div className="flex items-center">
@@ -270,7 +245,8 @@ const PropertyCostCalculator: React.FC = () => {
                       <span className="text-gray-500">₦</span>
                     </div>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
                       name="amount"
                       value={newCost.amount || ''}
                       onChange={handleNewCostChange}

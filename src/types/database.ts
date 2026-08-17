@@ -1352,6 +1352,62 @@ export type Database = {
           },
         ]
       }
+      tool_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          customer_email: string
+          customer_name: string | null
+          customer_phone: string | null
+          flutterwave_transaction_id: string
+          id: string
+          payment_type: string | null
+          status: string
+          tool_id: string
+          tx_ref: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          customer_email: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          flutterwave_transaction_id: string
+          id?: string
+          payment_type?: string | null
+          status?: string
+          tool_id: string
+          tx_ref: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          customer_email?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          flutterwave_transaction_id?: string
+          id?: string
+          payment_type?: string | null
+          status?: string
+          tool_id?: string
+          tx_ref?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_applications: {
         Row: {
           applicant_id: string

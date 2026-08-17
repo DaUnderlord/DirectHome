@@ -35,8 +35,8 @@ const ToolShell: React.FC<ToolShellProps> = ({
         compact
       />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20 pb-16">
-        <div className="border border-paper-200 bg-paper-50 p-6 md:p-10 shadow-folio dh-tool">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 md:-mt-8 relative z-20 pb-24 md:pb-16">
+        <div className="border border-paper-200 bg-paper-50 p-4 sm:p-6 md:p-10 shadow-folio dh-tool">
           {children}
         </div>
 

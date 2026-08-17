@@ -1,4 +1,6 @@
-const FLUTTERWAVE_PUBLIC_KEY = import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY as string | undefined;
+const FLUTTERWAVE_PUBLIC_KEY = String(
+  import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY || ''
+).trim();
 
 export interface FlutterwaveCheckoutOptions {
   amount: number;
@@ -45,14 +47,43 @@ function loadFlutterwaveScript(): Promise<void> {
   });
 }
 
+function isPaidStatus(status?: string) {
+  return status === 'successful' || status === 'completed';
+}
+
 export function isFlutterwaveConfigured(): boolean {
-  return Boolean(FLUTTERWAVE_PUBLIC_KEY);
+  return FLUTTERWAVE_PUBLIC_KEY.length > 0;
+}
+
+export function createPaymentRef(toolId: string) {
+  const nonce = crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `DH-${toolId}-${nonce}`;
+}
+
+export async function verifyPaidReport(params: {
+  transactionId: string;
+  txRef: string;
+  toolId: string;
+  customerEmail?: string;
+  customerName?: string;
+  userId?: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const response = await fetch('/api/verify-flutterwave', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  const payload = (await response.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+  if (!response.ok || !payload?.ok) {
+    return { ok: false, error: payload?.error || 'Payment could not be verified.' };
+  }
+  return { ok: true };
 }
 
 export async function openFlutterwaveCheckout(
   options: FlutterwaveCheckoutOptions
 ): Promise<FlutterwaveCheckoutResult> {
-  const txRef = options.txRef || `DH-${Date.now()}`;
+  const txRef = options.txRef || createPaymentRef('report');
 
   if (!FLUTTERWAVE_PUBLIC_KEY) {
     console.warn('DirectHome: VITE_FLUTTERWAVE_PUBLIC_KEY is not set. Payment checkout skipped.');
@@ -83,17 +114,21 @@ export async function openFlutterwaveCheckout(
       customizations: {
         title: options.title,
         description: options.description || 'DirectHome',
-        logo: '/dh-pin-mark.png',
+        logo: '/favicon.png',
       },
       meta: options.meta,
-      callback: (response: { status?: string; transaction_id?: string }) => {
+      callback: (response: { status?: string; transaction_id?: string | number }) => {
         settle({
-          status: response?.status === 'successful' ? 'successful' : 'failed',
+          status: isPaidStatus(response?.status) ? 'successful' : 'failed',
           transactionId: response?.transaction_id ? String(response.transaction_id) : undefined,
           txRef,
         });
       },
-      onclose: () => settle({ status: 'cancelled', txRef }),
+      onclose: () => {
+        window.setTimeout(() => {
+          if (!settled) settle({ status: 'cancelled', txRef });
+        }, 400);
+      },
     });
   });
 }

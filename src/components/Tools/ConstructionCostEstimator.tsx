@@ -19,6 +19,7 @@ import {
 import constructionCostService from '../../services/constructionCostService';
 import ToolShell from '../UI/ToolShell';
 import ResultPaywall, { useToolUnlock } from '../UI/ResultPaywall';
+import NumberField, { toolSelectClass } from '../UI/NumberField';
 import plateBuild from '../../assets/plate-build.png';
 
 const BREAKDOWN_BAR_COLORS: Record<string, string> = {
@@ -29,11 +30,6 @@ const BREAKDOWN_BAR_COLORS: Record<string, string> = {
   'Add-ons': 'bg-teal-500',
   Contingency: 'bg-orange-500',
   'VAT (7.5%)': 'bg-red-500',
-};
-
-const parsePositiveInt = (value: string, fallback: number, min = 1): number => {
-  const parsed = parseInt(value, 10);
-  return Number.isFinite(parsed) && parsed >= min ? parsed : fallback;
 };
 
 const ESTIMATOR_FAQ = [
@@ -214,17 +210,15 @@ specific site requirements, and material availability.
   };
 
   const renderStep1 = () => (
-    <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-stone-100">Building Type & Size</h3>
-      
-      <div>
-        <label className="block text-sm font-medium text-stone-300 mb-2">
-          Building Type
-        </label>
+    <div className="space-y-5">
+      <h3 className="font-display text-xl font-semibold text-ink-950">Building type & size</h3>
+
+      <label className="block">
+        <span className="block text-sm font-medium text-ink-800 mb-2">Building Type</span>
         <select
           value={specs.buildingType}
           onChange={(e) => setSpecs({ ...specs, buildingType: e.target.value as BuildingType })}
-          className="w-full px-4 py-2 bg-charcoal-800 border border-charcoal-600 rounded-lg text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+          className={toolSelectClass}
         >
           <option value={BuildingType.BUNGALOW}>Bungalow</option>
           <option value={BuildingType.DUPLEX}>Duplex</option>
@@ -232,75 +226,45 @@ specific site requirements, and material availability.
           <option value={BuildingType.APARTMENT_BLOCK}>Apartment Block</option>
           <option value={BuildingType.COMMERCIAL}>Commercial Building</option>
         </select>
-      </div>
+      </label>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-stone-300 mb-2">
-            Number of Bedrooms
-          </label>
-          <input
-            type="number"
-            min="1"
-            max="20"
-            value={specs.numberOfBedrooms}
-            onChange={(e) => setSpecs({ ...specs, numberOfBedrooms: parsePositiveInt(e.target.value, specs.numberOfBedrooms) })}
-            className="w-full px-4 py-2 bg-charcoal-800 border border-charcoal-600 rounded-lg text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-stone-300 mb-2">
-            Number of Bathrooms
-          </label>
-          <input
-            type="number"
-            min="1"
-            max="20"
-            value={specs.numberOfBathrooms}
-            onChange={(e) => setSpecs({ ...specs, numberOfBathrooms: parsePositiveInt(e.target.value, specs.numberOfBathrooms) })}
-            className="w-full px-4 py-2 bg-charcoal-800 border border-charcoal-600 rounded-lg text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-stone-300 mb-2">
-            Number of Floors
-          </label>
-          <input
-            type="number"
-            min="1"
-            max="10"
-            value={specs.numberOfFloors}
-            onChange={(e) => {
-              const floors = parsePositiveInt(e.target.value, specs.numberOfFloors);
-              setSpecs({
-                ...specs,
-                numberOfFloors: floors,
-                features: floors < 3
-                  ? { ...specs.features, hasElevator: false }
-                  : specs.features
-              });
-            }}
-            className="w-full px-4 py-2 bg-charcoal-800 border border-charcoal-600 rounded-lg text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-stone-300 mb-2">
-            Total Area (sqm)
-          </label>
-          <input
-            type="number"
-            min="50"
-            max="5000"
-            value={specs.totalSquareMeters}
-            onChange={(e) => setSpecs({ ...specs, totalSquareMeters: parsePositiveInt(e.target.value, specs.totalSquareMeters, 50) })}
-            className="w-full px-4 py-2 bg-charcoal-800 border border-charcoal-600 rounded-lg text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
-          />
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <NumberField
+          label="Number of Bedrooms"
+          value={specs.numberOfBedrooms}
+          min={1}
+          max={20}
+          onChange={(numberOfBedrooms) => setSpecs({ ...specs, numberOfBedrooms })}
+        />
+        <NumberField
+          label="Number of Bathrooms"
+          value={specs.numberOfBathrooms}
+          min={1}
+          max={20}
+          onChange={(numberOfBathrooms) => setSpecs({ ...specs, numberOfBathrooms })}
+        />
+        <NumberField
+          label="Number of Floors"
+          value={specs.numberOfFloors}
+          min={1}
+          max={10}
+          onChange={(floors) =>
+            setSpecs({
+              ...specs,
+              numberOfFloors: floors,
+              features: floors < 3 ? { ...specs.features, hasElevator: false } : specs.features,
+            })
+          }
+        />
+        <NumberField
+          label="Total Area"
+          value={specs.totalSquareMeters}
+          min={50}
+          max={5000}
+          suffix="sqm"
+          hint="You can type freely — the value is checked when you leave the field."
+          onChange={(totalSquareMeters) => setSpecs({ ...specs, totalSquareMeters })}
+        />
       </div>
     </div>
   );
@@ -326,7 +290,7 @@ specific site requirements, and material availability.
               }
             });
           }}
-          className="w-full px-4 py-2 bg-charcoal-800 border border-charcoal-600 rounded-lg text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+          className={toolSelectClass}
         >
           {nigerianStates.map(state => (
             <option key={state.name} value={state.name}>
@@ -356,7 +320,7 @@ specific site requirements, and material availability.
           <button
             key={quality.value}
             onClick={() => setSpecs({ ...specs, finishingQuality: quality.value })}
-            className={`p-4 border-2 rounded-lg text-left transition-all ${
+            className={`p-4 min-h-[4.5rem] border-2 rounded-sm text-left transition-all ${
               specs.finishingQuality === quality.value
                 ? 'border-gold-500 bg-gold-500/10'
                 : 'border-charcoal-600 hover:border-charcoal-500'
@@ -394,9 +358,9 @@ specific site requirements, and material availability.
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-stone-100">Additional Features</h3>
       
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {optionalFeatures.map(feature => (
-          <label key={feature.key} className="flex items-center space-x-3 p-3 border border-charcoal-600 rounded-lg hover:bg-charcoal-800/50 cursor-pointer">
+          <label key={feature.key} className="flex items-center space-x-3 p-3 min-h-12 border border-paper-300 rounded-sm hover:bg-paper-100 cursor-pointer">
             <input
               type="checkbox"
               checked={specs.features[feature.key as keyof typeof specs.features] as boolean}
@@ -413,19 +377,17 @@ specific site requirements, and material availability.
 
       {specs.features.hasGarage && (
         <div>
-          <label className="block text-sm font-medium text-stone-300 mb-2">
-            Number of Parking Spaces
-          </label>
-          <input
-            type="number"
-            min="1"
-            max="10"
+          <NumberField
+            label="Number of Parking Spaces"
             value={specs.features.numberOfParkingSpaces}
-            onChange={(e) => setSpecs({
-              ...specs,
-              features: { ...specs.features, numberOfParkingSpaces: parsePositiveInt(e.target.value, specs.features.numberOfParkingSpaces) }
-            })}
-            className="w-full px-4 py-2 bg-charcoal-800 border border-charcoal-600 rounded-lg text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+            min={1}
+            max={10}
+            onChange={(numberOfParkingSpaces) =>
+              setSpecs({
+                ...specs,
+                features: { ...specs.features, numberOfParkingSpaces },
+              })
+            }
           />
         </div>
       )}
@@ -633,13 +595,31 @@ specific site requirements, and material availability.
       faq={ESTIMATOR_FAQ}
     >
         {/* Progress Steps */}
-        <div className="mb-8 overflow-x-auto">
-          <div className="flex items-center justify-between min-w-[480px]">
+        <div className="mb-6 md:mb-8">
+          <div className="md:hidden">
+            <p className="text-[11px] tracking-[0.28em] uppercase text-courtyard-700 font-semibold">
+              Step {Math.min(currentStep, 4)} of 4
+            </p>
+            <p className="font-display text-xl font-semibold text-ink-950 mt-1">
+              {steps[currentStep - 1]?.title}
+            </p>
+            <div className="flex gap-1.5 mt-3">
+              {steps.slice(0, 4).map((step) => (
+                <span
+                  key={step.number}
+                  className={`h-1 flex-1 rounded-full ${
+                    currentStep >= step.number ? 'bg-courtyard-700' : 'bg-paper-300'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="hidden md:flex items-center justify-between">
             {steps.map((step, index) => {
               const Icon = step.icon;
               const isActive = currentStep === step.number;
               const isCompleted = currentStep > step.number;
-              
+
               return (
                 <React.Fragment key={step.number}>
                   <div className="flex flex-col items-center">
@@ -683,17 +663,17 @@ specific site requirements, and material availability.
 
           {/* Navigation Buttons */}
           {currentStep < 5 && (
-            <div className="mt-8">
+            <div className="mt-8 sticky bottom-0 -mx-4 px-4 py-4 bg-paper-50/95 backdrop-blur-sm border-t border-paper-200 sm:static sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:border-0 sm:backdrop-blur-none">
               {validationError && (
-                <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                <div className="mb-4 rounded-sm border border-laterite-500/30 bg-laterite-500/10 px-4 py-3 text-sm text-laterite-600">
                   {validationError}
                 </div>
               )}
-            <div className="flex justify-between">
+            <div className="flex gap-3">
               <button
                 onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
                 disabled={currentStep === 1}
-                className="px-6 py-2 border border-charcoal-600 rounded-lg text-stone-300 hover:bg-charcoal-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 sm:flex-none min-h-12 px-6 py-3 border border-paper-300 rounded-sm text-ink-800 hover:bg-paper-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
@@ -701,7 +681,7 @@ specific site requirements, and material availability.
               {currentStep < 4 ? (
                 <button
                   onClick={() => setCurrentStep(currentStep + 1)}
-                  className="flex items-center px-6 py-2 bg-gold-500 text-charcoal-950 font-semibold rounded-lg hover:bg-gold-400"
+                  className="flex-1 sm:flex-none min-h-12 flex items-center justify-center px-6 py-3 bg-gold-500 text-charcoal-950 font-semibold rounded-sm hover:bg-gold-400"
                 >
                   Next
                   <IconChevronRight size={20} className="ml-1" />
@@ -709,10 +689,10 @@ specific site requirements, and material availability.
               ) : (
                 <button
                   onClick={handleCalculate}
-                  className="flex items-center px-6 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-500"
+                  className="flex-1 sm:flex-none min-h-12 flex items-center justify-center px-6 py-3 bg-emerald-600 text-white font-semibold rounded-sm hover:bg-emerald-500"
                 >
                   <IconCalculator size={20} className="mr-2" />
-                  Calculate Estimate
+                  Calculate
                 </button>
               )}
             </div>

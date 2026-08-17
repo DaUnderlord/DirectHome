@@ -27,26 +27,33 @@ const Header: React.FC<HeaderProps> = ({ toggle }) => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 h-[4.5rem] bg-paper-100 border-b border-paper-200 transition-all duration-700 ${
+      className={`fixed top-0 left-0 right-0 z-50 bg-paper-100 border-b border-paper-200 transition-all duration-700 ${
         phase === 'playing' ? 'opacity-0 pointer-events-none -translate-y-2' : 'opacity-100 translate-y-0'
       }`}
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        height: 'calc(4.5rem + env(safe-area-inset-top))',
+      }}
     >
-      <div className="h-full flex items-center justify-between px-4 sm:px-6 max-w-screen-2xl mx-auto">
+      <div className="h-[4.5rem] flex items-center justify-between px-3 sm:px-6 max-w-screen-2xl mx-auto">
         <div className="md:hidden">
           <button onClick={toggle} className={navLinkMobile} aria-label="Toggle menu">
             <IconMenu2 size={22} />
           </button>
         </div>
 
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 min-w-0">
           <div className={phase === 'playing' ? 'opacity-0' : 'opacity-100 transition-opacity duration-500 delay-300'}>
             <Logo size="md" markTarget />
           </div>
         </div>
 
-        <div className="md:hidden flex items-center space-x-2">
+        <div className="md:hidden flex items-center space-x-1">
           <Link to="/construction-estimator" className={navLinkMobile} aria-label="Construction Estimator">
             <IconHammer size={20} />
+          </Link>
+          <Link to="/calculator" className={navLinkMobile} aria-label="Rent Calculator">
+            <IconCalculator size={20} />
           </Link>
           {isAuthenticated ? (
             <Link to="/profile" className={navLinkMobile} aria-label="Profile">

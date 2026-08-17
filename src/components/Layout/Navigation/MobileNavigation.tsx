@@ -11,6 +11,7 @@ import {
   IconLogout,
   IconX
 } from '@tabler/icons-react';
+import Logo from '../../UI/Logo';
 import { useAuth } from '../../../context/AuthContext';
 
 interface MobileNavigationProps {
@@ -82,26 +83,25 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
       />
 
       <nav
-        className={`fixed top-0 left-0 h-full w-80 max-w-[85vw] z-50 bg-paper-50 border-r border-paper-200 transform transition-transform duration-300 ease-out ${
+        className={`fixed top-0 left-0 h-full w-[min(20rem,88vw)] z-50 bg-paper-50 border-r border-paper-200 transform transition-transform duration-300 ease-out flex flex-col ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
         aria-label="Mobile navigation"
       >
-        <div className="flex items-center justify-between p-6 border-b border-paper-200">
-          <h2 className="text-xl font-display font-semibold text-ink-950">
-            Direct<span className="italic text-courtyard-700">Home</span>
-          </h2>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-paper-200">
+          <Logo size="sm" />
           <button
             onClick={onClose}
-            className="p-2 rounded-sm text-ink-600 hover:bg-paper-200 transition"
+            className="p-2 min-h-11 min-w-11 rounded-sm text-ink-600 hover:bg-paper-200 transition"
             aria-label="Close menu"
           >
             <IconX size={20} />
           </button>
         </div>
 
-        <div className="flex-1 py-6">
-          <ul className="space-y-1 px-4">
+        <div className="flex-1 py-4 overflow-y-auto">
+          <ul className="space-y-1 px-3">
             {navigationItems
               .filter(item => item.show)
               .map((item) => {
@@ -112,7 +112,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   <li key={item.path}>
                     <Link
                       to={item.path}
-                      className={`flex items-center space-x-4 px-4 py-3 rounded-sm transition-colors ${
+                      className={`flex items-center space-x-4 min-h-12 px-4 py-3 rounded-sm transition-colors ${
                         isActive
                           ? 'bg-courtyard-50 text-courtyard-700 border border-courtyard-100'
                           : 'text-ink-800 hover:bg-paper-100'
@@ -128,10 +128,10 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
         </div>
 
         {isAuthenticated && (
-          <div className="p-4 border-t border-paper-200">
+          <div className="p-3 border-t border-paper-200 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <button
               onClick={handleLogout}
-              className="flex items-center space-x-4 w-full px-4 py-3 rounded-sm text-laterite-600 hover:bg-paper-100 transition"
+              className="flex items-center space-x-4 w-full min-h-12 px-4 py-3 rounded-sm text-laterite-600 hover:bg-paper-100 transition"
             >
               <IconLogout size={20} />
               <span className="font-medium">Logout</span>

@@ -41,7 +41,7 @@ const CinematicHero: React.FC = () => {
 
   useEffect(() => {
     if (phase !== 'playing') return;
-    const t = window.setTimeout(beginReveal, 2200);
+    const t = window.setTimeout(beginReveal, 1200);
     return () => window.clearTimeout(t);
   }, [phase, beginReveal]);
 
@@ -100,22 +100,22 @@ const CinematicHero: React.FC = () => {
 
         <div className={`lookbook-copy ${phase !== 'playing' ? 'is-in' : ''}`}>
           <p className="lookbook-kicker">Built for Nigeria</p>
-          <h1 className="font-display text-[2.6rem] md:text-5xl lg:text-[4.15rem] font-semibold text-ink-950 leading-[1.08] tracking-tight">
+          <h1 className="font-display text-[2.05rem] sm:text-[2.6rem] md:text-5xl lg:text-[4.15rem] font-semibold text-ink-950 leading-[1.1] tracking-tight">
             Tools for the
             <br />
             <span className="italic text-courtyard-700">Nigerian house.</span>
           </h1>
-          <span className="brass-rule mt-7 mb-6" />
-          <p className="text-lg md:text-xl text-ink-600 leading-relaxed max-w-xl">
+          <span className="brass-rule mt-6 mb-5 md:mt-7 md:mb-6" />
+          <p className="text-base sm:text-lg md:text-xl text-ink-600 leading-relaxed max-w-xl">
             A construction cost estimator and rent calculator priced for Lagos, Abuja, Port Harcourt,
             and the rest of the country — before you break ground or sign a lease.
           </p>
-          <div className="mt-10 flex flex-wrap gap-3">
-            <Link to="/construction-estimator" className="btn-courtyard">
+          <div className="mt-8 md:mt-10 flex flex-col sm:flex-row sm:flex-wrap gap-3">
+            <Link to="/construction-estimator" className="btn-courtyard justify-center w-full sm:w-auto">
               <IconHammer size={18} />
               Estimate a build
             </Link>
-            <Link to="/calculator" className="btn-outline-ink">
+            <Link to="/calculator" className="btn-outline-ink justify-center w-full sm:w-auto">
               <IconCalculator size={18} />
               Rent calculator
             </Link>

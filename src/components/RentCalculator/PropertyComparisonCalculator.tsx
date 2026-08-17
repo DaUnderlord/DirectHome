@@ -73,10 +73,10 @@ const PropertyComparisonCalculator: React.FC<PropertyComparisonCalculatorProps> 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     
-    if (type === 'number') {
+    if (type === 'number' || e.target.getAttribute('inputmode') === 'decimal' || e.target.getAttribute('inputmode') === 'numeric') {
       setNewProperty({
         ...newProperty,
-        [name]: parseFloat(value) || 0
+        [name]: value === '' ? 0 : Number(value) || 0
       });
     } else {
       setNewProperty({
@@ -264,7 +264,8 @@ const PropertyComparisonCalculator: React.FC<PropertyComparisonCalculatorProps> 
                   <span className="text-gray-500">₦</span>
                 </div>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   name="baseRent"
                   value={newProperty.baseRent || ''}
                   onChange={handleInputChange}
@@ -296,7 +297,8 @@ const PropertyComparisonCalculator: React.FC<PropertyComparisonCalculatorProps> 
                 Size (sq.m)
               </label>
               <input
-                type="number"
+                type="text"
+                  inputMode="decimal"
                 name="size"
                 value={newProperty.size || ''}
                 onChange={handleInputChange}
@@ -312,7 +314,8 @@ const PropertyComparisonCalculator: React.FC<PropertyComparisonCalculatorProps> 
                 Bedrooms
               </label>
               <input
-                type="number"
+                type="text"
+                  inputMode="decimal"
                 name="bedrooms"
                 value={newProperty.bedrooms || ''}
                 onChange={handleInputChange}
@@ -326,7 +329,8 @@ const PropertyComparisonCalculator: React.FC<PropertyComparisonCalculatorProps> 
                 Bathrooms
               </label>
               <input
-                type="number"
+                type="text"
+                  inputMode="decimal"
                 name="bathrooms"
                 value={newProperty.bathrooms || ''}
                 onChange={handleInputChange}

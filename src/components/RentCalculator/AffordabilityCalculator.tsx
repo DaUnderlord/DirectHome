@@ -7,6 +7,7 @@ import {
 import { useRentCalculator } from '../../hooks/useRentCalculator';
 import { Property } from '../../types/property';
 import { PaidResultsGate } from '../UI/ResultPaywall';
+import NumberField from '../UI/NumberField';
 
 interface AffordabilityCalculatorProps {
   property?: Property;
@@ -30,12 +31,6 @@ const AffordabilityCalculator: React.FC<AffordabilityCalculatorProps> = ({
   } = useRentCalculator();
 
   const [showInfo, setShowInfo] = useState(false);
-
-  // Handle input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setAffordabilityInput({ [name]: parseFloat(value) || 0 });
-  };
 
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
@@ -80,23 +75,15 @@ const AffordabilityCalculator: React.FC<AffordabilityCalculatorProps> = ({
           <h4 className="text-lg font-medium text-gray-900 mb-4">Check Affordability</h4>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Your Monthly Income
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500">₦</span>
-              </div>
-              <input
-                type="number"
+              <NumberField
                 name="monthlyIncome"
-                value={affordabilityInput.monthlyIncome || ''}
-                onChange={handleInputChange}
+                label="Your Monthly Income"
+                prefix="₦"
+                value={affordabilityInput.monthlyIncome}
+                min={0}
                 placeholder="e.g., 300000"
-                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                aria-label="Monthly income"
+                onChange={(monthlyIncome) => setAffordabilityInput({ monthlyIncome })}
               />
-            </div>
           </div>
 
           {affordabilityInput.monthlyIncome > 0 && (
@@ -201,117 +188,65 @@ const AffordabilityCalculator: React.FC<AffordabilityCalculatorProps> = ({
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div>
-            <label htmlFor="monthlyIncome" className="block text-sm font-medium text-gray-700 mb-1">
-              Monthly Income
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500">₦</span>
-              </div>
-              <input
-                id="monthlyIncome"
-                type="number"
-                name="monthlyIncome"
-                value={affordabilityInput.monthlyIncome || ''}
-                onChange={handleInputChange}
-                placeholder="e.g., 300000"
-                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-                aria-describedby="monthlyIncome-description"
-              />
-            </div>
-            <p id="monthlyIncome-description" className="mt-1 text-xs text-gray-500">Your total monthly income before taxes</p>
-          </div>
-
-          <div>
-            <label htmlFor="otherMonthlyExpenses" className="block text-sm font-medium text-gray-700 mb-1">
-              Other Monthly Expenses
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500">₦</span>
-              </div>
-              <input
-                id="otherMonthlyExpenses"
-                type="number"
-                name="otherMonthlyExpenses"
-                value={affordabilityInput.otherMonthlyExpenses || ''}
-                onChange={handleInputChange}
-                placeholder="e.g., 100000"
-                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-                aria-describedby="otherMonthlyExpenses-description"
-              />
-            </div>
-            <p id="otherMonthlyExpenses-description" className="mt-1 text-xs text-gray-500">All other monthly expenses excluding rent</p>
-          </div>
-
-          <div>
-            <label htmlFor="desiredSavingsRate" className="block text-sm font-medium text-gray-700 mb-1">
-              Desired Savings Rate (%)
-            </label>
-            <input
-              id="desiredSavingsRate"
-              type="number"
-              name="desiredSavingsRate"
-              value={affordabilityInput.desiredSavingsRate || ''}
-              onChange={handleInputChange}
-              placeholder="e.g., 20"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              min="0"
-              max="100"
-              aria-describedby="desiredSavingsRate-description"
-            />
-            <p id="desiredSavingsRate-description" className="mt-1 text-xs text-gray-500">Percentage of income you want to save monthly</p>
-          </div>
-
-          <div>
-            <label htmlFor="dependents" className="block text-sm font-medium text-gray-700 mb-1">
-              Number of Dependents
-            </label>
-            <input
-              id="dependents"
-              type="number"
-              name="dependents"
-              value={affordabilityInput.dependents || ''}
-              onChange={handleInputChange}
-              placeholder="e.g., 0"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              min="0"
-              aria-describedby="dependents-description"
-            />
-            <p id="dependents-description" className="mt-1 text-xs text-gray-500">Number of people financially dependent on you</p>
-          </div>
-
-          <div>
-            <label htmlFor="additionalIncomeSource" className="block text-sm font-medium text-gray-700 mb-1">
-              Additional Monthly Income
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500">₦</span>
-              </div>
-              <input
-                id="additionalIncomeSource"
-                type="number"
-                name="additionalIncomeSource"
-                value={affordabilityInput.additionalIncomeSource || ''}
-                onChange={handleInputChange}
-                placeholder="e.g., 0"
-                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                min="0"
-                aria-describedby="additionalIncomeSource-description"
-              />
-            </div>
-            <p id="additionalIncomeSource-description" className="mt-1 text-xs text-gray-500">Any additional monthly income (optional)</p>
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+          <NumberField
+            id="monthlyIncome"
+            name="monthlyIncome"
+            label="Monthly Income"
+            prefix="₦"
+            value={affordabilityInput.monthlyIncome}
+            min={0}
+            placeholder="e.g., 300000"
+            hint="Your total monthly income before taxes"
+            onChange={(monthlyIncome) => setAffordabilityInput({ monthlyIncome })}
+          />
+          <NumberField
+            id="otherMonthlyExpenses"
+            name="otherMonthlyExpenses"
+            label="Other Monthly Expenses"
+            prefix="₦"
+            value={affordabilityInput.otherMonthlyExpenses}
+            min={0}
+            placeholder="e.g., 100000"
+            hint="All other monthly expenses excluding rent"
+            onChange={(otherMonthlyExpenses) => setAffordabilityInput({ otherMonthlyExpenses })}
+          />
+          <NumberField
+            id="desiredSavingsRate"
+            name="desiredSavingsRate"
+            label="Desired Savings Rate (%)"
+            value={affordabilityInput.desiredSavingsRate}
+            min={0}
+            max={100}
+            placeholder="e.g., 20"
+            hint="Percentage of income you want to save monthly"
+            onChange={(desiredSavingsRate) => setAffordabilityInput({ desiredSavingsRate })}
+          />
+          <NumberField
+            id="dependents"
+            name="dependents"
+            label="Number of Dependents"
+            value={affordabilityInput.dependents}
+            min={0}
+            placeholder="e.g., 0"
+            hint="Number of people financially dependent on you"
+            onChange={(dependents) => setAffordabilityInput({ dependents })}
+          />
+          <NumberField
+            id="additionalIncomeSource"
+            name="additionalIncomeSource"
+            label="Additional Monthly Income"
+            prefix="₦"
+            value={affordabilityInput.additionalIncomeSource}
+            min={0}
+            placeholder="e.g., 0"
+            hint="Any additional monthly income (optional)"
+            onChange={(additionalIncomeSource) => setAffordabilityInput({ additionalIncomeSource })}
+          />
           <div className="md:col-span-2">
             <button
               type="submit"
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="w-full min-h-12 px-4 py-3 bg-blue-600 text-white rounded-sm font-semibold hover:bg-blue-700 transition-colors"
               aria-label="Calculate rent affordability"
             >
               Calculate Affordability

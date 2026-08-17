@@ -36,14 +36,13 @@ const RentCalculator: React.FC<RentCalculatorProps> = ({
   const tabInactive = isDark
     ? 'border-transparent text-stone-400 hover:text-stone-200 hover:border-charcoal-600'
     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
-  const shellClass = isDark ? '' : 'max-w-7xl mx-auto px-4 py-12';
   const cardClass = isDark
     ? 'rounded-xl border border-charcoal-700/50 overflow-hidden'
-    : 'bg-white border border-gray-200 rounded-lg overflow-hidden';
+    : 'border border-paper-200 bg-paper-50 overflow-hidden';
   const tabBarClass = isDark
     ? 'border-b border-charcoal-700/50'
-    : 'border-b border-gray-200';
-  const contentClass = isDark ? 'p-4 md:p-6' : 'p-6';
+    : 'border-b border-paper-200';
+  const contentClass = isDark ? 'p-4 md:p-6' : 'p-4 sm:p-6';
   
   // Compact version for embedding in property pages
   if (compact) {
@@ -67,25 +66,13 @@ const RentCalculator: React.FC<RentCalculatorProps> = ({
   
   // Full version for dedicated calculator page
   return (
-    <div className={shellClass}>
-      {!isDark && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
-          <div className="flex items-center space-x-3">
-            <IconCalculator size={24} className="text-blue-600" />
-            <h2 className="text-2xl font-bold text-gray-900">Rent Calculator</h2>
-          </div>
-          <p className="text-gray-600 mt-2">
-            Calculate rent affordability, property costs, and compare options to make informed decisions.
-          </p>
-        </div>
-      )}
-      
+    <div>
       <div className={cardClass}>
         <div className={tabBarClass}>
-          <div className="flex flex-wrap -mb-px overflow-x-auto">
+          <div className="flex flex-nowrap -mb-px overflow-x-auto overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <button
               onClick={() => setActiveTab('affordability')}
-              className={`inline-flex items-center py-4 px-4 text-sm font-medium border-b-2 whitespace-nowrap ${
+              className={`inline-flex items-center min-h-12 py-3 px-4 text-sm font-medium border-b-2 whitespace-nowrap ${
                 activeTab === 'affordability' ? tabActive : tabInactive
               }`}
             >
@@ -95,7 +82,7 @@ const RentCalculator: React.FC<RentCalculatorProps> = ({
             
             <button
               onClick={() => setActiveTab('property-cost')}
-              className={`inline-flex items-center py-4 px-4 text-sm font-medium border-b-2 whitespace-nowrap ${
+              className={`inline-flex items-center min-h-12 py-3 px-4 text-sm font-medium border-b-2 whitespace-nowrap ${
                 activeTab === 'property-cost' ? tabActive : tabInactive
               }`}
             >
@@ -105,7 +92,7 @@ const RentCalculator: React.FC<RentCalculatorProps> = ({
             
             <button
               onClick={() => setActiveTab('property-comparison')}
-              className={`inline-flex items-center py-4 px-4 text-sm font-medium border-b-2 whitespace-nowrap ${
+              className={`inline-flex items-center min-h-12 py-3 px-4 text-sm font-medium border-b-2 whitespace-nowrap ${
                 activeTab === 'property-comparison' ? tabActive : tabInactive
               }`}
             >
@@ -115,7 +102,7 @@ const RentCalculator: React.FC<RentCalculatorProps> = ({
             
             <button
               onClick={() => setActiveTab('market-comparison')}
-              className={`inline-flex items-center py-4 px-4 text-sm font-medium border-b-2 whitespace-nowrap ${
+              className={`inline-flex items-center min-h-12 py-3 px-4 text-sm font-medium border-b-2 whitespace-nowrap ${
                 activeTab === 'market-comparison' ? tabActive : tabInactive
               }`}
             >
@@ -125,7 +112,7 @@ const RentCalculator: React.FC<RentCalculatorProps> = ({
             
             <button
               onClick={() => setActiveTab('market-map')}
-              className={`inline-flex items-center py-4 px-4 text-sm font-medium border-b-2 whitespace-nowrap ${
+              className={`inline-flex items-center min-h-12 py-3 px-4 text-sm font-medium border-b-2 whitespace-nowrap ${
                 activeTab === 'market-map' ? tabActive : tabInactive
               }`}
             >

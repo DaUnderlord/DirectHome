@@ -27,10 +27,10 @@ const HomePage: React.FC = () => {
     <div className="min-h-screen bg-paper-100">
       <CinematicHero />
 
-      <section className="py-16 md:py-20 bg-paper-100">
+      <section className="py-12 md:py-20 bg-paper-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-courtyard-700 text-[11px] font-semibold tracking-[0.28em] uppercase mb-3">The tools</p>
-          <h2 className="font-display text-3xl md:text-5xl font-semibold text-ink-950 max-w-xl leading-tight">
+          <h2 className="font-display text-[1.85rem] md:text-5xl font-semibold text-ink-950 max-w-xl leading-tight">
             Plan the cost before you commit.
           </h2>
           <span className="brass-rule mt-6" />
@@ -46,7 +46,7 @@ const HomePage: React.FC = () => {
         </div>
         <div className="folio-essay bg-paper-50">
           <p className="text-courtyard-700 text-[11px] font-semibold tracking-[0.28em] uppercase mb-4">Build</p>
-          <h3 className="font-display text-3xl md:text-4xl font-semibold text-ink-950 mb-4">
+          <h3 className="font-display text-[1.85rem] md:text-4xl font-semibold text-ink-950 mb-4">
             Construction Cost Estimator
           </h3>
           <p className="text-ink-600 leading-relaxed mb-6">
@@ -80,7 +80,7 @@ const HomePage: React.FC = () => {
         </div>
         <div className="folio-essay bg-paper-100">
           <p className="text-courtyard-700 text-[11px] font-semibold tracking-[0.28em] uppercase mb-4">Rent</p>
-          <h3 className="font-display text-3xl md:text-4xl font-semibold text-ink-950 mb-4">
+          <h3 className="font-display text-[1.85rem] md:text-4xl font-semibold text-ink-950 mb-4">
             Rent Calculator
           </h3>
           <p className="text-ink-600 leading-relaxed mb-6">
@@ -117,7 +117,7 @@ const HomePage: React.FC = () => {
           className="absolute inset-0 opacity-[0.08]"
           style={{ backgroundImage: 'url(/compound-plan.png)', backgroundSize: '640px' }}
         />
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 text-center">
           <p className="text-paper-300 text-[11px] font-semibold tracking-[0.28em] uppercase mb-4">Marketplace</p>
           <div className="inline-flex items-center justify-center w-14 h-14 border border-white/20 mb-6">
             <IconBuildingSkyscraper size={26} className="text-paper-50" />
@@ -138,7 +138,7 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      <section className="py-20 bg-paper-50">
+      <section className="py-14 md:py-20 bg-paper-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid sm:grid-cols-3 gap-10 md:gap-6">
             {[

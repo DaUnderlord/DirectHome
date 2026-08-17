@@ -33,7 +33,7 @@ const PageHero: React.FC<PageHeroProps> = ({
               {eyebrow}
             </p>
           )}
-          <h1 className="font-display text-4xl md:text-5xl lg:text-[3.6rem] font-semibold text-ink-950 leading-[1.08] tracking-tight">
+          <h1 className="font-display text-[1.85rem] sm:text-4xl md:text-5xl lg:text-[3.6rem] font-semibold text-ink-950 leading-[1.12] tracking-tight">
             {title}
           </h1>
           <span className="brass-rule mt-7 mb-6" />

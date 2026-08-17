@@ -24,8 +24,8 @@ const MarketComparisonCalculator: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     
-    if (type === 'number') {
-      setMarketComparisonInput({ [name]: parseFloat(value) || 0 });
+    if (type === 'number' || e.target.getAttribute('inputmode') === 'decimal' || e.target.getAttribute('inputmode') === 'numeric') {
+      setMarketComparisonInput({ [name]: value === '' ? 0 : Number(value) || 0 });
     } else {
       setMarketComparisonInput({ [name]: value });
     }
@@ -170,7 +170,8 @@ const MarketComparisonCalculator: React.FC = () => {
               Property Size (sq.m)
             </label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               name="size"
               value={marketComparisonInput.size || ''}
               onChange={handleInputChange}
