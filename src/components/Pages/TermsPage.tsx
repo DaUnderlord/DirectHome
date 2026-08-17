@@ -1,12 +1,19 @@
 import React from 'react';
+import ContentPage from '../UI/ContentPage';
 
 const TermsPage: React.FC = () => {
   return (
-    <div className="container mx-auto px-8 py-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-gray-900">Terms and Conditions</h1>
-        
-        <div className="prose max-w-none">
+    <ContentPage
+      meta={{
+        title: 'Terms and Conditions — DirectHome',
+        description: 'Terms that govern your use of DirectHome calculators and services.',
+        path: '/terms',
+      }}
+      eyebrow="Legal"
+      title={<>Terms & <span className="text-gold-400">conditions</span></>}
+      subtitle="The rules for using DirectHome — calculators now, marketplace next."
+    >
+        <div>
           <p className="mb-4">
             Welcome to DirectHome. These Terms and Conditions govern your use of our platform and services.
             By accessing or using DirectHome, you agree to be bound by these Terms. Please read them carefully.
@@ -111,8 +118,7 @@ const TermsPage: React.FC = () => {
             Last updated: July 15, 2025
           </p>
         </div>
-      </div>
-    </div>
+    </ContentPage>
   );
 };
 

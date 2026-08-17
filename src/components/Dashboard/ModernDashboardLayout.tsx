@@ -48,7 +48,7 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-charcoal-950">
       <Container size="xl" className="py-8">
         <div className="space-y-8">
           {/* Welcome Header */}
@@ -63,23 +63,23 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
                 <div className="mb-6 lg:mb-0">
                   <div className="flex items-center space-x-3 mb-2">
-                    <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg">
-                      <IconSparkles size={24} className="text-white" />
+                    <div className="p-2 bg-gold-500 rounded-xl">
+                      <IconSparkles size={24} className="text-charcoal-950" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 font-medium">
+                      <p className="text-sm text-stone-400 font-medium">
                         {getGreeting()}, {user.firstName}!
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-stone-500">
                         {getRoleDisplayName(activeRole)} Dashboard
                       </p>
                     </div>
                   </div>
                   
-                  <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2 leading-tight">
+                  <h1 className="font-display text-3xl lg:text-4xl font-bold text-stone-100 mb-2 leading-tight">
                     {title}
                   </h1>
-                  <p className="text-gray-600 text-lg max-w-2xl leading-relaxed">
+                  <p className="text-stone-400 text-lg max-w-2xl leading-relaxed">
                     {subtitle}
                   </p>
                 </div>
@@ -94,16 +94,16 @@ const ModernDashboardLayout: React.FC<ModernDashboardLayoutProps> = ({
                       >
                         <div className="text-center">
                           <div className={`text-2xl font-bold mb-1 ${
-                            stat.color === 'blue' ? 'text-blue-600' :
-                            stat.color === 'green' ? 'text-green-600' :
-                            stat.color === 'yellow' ? 'text-yellow-600' :
-                            stat.color === 'purple' ? 'text-purple-600' :
-                            stat.color === 'indigo' ? 'text-indigo-600' :
-                            'text-red-600'
+                            stat.color === 'blue' ? 'text-gold-400' :
+                            stat.color === 'green' ? 'text-emerald-400' :
+                            stat.color === 'yellow' ? 'text-gold-300' :
+                            stat.color === 'purple' ? 'text-stone-200' :
+                            stat.color === 'indigo' ? 'text-gold-400' :
+                            'text-red-400'
                           }`}>
                             {stat.value}
                           </div>
-                          <p className="text-xs text-gray-600 font-medium">
+                          <p className="text-xs text-stone-500 font-medium">
                             {stat.label}
                           </p>
                           {stat.change !== undefined && (

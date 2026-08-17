@@ -1,39 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  IconSearch,
-  IconPlus,
+  IconHammer,
+  IconCalculator,
   IconUser,
   IconDashboard,
   IconLogin,
-  IconMenu2
+  IconMenu2,
+  IconBuildingSkyscraper,
 } from '@tabler/icons-react';
 import Logo from '../UI/Logo';
 import { useAuth } from '../../context/AuthContext';
+import { useIntro } from '../../context/IntroContext';
 
 interface HeaderProps {
   opened?: boolean;
   toggle?: () => void;
 }
 
-/* ---------- helpers ---------- */
-const glass = {
-  light: {
-    bg: 'rgba(255, 255, 255, .08)',
-    border: 'rgba(255, 255, 255, .25)',
-    shadow: 'rgba(0, 0, 0, .15)',
-    glow: 'rgba(255, 255, 255, .35)'
-  },
-  dark: {
-    bg: 'rgba(0, 0, 0, .15)',
-    border: 'rgba(255, 255, 255, .12)',
-    shadow: 'rgba(0, 0, 0, .35)',
-    glow: 'rgba(255, 255, 255, .25)'
-  }
-};
-
 const Header: React.FC<HeaderProps> = ({ toggle }) => {
   const { isAuthenticated } = useAuth();
+  const { phase } = useIntro();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -42,115 +29,82 @@ const Header: React.FC<HeaderProps> = ({ toggle }) => {
     return () => window.removeEventListener('scroll', handle);
   }, []);
 
-  /* choose light/dark variables automatically */
-  const mode = scrolled ? 'dark' : 'light';
-  const vars = glass[mode];
+  const navLink =
+    'flex items-center space-x-2 text-stone-300/90 text-sm tracking-wide font-medium hover:text-gold-400 transition-colors';
+  const navLinkMobile = 'p-2 rounded-xl text-stone-300 hover:bg-charcoal-800 transition';
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out"
-      style={{
-        // 1) frosted sheet
-        background: `linear-gradient(135deg, ${vars.bg}, ${vars.bg})`,
-        backdropFilter: 'blur(24px) saturate(1.4)',
-        WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
-        // 2) glass edge + glow
-        borderBottom: `1px solid ${vars.border}`,
-        boxShadow: `inset 0 1px 0 0 ${vars.glow}, 0 8px 32px 0 ${vars.shadow}`,
-        // 3) height & padding
-        height: '4.5rem'
-      }}
+      className={`fixed top-0 left-0 right-0 z-50 h-[4.5rem] transition-all duration-700 ${
+        phase === 'playing' ? 'opacity-0 pointer-events-none -translate-y-2' : 'opacity-100 translate-y-0'
+      } ${
+        scrolled
+          ? 'bg-charcoal-950/90 backdrop-blur-xl border-b border-gold-500/15'
+          : 'bg-transparent border-b border-white/5'
+      }`}
     >
-      <div className="h-full flex items-center justify-between px-6 max-w-screen-2xl mx-auto">
-        {/* Mobile menu */}
+      <div className="h-full flex items-center justify-between px-4 sm:px-6 max-w-screen-2xl mx-auto">
         <div className="md:hidden">
-          <button
-            onClick={toggle}
-            className="p-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-white/10 dark:hover:bg-black/10 transition"
-            aria-label="Toggle menu"
-          >
+          <button onClick={toggle} className={navLinkMobile} aria-label="Toggle menu">
             <IconMenu2 size={22} />
           </button>
         </div>
 
-        {/* Logo */}
         <div className="flex-shrink-0">
-          <Logo size="md" />
+          <div className={phase === 'playing' ? 'opacity-0' : 'opacity-100 transition-opacity duration-500 delay-300'}>
+            <Logo size="md" markTarget />
+          </div>
         </div>
 
-        {/* Mobile quick actions */}
         <div className="md:hidden flex items-center space-x-2">
-          <Link
-            to="/search"
-            className="p-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-white/10 dark:hover:bg-black/10 transition"
-            aria-label="Search"
-          >
-            <IconSearch size={20} />
+          <Link to="/construction-estimator" className={navLinkMobile} aria-label="Construction Estimator">
+            <IconHammer size={20} />
           </Link>
-
           {isAuthenticated ? (
-            <Link
-              to="/profile"
-              className="p-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-white/10 dark:hover:bg-black/10 transition"
-              aria-label="Profile"
-            >
+            <Link to="/profile" className={navLinkMobile} aria-label="Profile">
               <IconUser size={20} />
             </Link>
           ) : (
-            <Link
-              to="/auth/login"
-              className="p-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-white/10 dark:hover:bg-black/10 transition"
-              aria-label="Login"
-            >
+            <Link to="/auth/login" className={navLinkMobile} aria-label="Login">
               <IconLogin size={20} />
             </Link>
           )}
         </div>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center space-x-8">
-          <Link
-            to="/search"
-            className="flex items-center space-x-2 text-slate-700 dark:text-slate-200 font-medium hover:opacity-70 transition"
-          >
-            <IconSearch size={18} />
-            <span>Search</span>
+        <nav className="hidden md:flex items-center space-x-7">
+          <Link to="/construction-estimator" className={navLink}>
+            <IconHammer size={16} />
+            <span>Build Cost</span>
+          </Link>
+          <Link to="/calculator" className={navLink}>
+            <IconCalculator size={16} />
+            <span>Rent Calculator</span>
+          </Link>
+          <Link to="/search" className={navLink}>
+            <IconBuildingSkyscraper size={16} />
+            <span>Listings</span>
+            <span className="text-[9px] uppercase tracking-[0.18em] text-gold-500 font-semibold ml-0.5">Soon</span>
           </Link>
 
           {isAuthenticated ? (
             <>
-              <Link
-                to="/dashboard"
-                className="flex items-center space-x-2 text-slate-700 dark:text-slate-200 font-medium hover:opacity-70 transition"
-              >
-                <IconDashboard size={18} />
+              <Link to="/dashboard" className={navLink}>
+                <IconDashboard size={16} />
                 <span>Dashboard</span>
               </Link>
-              <Link
-                to="/profile"
-                className="flex items-center space-x-2 text-slate-700 dark:text-slate-200 font-medium hover:opacity-70 transition"
-              >
-                <IconUser size={18} />
+              <Link to="/profile" className={navLink}>
+                <IconUser size={16} />
                 <span>Profile</span>
               </Link>
             </>
           ) : (
-            <>
-              <Link
-                to="/auth/login?redirect=list-property"
-                className="flex items-center space-x-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-semibold rounded-xl shadow-sm transition-all duration-200"
-              >
-                <IconPlus size={18} />
-                <span>List Property</span>
-              </Link>
-              <Link
-                to="/auth/login"
-                className="flex items-center space-x-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-semibold rounded-xl shadow-sm transition-all duration-200"
-              >
-                <IconLogin size={18} />
-                <span>Login</span>
-              </Link>
-            </>
+            <Link
+              to="/auth/login"
+              className="flex items-center space-x-2 px-5 py-2 bg-gold-500 hover:bg-gold-400 active:scale-[0.98] text-charcoal-950 text-sm font-semibold rounded-full transition-all duration-200"
+            >
+              <IconLogin size={16} />
+              <span>Login</span>
+            </Link>
           )}
         </nav>
       </div>

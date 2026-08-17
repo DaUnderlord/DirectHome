@@ -69,46 +69,46 @@ const InteractiveStatsCard: React.FC<InteractiveStatsCardProps> = ({
   const getColorClasses = () => {
     const colors = {
       blue: {
-        bg: 'from-blue-50 to-blue-100/50',
-        iconBg: 'bg-blue-500',
-        text: 'text-blue-600',
-        border: 'border-blue-200/50',
-        hover: 'hover:from-blue-100 hover:to-blue-200/50'
+        bg: 'from-charcoal-800 to-charcoal-900',
+        iconBg: 'bg-gold-500',
+        text: 'text-gold-400',
+        border: 'border-charcoal-700',
+        hover: 'hover:from-charcoal-700 hover:to-charcoal-800'
       },
       green: {
-        bg: 'from-green-50 to-green-100/50',
-        iconBg: 'bg-green-500',
-        text: 'text-green-600',
-        border: 'border-green-200/50',
-        hover: 'hover:from-green-100 hover:to-green-200/50'
+        bg: 'from-charcoal-800 to-charcoal-900',
+        iconBg: 'bg-emerald-600',
+        text: 'text-emerald-400',
+        border: 'border-charcoal-700',
+        hover: 'hover:from-charcoal-700 hover:to-charcoal-800'
       },
       yellow: {
-        bg: 'from-yellow-50 to-yellow-100/50',
-        iconBg: 'bg-yellow-500',
-        text: 'text-yellow-600',
-        border: 'border-yellow-200/50',
-        hover: 'hover:from-yellow-100 hover:to-yellow-200/50'
+        bg: 'from-charcoal-800 to-charcoal-900',
+        iconBg: 'bg-gold-500',
+        text: 'text-gold-400',
+        border: 'border-charcoal-700',
+        hover: 'hover:from-charcoal-700 hover:to-charcoal-800'
       },
       purple: {
-        bg: 'from-purple-50 to-purple-100/50',
-        iconBg: 'bg-purple-500',
-        text: 'text-purple-600',
-        border: 'border-purple-200/50',
-        hover: 'hover:from-purple-100 hover:to-purple-200/50'
+        bg: 'from-charcoal-800 to-charcoal-900',
+        iconBg: 'bg-charcoal-600',
+        text: 'text-stone-200',
+        border: 'border-charcoal-700',
+        hover: 'hover:from-charcoal-700 hover:to-charcoal-800'
       },
       red: {
-        bg: 'from-red-50 to-red-100/50',
-        iconBg: 'bg-red-500',
-        text: 'text-red-600',
-        border: 'border-red-200/50',
-        hover: 'hover:from-red-100 hover:to-red-200/50'
+        bg: 'from-charcoal-800 to-charcoal-900',
+        iconBg: 'bg-red-600',
+        text: 'text-red-400',
+        border: 'border-charcoal-700',
+        hover: 'hover:from-charcoal-700 hover:to-charcoal-800'
       },
       indigo: {
-        bg: 'from-indigo-50 to-indigo-100/50',
-        iconBg: 'bg-indigo-500',
-        text: 'text-indigo-600',
-        border: 'border-indigo-200/50',
-        hover: 'hover:from-indigo-100 hover:to-indigo-200/50'
+        bg: 'from-charcoal-800 to-charcoal-900',
+        iconBg: 'bg-gold-500',
+        text: 'text-gold-400',
+        border: 'border-charcoal-700',
+        hover: 'hover:from-charcoal-700 hover:to-charcoal-800'
       }
     };
     return colors[color];
@@ -161,7 +161,7 @@ const InteractiveStatsCard: React.FC<InteractiveStatsCardProps> = ({
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className={`p-3 ${colorClasses.iconBg} rounded-xl shadow-lg`}>
-            <Icon size={24} className="text-white" />
+            <Icon className="text-charcoal-950" size={24} />
           </div>
           
           {onClick && (
@@ -188,10 +188,10 @@ const InteractiveStatsCard: React.FC<InteractiveStatsCardProps> = ({
             </div>
           ) : (
             <>
-              <div className="text-3xl font-bold text-gray-900 mb-1">
+              <div className="text-3xl font-bold text-stone-100 mb-1">
                 {prefix}{displayValue}{suffix}
               </div>
-              <p className="text-sm font-medium text-gray-600">
+              <p className="text-sm font-medium text-stone-400">
                 {title}
               </p>
             </>

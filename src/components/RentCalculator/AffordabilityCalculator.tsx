@@ -6,15 +6,18 @@ import {
 } from '@tabler/icons-react';
 import { useRentCalculator } from '../../hooks/useRentCalculator';
 import { Property } from '../../types/property';
+import { PaidResultsGate } from '../UI/ResultPaywall';
 
 interface AffordabilityCalculatorProps {
   property?: Property;
   compact?: boolean;
+  variant?: 'light' | 'dark';
 }
 
 const AffordabilityCalculator: React.FC<AffordabilityCalculatorProps> = ({
   property,
-  compact = false
+  compact = false,
+  variant = 'light',
 }) => {
   const {
     affordabilityInput,
@@ -57,6 +60,8 @@ const AffordabilityCalculator: React.FC<AffordabilityCalculatorProps> = ({
     if (score >= 20) return 'bg-orange-50';
     return 'bg-red-50';
   };
+
+  const isDark = variant === 'dark';
 
   // Compact version for embedding in property pages
   if (compact) {
@@ -169,7 +174,7 @@ const AffordabilityCalculator: React.FC<AffordabilityCalculatorProps> = ({
 
   // Full version
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6">
+    <div className={isDark ? '' : 'bg-white border border-gray-200 rounded-lg p-6'}>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-xl font-semibold text-gray-900">Rent Affordability Calculator</h3>
         <button
@@ -316,6 +321,11 @@ const AffordabilityCalculator: React.FC<AffordabilityCalculatorProps> = ({
       </form>
 
       {affordabilityResult && (
+        <PaidResultsGate
+          toolId="rent-calculator"
+          title="Unlock your rent results"
+          ready
+        >
         <div className="mt-8 border-t border-gray-200 pt-6">
           <h4 className="text-lg font-medium text-gray-900 mb-4">Affordability Results</h4>
 
@@ -489,6 +499,7 @@ const AffordabilityCalculator: React.FC<AffordabilityCalculatorProps> = ({
             </div>
           </div>
         </div>
+        </PaidResultsGate>
       )}
     </div>
   );

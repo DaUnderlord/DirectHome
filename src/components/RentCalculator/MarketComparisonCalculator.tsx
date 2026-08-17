@@ -7,6 +7,7 @@ import {
   IconMinus 
 } from '@tabler/icons-react';
 import { useRentCalculator } from '../../hooks/useRentCalculator';
+import { PaidResultsGate } from '../UI/ResultPaywall';
 
 const MarketComparisonCalculator: React.FC = () => {
   const {
@@ -193,6 +194,11 @@ const MarketComparisonCalculator: React.FC = () => {
       
       {/* Results */}
       {marketComparisonResult && (
+        <PaidResultsGate
+          toolId="rent-calculator"
+          title="Unlock your rent results"
+          ready
+        >
         <div className="mt-8 border-t border-gray-200 pt-6">
           <h4 className="text-lg font-medium text-gray-900 mb-4">Market Comparison Results</h4>
           
@@ -325,6 +331,7 @@ const MarketComparisonCalculator: React.FC = () => {
             </div>
           </div>
         </div>
+        </PaidResultsGate>
       )}
     </div>
   );

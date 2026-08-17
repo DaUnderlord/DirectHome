@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import AuthLayout from './AuthLayout';
 
 const ResetPasswordPage: React.FC = () => {
   const { confirmResetPassword, error } = useAuth();
@@ -43,71 +44,60 @@ const ResetPasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-        <h1 className="text-2xl font-bold text-center text-gray-900 mb-2">Reset Password</h1>
-        <p className="text-gray-600 text-center text-sm mb-6">
-          Choose a new password for your account.
-        </p>
-
-        {success ? (
-          <div className="text-center space-y-4">
-            <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
-              Password updated successfully. Redirecting to sign in...
-            </div>
-            <Link to="/auth/login" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-              Go to Sign In
-            </Link>
+    <AuthLayout title="Reset password" subtitle="Choose a new password for your account.">
+      {success ? (
+        <div className="text-center space-y-4">
+          <div className="rounded-xl border border-gold-500/30 bg-gold-500/10 px-4 py-3 text-sm text-gold-200">
+            Password updated. Redirecting to sign in…
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {(localError || error) && (
-              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                {localError || error?.message}
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                New password
-              </label>
-              <input
-                id="password"
-                type="password"
-                required
-                minLength={8}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+          <Link to="/auth/login" className="text-gold-400 hover:text-gold-300 text-sm font-medium">
+            Go to sign in
+          </Link>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {(localError || error) && (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+              {localError || error?.message}
             </div>
+          )}
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm password
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                required
-                minLength={8}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+          <label htmlFor="password" className="block text-sm text-stone-300">
+            New password
+            <input
+              id="password"
+              type="password"
+              required
+              minLength={8}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mt-1 w-full px-3 py-2.5 rounded-xl bg-charcoal-900 border border-charcoal-600 text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+            />
+          </label>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md disabled:opacity-50"
-            >
-              {isSubmitting ? 'Updating...' : 'Update Password'}
-            </button>
-          </form>
-        )}
-      </div>
-    </div>
+          <label htmlFor="confirmPassword" className="block text-sm text-stone-300">
+            Confirm password
+            <input
+              id="confirmPassword"
+              type="password"
+              required
+              minLength={8}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="mt-1 w-full px-3 py-2.5 rounded-xl bg-charcoal-900 border border-charcoal-600 text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+            />
+          </label>
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full py-3 rounded-full bg-gold-500 text-charcoal-950 font-semibold hover:bg-gold-400 disabled:opacity-50"
+          >
+            {isSubmitting ? 'Updating…' : 'Update password'}
+          </button>
+        </form>
+      )}
+    </AuthLayout>
   );
 };
 

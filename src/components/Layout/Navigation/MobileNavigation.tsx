@@ -2,8 +2,9 @@ import React, { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   IconHome,
-  IconSearch,
-  IconPlus,
+  IconHammer,
+  IconCalculator,
+  IconBuildingSkyscraper,
   IconUser,
   IconDashboard,
   IconLogin,
@@ -25,7 +26,6 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
   const location = useLocation();
   const lastPathRef = useRef(location.pathname);
 
-  // Close menu when route changes
   useEffect(() => {
     const lastPath = lastPathRef.current;
     if (isOpen && location.pathname !== lastPath) {
@@ -34,12 +34,9 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
     lastPathRef.current = location.pathname;
   }, [location.pathname, isOpen, onClose]);
 
-  // Close menu on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
+      if (e.key === 'Escape') onClose();
     };
 
     if (isOpen) {
@@ -65,101 +62,59 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
   };
 
   const navigationItems = [
-    {
-      label: 'Home',
-      path: '/',
-      icon: IconHome,
-      show: true
-    },
-    {
-      label: 'Search Properties',
-      path: '/search',
-      icon: IconSearch,
-      show: true
-    },
-    {
-      label: 'Dashboard',
-      path: '/dashboard',
-      icon: IconDashboard,
-      show: isAuthenticated
-    },
-    {
-      label: 'Profile',
-      path: '/profile',
-      icon: IconUser,
-      show: isAuthenticated
-    },
-    {
-      label: 'List Property',
-      path: '/auth/login?redirect=list-property',
-      icon: IconPlus,
-      show: !isAuthenticated
-    },
-    {
-      label: 'Login',
-      path: '/auth/login',
-      icon: IconLogin,
-      show: !isAuthenticated
-    }
+    { label: 'Home', path: '/', icon: IconHome, show: true },
+    { label: 'Construction Estimator', path: '/construction-estimator', icon: IconHammer, show: true },
+    { label: 'Rent Calculator', path: '/calculator', icon: IconCalculator, show: true },
+    { label: 'Listings (Soon)', path: '/search', icon: IconBuildingSkyscraper, show: true },
+    { label: 'Dashboard', path: '/dashboard', icon: IconDashboard, show: isAuthenticated },
+    { label: 'Profile', path: '/profile', icon: IconUser, show: isAuthenticated },
+    { label: 'Login', path: '/auth/login', icon: IconLogin, show: !isAuthenticated },
   ];
 
   return (
     <>
-      {/* Backdrop */}
       <div
-        className={`
-          fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300
-          ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
-        `}
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Navigation Menu */}
       <nav
-        className={`
-          fixed top-0 left-0 h-full w-80 max-w-[85vw] z-50
-          glass-card border-r border-white/20
-          transform transition-transform duration-300 ease-out
-          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        `}
+        className={`fixed top-0 left-0 h-full w-80 max-w-[85vw] z-50 bg-charcoal-900 border-r border-charcoal-700 transform transition-transform duration-300 ease-out ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
         aria-label="Mobile navigation"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-            DirectHome
-          </h2>
+        <div className="flex items-center justify-between p-6 border-b border-charcoal-700">
+          <h2 className="text-xl font-display font-bold text-gold-400">DirectHome</h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl neumorphic-inset hover:neumorphic transition-all duration-200 btn-interactive"
+            className="p-2 rounded-xl text-stone-400 hover:bg-charcoal-800 transition"
             aria-label="Close menu"
           >
-            <IconX size={20} className="text-gray-700" />
+            <IconX size={20} />
           </button>
         </div>
 
-        {/* Navigation Items */}
         <div className="flex-1 py-6">
-          <ul className="space-y-2 px-4">
+          <ul className="space-y-1 px-4">
             {navigationItems
               .filter(item => item.show)
               .map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
-                
+
                 return (
                   <li key={item.path}>
                     <Link
                       to={item.path}
-                      className={`
-                        flex items-center space-x-4 px-4 py-3 rounded-xl
-                        transition-all duration-200 btn-interactive
-                        ${isActive
-                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
-                          : 'text-gray-700 hover:text-blue-600 neumorphic-inset hover:neumorphic'
-                        }
-                      `}
+                      className={`flex items-center space-x-4 px-4 py-3 rounded-xl transition-colors ${
+                        isActive
+                          ? 'bg-gold-500/15 text-gold-400 border border-gold-500/30'
+                          : 'text-stone-300 hover:bg-charcoal-800'
+                      }`}
                     >
                       <Icon size={20} />
                       <span className="font-medium">{item.label}</span>
@@ -170,16 +125,11 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
           </ul>
         </div>
 
-        {/* Footer Actions */}
         {isAuthenticated && (
-          <div className="p-4 border-t border-white/10">
+          <div className="p-4 border-t border-charcoal-700">
             <button
               onClick={handleLogout}
-              className="
-                flex items-center space-x-4 w-full px-4 py-3 rounded-xl
-                text-red-600 hover:text-red-700 neumorphic-inset hover:neumorphic
-                transition-all duration-200 btn-interactive
-              "
+              className="flex items-center space-x-4 w-full px-4 py-3 rounded-xl text-red-400 hover:bg-charcoal-800 transition"
             >
               <IconLogout size={20} />
               <span className="font-medium">Logout</span>

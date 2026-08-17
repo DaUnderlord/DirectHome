@@ -1,12 +1,19 @@
 import React from 'react';
+import ContentPage from '../UI/ContentPage';
 
 const CookiesPage: React.FC = () => {
   return (
-    <div className="container mx-auto px-8 py-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-gray-900">Cookie Policy</h1>
-        
-        <div className="prose max-w-none">
+    <ContentPage
+      meta={{
+        title: 'Cookie Policy — DirectHome',
+        description: 'How DirectHome uses cookies and similar technologies.',
+        path: '/cookies',
+      }}
+      eyebrow="Legal"
+      title={<>Cookie <span className="text-gold-400">policy</span></>}
+      subtitle="What cookies we use, why we use them, and how you can control them."
+    >
+        <div>
           <p className="mb-4">
             This Cookie Policy explains how DirectHome ("we", "us", or "our") uses cookies and similar technologies to recognize you when you visit our website. It explains what these technologies are and why we use them, as well as your rights to control our use of them.
           </p>
@@ -79,8 +86,7 @@ const CookiesPage: React.FC = () => {
             Last Updated: July 15, 2025
           </p>
         </div>
-      </div>
-    </div>
+    </ContentPage>
   );
 };
 

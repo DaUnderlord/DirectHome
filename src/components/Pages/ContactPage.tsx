@@ -1,127 +1,122 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { IconMail, IconPhone, IconMapPin } from '@tabler/icons-react';
+import ContentPage from '../UI/ContentPage';
 
 const ContactPage: React.FC = () => {
+  const [sent, setSent] = useState(false);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real implementation, this would send the form data to a server
-    alert('Thank you for your message! We will get back to you soon.');
+    setSent(true);
   };
 
   return (
-    <div className="container mx-auto px-8 py-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-gray-900">Contact Us</h1>
-        
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-            <h2 className="text-2xl font-semibold mb-4 text-gray-800">Get in Touch</h2>
-            <p className="text-gray-600 mb-6">
-              Have questions or feedback? We'd love to hear from you. Fill out the form and we'll get back to you as soon as possible.
-            </p>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Name
-                </label>
+    <ContentPage
+      meta={{
+        title: 'Contact DirectHome',
+        description: 'Get in touch with DirectHome — questions about our calculators, listings launch, or partnerships.',
+        path: '/contact',
+      }}
+      eyebrow="Contact"
+      title={
+        <>
+          Talk to us. We actually{' '}
+          <span className="text-gold-400">read this</span>
+        </>
+      }
+      subtitle="Questions about the tools, the marketplace launch, or working together — send a note."
+    >
+      <div className="grid md:grid-cols-2 gap-10">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <h2 className="font-display text-2xl font-bold text-stone-100 mb-1">Send a message</h2>
+          <p className="text-stone-400 text-sm mb-4">
+            We typically reply within one business day.
+          </p>
+
+          {sent ? (
+            <div className="rounded-xl border border-gold-500/30 bg-gold-500/10 px-4 py-3 text-sm text-gold-200">
+              Thanks — we have your message and will get back to you soon.
+            </div>
+          ) : (
+            <>
+              <label className="block text-sm text-stone-300">
+                Name
                 <input
                   type="text"
-                  id="name"
                   name="name"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full px-3 py-2.5 rounded-xl bg-charcoal-950 border border-charcoal-600 text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
                 />
-              </div>
-              
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
+              </label>
+              <label className="block text-sm text-stone-300">
+                Email
                 <input
                   type="email"
-                  id="email"
                   name="email"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full px-3 py-2.5 rounded-xl bg-charcoal-950 border border-charcoal-600 text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
                 />
-              </div>
-              
-              <div>
-                <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
-                  Subject
-                </label>
+              </label>
+              <label className="block text-sm text-stone-300">
+                Subject
                 <input
                   type="text"
-                  id="subject"
                   name="subject"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full px-3 py-2.5 rounded-xl bg-charcoal-950 border border-charcoal-600 text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
                 />
-              </div>
-              
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                  Message
-                </label>
+              </label>
+              <label className="block text-sm text-stone-300">
+                Message
                 <textarea
-                  id="message"
                   name="message"
-                  rows={4}
+                  rows={5}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                ></textarea>
-              </div>
-              
+                  className="mt-1 w-full px-3 py-2.5 rounded-xl bg-charcoal-950 border border-charcoal-600 text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500 resize-none"
+                />
+              </label>
               <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition-colors duration-200"
+                className="w-full py-3 rounded-full bg-gold-500 text-charcoal-950 font-semibold hover:bg-gold-400"
               >
-                Send Message
+                Send message
               </button>
-            </form>
-          </div>
-          
-          <div>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-              <h2 className="text-2xl font-semibold mb-4 text-gray-800">Contact Information</h2>
-              
-              <div className="space-y-4">
-                <div className="flex items-start">
-                  <IconMail className="text-blue-600 mt-1 mr-3" size={20} />
-                  <div>
-                    <p className="font-medium text-gray-800">Email</p>
-                    <a href="mailto:norwickprojects@gmail.com" className="text-blue-600 hover:underline">
-                      norwickprojects@gmail.com
-                    </a>
-                  </div>
-                </div>
-                
-                <div className="flex items-start">
-                  <IconPhone className="text-blue-600 mt-1 mr-3" size={20} />
-                  <div>
-                    <p className="font-medium text-gray-800">Phone</p>
-                    <a href="tel:+2348105797401" className="text-blue-600 hover:underline">
-                      08105797401
-                    </a>
-                  </div>
-                </div>
-                
-                <div className="flex items-start">
-                  <IconMapPin className="text-blue-600 mt-1 mr-3" size={20} />
-                  <div>
-                    <p className="font-medium text-gray-800">Address</p>
-                    <p className="text-gray-600">
-                      39, Off-Igbe road, Ikorodu, Lagos.
-                    </p>
-                  </div>
-                </div>
+            </>
+          )}
+        </form>
+
+        <div className="space-y-6">
+          <h2 className="font-display text-2xl font-bold text-stone-100">Direct lines</h2>
+          <div className="space-y-5">
+            <div className="flex items-start gap-3">
+              <IconMail className="text-gold-400 mt-1" size={20} />
+              <div>
+                <p className="text-sm text-stone-500">Email</p>
+                <a href="mailto:norwickprojects@gmail.com" className="text-gold-400 hover:text-gold-300">
+                  norwickprojects@gmail.com
+                </a>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <IconPhone className="text-gold-400 mt-1" size={20} />
+              <div>
+                <p className="text-sm text-stone-500">Phone</p>
+                <a href="tel:+2348105797401" className="text-stone-100 hover:text-gold-300">
+                  0810 579 7401
+                </a>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <IconMapPin className="text-gold-400 mt-1" size={20} />
+              <div>
+                <p className="text-sm text-stone-500">Address</p>
+                <p className="text-stone-300">39, Off-Igbe road, Ikorodu, Lagos.</p>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </ContentPage>
   );
 };
 

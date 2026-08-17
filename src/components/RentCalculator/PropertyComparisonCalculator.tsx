@@ -14,6 +14,7 @@ import {
 } from '@tabler/icons-react';
 import { useRentCalculator } from '../../hooks/useRentCalculator';
 import { PropertyComparisonItem, RentPaymentFrequency } from '../../types/rentCalculator';
+import { PaidResultsGate } from '../UI/ResultPaywall';
 
 interface PropertyComparisonCalculatorProps {
   compact?: boolean;
@@ -472,6 +473,11 @@ const PropertyComparisonCalculator: React.FC<PropertyComparisonCalculatorProps> 
       
       {/* Comparison Results */}
       {propertyComparisonResult && (
+        <PaidResultsGate
+          toolId="rent-calculator"
+          title="Unlock your rent results"
+          ready
+        >
         <div className="border border-gray-200 rounded-lg overflow-hidden">
           <div className="bg-blue-50 px-6 py-4 border-b border-gray-200">
             <h4 className="text-lg font-medium text-blue-900">Comparison Results</h4>
@@ -592,6 +598,7 @@ const PropertyComparisonCalculator: React.FC<PropertyComparisonCalculatorProps> 
             </div>
           </div>
         </div>
+        </PaidResultsGate>
       )}
     </div>
   );

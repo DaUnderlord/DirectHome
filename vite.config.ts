@@ -44,8 +44,8 @@ export default defineConfig({
       'react-hook-form',
       'framer-motion'
     ],
-    // Force dependency pre-bundling
-    force: true,
+    // Pre-bundle on first run only
+    force: false,
     // Esbuild options for dependency optimization
     esbuildOptions: {
       target: 'es2020',
@@ -57,7 +57,7 @@ export default defineConfig({
   },
   server: {
     hmr: {
-      overlay: false, // Disable HMR overlay to reduce memory usage
+      overlay: true,
       timeout: 5000, // 5 seconds
     },
     fs: {
@@ -76,7 +76,7 @@ export default defineConfig({
     devSourcemap: false,
   },
   // Reduce the amount of information logged to the console
-  logLevel: 'error',
+  logLevel: 'info',
   // Clear screen on restart to reduce console output
   clearScreen: true,
 })

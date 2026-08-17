@@ -32,7 +32,7 @@ export enum BuildingType {
 }
 
 export enum FinishingQuality {
-  BASIC = 'basic',
+  ECONOMY = 'economy',
   STANDARD = 'standard',
   PREMIUM = 'premium',
   LUXURY = 'luxury'
@@ -98,11 +98,13 @@ export interface LaborCost {
 export interface ConstructionEstimate {
   specs: ConstructionSpecs;
   materialCosts: CostBreakdown[];
+  addonCosts: CostBreakdown[];
   laborCosts: LaborCost[];
   professionalFees: {
     architect: number;
-    engineer: number;
-    surveyor: number;
+    structuralEngineer: number;
+    electricalEngineer: number;
+    mechanicalEngineer: number;
     projectManager: number;
     total: number;
   };
@@ -126,6 +128,7 @@ export interface ConstructionEstimate {
     labor: number;
     professional: number;
     permits: number;
+    addons: number;
     contingency: number;
   };
 }

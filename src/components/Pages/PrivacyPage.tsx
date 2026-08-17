@@ -1,12 +1,19 @@
 import React from 'react';
+import ContentPage from '../UI/ContentPage';
 
 const PrivacyPage: React.FC = () => {
   return (
-    <div className="container mx-auto px-8 py-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-gray-900">Privacy Policy</h1>
-        
-        <div className="prose max-w-none">
+    <ContentPage
+      meta={{
+        title: 'Privacy Policy — DirectHome',
+        description: 'How DirectHome collects, uses, and protects your information.',
+        path: '/privacy',
+      }}
+      eyebrow="Legal"
+      title={<>Privacy <span className="text-gold-400">policy</span></>}
+      subtitle="How we collect, use, and protect information on DirectHome."
+    >
+        <div>
           <p className="mb-4">
             At DirectHome, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.
             Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the platform.
@@ -115,8 +122,7 @@ const PrivacyPage: React.FC = () => {
             Last Updated: July 15, 2025
           </p>
         </div>
-      </div>
-    </div>
+    </ContentPage>
   );
 };
 

@@ -24,10 +24,10 @@ const Button: React.FC<ButtonProps> = ({
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation';
   
   const variantClasses = {
-    primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500',
-    secondary: 'bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500',
-    outline: 'border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 focus:ring-blue-500',
-    ghost: 'hover:bg-gray-100 text-gray-700 focus:ring-blue-500',
+    primary: 'bg-gold-500 hover:bg-gold-400 text-charcoal-950 focus:ring-gold-500',
+    secondary: 'bg-charcoal-700 hover:bg-charcoal-600 text-stone-100 focus:ring-gold-500',
+    outline: 'border border-charcoal-600 bg-transparent hover:bg-charcoal-800 text-stone-200 focus:ring-gold-500',
+    ghost: 'hover:bg-charcoal-800 text-stone-300 focus:ring-gold-500',
     danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500'
   };
   

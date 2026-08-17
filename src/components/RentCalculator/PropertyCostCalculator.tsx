@@ -7,6 +7,7 @@ import {
 } from '@tabler/icons-react';
 import { useRentCalculator } from '../../hooks/useRentCalculator';
 import { AdditionalCost, RentPaymentFrequency } from '../../types/rentCalculator';
+import { PaidResultsGate } from '../UI/ResultPaywall';
 
 const PropertyCostCalculator: React.FC = () => {
   const {
@@ -420,6 +421,11 @@ const PropertyCostCalculator: React.FC = () => {
       
       {/* Results */}
       {propertyCostResult && (
+        <PaidResultsGate
+          toolId="rent-calculator"
+          title="Unlock your rent results"
+          ready
+        >
         <div className="mt-8 border-t border-gray-200 pt-6">
           <h4 className="text-lg font-medium text-gray-900 mb-4">Cost Breakdown</h4>
           
@@ -498,6 +504,7 @@ const PropertyCostCalculator: React.FC = () => {
             </div>
           </div>
         </div>
+        </PaidResultsGate>
       )}
     </div>
   );

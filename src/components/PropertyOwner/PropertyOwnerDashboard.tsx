@@ -192,22 +192,22 @@ const PropertyOwnerDashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-charcoal-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500 mx-auto mb-4"></div>
+          <p className="text-stone-400">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-charcoal-950">
       <Container size="xl" className="py-8">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="font-display text-3xl font-bold text-stone-100 mb-2">
               Welcome back, {user?.firstName || 'Property Owner'}!
             </h1>
             <p className="text-gray-600">
@@ -228,7 +228,7 @@ const PropertyOwnerDashboard: React.FC = () => {
             </button>
             <button 
               onClick={() => navigate('/owner/properties/new')}
-              className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg"
+              className="flex items-center px-6 py-3 bg-gold-500 text-charcoal-950 rounded-xl hover:bg-gold-400 transition-all font-semibold"
             >
               <IconPlus size={20} className="mr-2" />
               Add Property

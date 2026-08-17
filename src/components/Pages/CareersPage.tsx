@@ -1,38 +1,47 @@
 import React from 'react';
+import ContentPage from '../UI/ContentPage';
 
 const CareersPage: React.FC = () => {
   return (
-    <div className="container mx-auto px-8 py-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-gray-900">Careers</h1>
-        
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-          <h2 className="text-2xl font-semibold mb-4 text-gray-800">Join Our Team</h2>
-          <p className="text-gray-600 mb-6 leading-relaxed">
-            We're always looking for talented individuals to join our team. If you're passionate about real estate, 
-            technology, and making a difference, we'd love to hear from you.
-          </p>
-          
-          <h3 className="text-xl font-semibold mb-3 text-gray-800">Why Work With Us?</h3>
-          <ul className="list-disc pl-6 text-gray-600 mb-6 space-y-2">
-            <li>Opportunity to work on innovative solutions for the real estate industry</li>
-            <li>Collaborative and inclusive work environment</li>
-            <li>Competitive compensation and benefits</li>
-            <li>Professional development and growth opportunities</li>
-            <li>Flexible work arrangements</li>
+    <ContentPage
+      meta={{
+        title: 'Careers at DirectHome',
+        description: 'Join DirectHome — we are building Nigeria-first housing tools and a direct marketplace without agents.',
+        path: '/careers',
+      }}
+      eyebrow="Careers"
+      title={
+        <>
+          Help us take the agent out of{' '}
+          <span className="text-gold-400">housing</span>
+        </>
+      }
+      subtitle="We are a small team. If you care about real estate, product, and Nigeria, we want to hear from you."
+    >
+      <div className="space-y-10">
+        <section>
+          <h2 className="font-display text-2xl font-bold text-stone-100 mb-3">Why work here</h2>
+          <ul className="space-y-2 text-stone-400">
+            <li>— Ship tools people in Lagos, Abuja, and beyond actually use</li>
+            <li>— Small team, real ownership, no agency layers</li>
+            <li>— Competitive pay and room to grow with the product</li>
+            <li>— Flexible work arrangements</li>
           </ul>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-          <h2 className="text-2xl font-semibold mb-4 text-gray-800">Open Positions</h2>
-          <p className="text-gray-600 mb-6">
-            We currently don't have any open positions, but we're always interested in meeting talented people. 
-            Send your resume to <a href="mailto:careers@realestate.com" className="text-blue-600 hover:underline">careers@realestate.com</a> 
-            and we'll keep you in mind for future opportunities.
+        </section>
+
+        <section className="rounded-xl border border-charcoal-700/70 bg-charcoal-950/50 p-6">
+          <h2 className="font-display text-2xl font-bold text-stone-100 mb-3">Open roles</h2>
+          <p className="text-stone-400 leading-relaxed">
+            No listed openings right now — we still want to meet strong people. Send a short note and your
+            resume to{' '}
+            <a href="mailto:norwickprojects@gmail.com" className="text-gold-400 hover:text-gold-300">
+              norwickprojects@gmail.com
+            </a>{' '}
+            and we will keep you in mind.
           </p>
-        </div>
+        </section>
       </div>
-    </div>
+    </ContentPage>
   );
 };
 

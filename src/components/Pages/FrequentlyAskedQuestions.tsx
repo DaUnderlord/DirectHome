@@ -1,61 +1,65 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import ContentPage from '../UI/ContentPage';
+
+const faqs = [
+  {
+    q: 'How does DirectHome work?',
+    a: 'Use the Construction Cost Estimator and Rent Calculator to plan with Nigerian prices. Property listings — owner to seeker, no agents — are launching next.',
+  },
+  {
+    q: 'Do I need an account?',
+    a: 'No for filling in the tools. Unlocking a full report is ₦399 per tool, per browser session. Accounts are free.',
+  },
+  {
+    q: 'Are the calculators accurate?',
+    a: 'They use city-tier material, labour, and fee rates. Treat them as planning figures and confirm with contractors or landlords.',
+  },
+  {
+    q: 'When can I list or search properties?',
+    a: 'The marketplace is in progress. You can still create an account so you are ready when listings open.',
+  },
+  {
+    q: 'How do I get in touch?',
+    a: 'Use the Contact page, or email norwickprojects@gmail.com.',
+  },
+];
 
 const FrequentlyAskedQuestions: React.FC = () => {
   return (
-    <div className="container mx-auto px-8 py-8">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-gray-900">Frequently Asked Questions</h1>
-        
-        <div className="space-y-4">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <h2 className="text-lg font-medium text-gray-800">How does this platform work?</h2>
-            <p className="mt-2 text-gray-600">
-              Our platform connects property seekers directly with property owners.
-            </p>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <h2 className="text-lg font-medium text-gray-800">Is it free to use this platform?</h2>
-            <p className="mt-2 text-gray-600">
-              Yes, basic use of our platform is free for both property seekers and owners.
-            </p>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <h2 className="text-lg font-medium text-gray-800">How do I know if a property is legitimate?</h2>
-            <p className="mt-2 text-gray-600">
-              We verify all property owners and listings on our platform to ensure legitimacy.
-            </p>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <h2 className="text-lg font-medium text-gray-800">Can I list multiple properties?</h2>
-            <p className="mt-2 text-gray-600">
-              Yes, you can list multiple properties on our platform.
-            </p>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <h2 className="text-lg font-medium text-gray-800">How do I schedule a property viewing?</h2>
-            <p className="mt-2 text-gray-600">
-              To schedule a viewing, navigate to the property listing page and click on the Schedule Viewing button.
-            </p>
-          </div>
-        </div>
-        
-        <div className="mt-12 text-center">
-          <p className="text-gray-600 mb-4">
-            Still have questions? We're here to help!
-          </p>
-          <a
-            href="/contact"
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-md transition-colors duration-200"
-          >
-            Contact Us
-          </a>
-        </div>
+    <ContentPage
+      meta={{
+        title: 'FAQ — DirectHome',
+        description: 'Frequently asked questions about DirectHome calculators, pricing, and the upcoming property marketplace.',
+        path: '/faq',
+      }}
+      eyebrow="FAQ"
+      title={
+        <>
+          Straight answers,{' '}
+          <span className="text-gold-400">no agent-speak</span>
+        </>
+      }
+      subtitle="The questions we get most about the tools and the marketplace launch."
+    >
+      <div className="space-y-4">
+        {faqs.map((item) => (
+          <article key={item.q} className="rounded-xl border border-charcoal-700/70 p-5">
+            <h2 className="font-semibold text-stone-100 mb-2">{item.q}</h2>
+            <p className="text-sm text-stone-400 leading-relaxed">{item.a}</p>
+          </article>
+        ))}
       </div>
-    </div>
+      <div className="mt-10 text-center">
+        <p className="text-stone-400 mb-4">Still have a question?</p>
+        <Link
+          to="/contact"
+          className="inline-flex px-6 py-2.5 rounded-full bg-gold-500 text-charcoal-950 font-semibold hover:bg-gold-400"
+        >
+          Contact us
+        </Link>
+      </div>
+    </ContentPage>
   );
 };
 

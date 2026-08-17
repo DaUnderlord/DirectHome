@@ -1,122 +1,112 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { UserRole } from '../types/auth';
 
-// Layouts
 import Layout from '../components/Layout/Layout';
-
-// Auth Components
 import LoginPage from '../components/Auth/LoginPage';
 import RegisterPage from '../components/Auth/RegisterPage';
 import ForgotPasswordPage from '../components/Auth/ForgotPasswordPage';
 import ResetPasswordPage from '../components/Auth/ResetPasswordPage';
 import VerificationPage from '../components/Auth/VerificationPage';
 import UnauthorizedPage from '../components/Auth/UnauthorizedPage';
-
-// Property Components
-import { PropertyDetailPage, PropertyGrid, FavoriteProperties } from '../components/Property';
-import PropertyListingGuard from '../components/Property/PropertyListingGuard';
-import VerificationFlow from '../components/Verification/VerificationFlow';
-import VerificationPending from '../components/Verification/VerificationPending';
-import RoleConversionFlow from '../components/Profile/RoleConversionFlow';
-import DashboardRouter from '../components/Dashboard/DashboardRouter';
-
-// Route Guards
 import PublicRoute from '../components/Auth/PublicRoute';
 import ProtectedRoute from '../components/Auth/ProtectedRoute';
-
-// Feature Routes
-import AdminRoutes from './AdminRoutes';
-import PropertyRoutes from './PropertyRoutes';
-
-// Error Handling
 import ErrorBoundary from '../components/ErrorBoundary/ErrorBoundary';
 
-// Import the new HomePage component
 import HomePage from '../components/Pages/HomePage';
+import ListingsComingSoon from '../components/Pages/ListingsComingSoon';
 
-// Import the new SearchPage component
-import SearchPage from '../components/Pages/SearchPage';
+const RentCalculatorPage = React.lazy(() => import('../components/Pages/RentCalculatorPage'));
+const ConstructionCostEstimator = React.lazy(() =>
+  import('../components/Tools/ConstructionCostEstimator').then((m) => ({
+    default: m.default,
+  }))
+);
+const AboutPage = React.lazy(() => import('../components/Pages/AboutPage'));
+const ContactPage = React.lazy(() => import('../components/Pages/ContactPage'));
+const CareersPage = React.lazy(() => import('../components/Pages/CareersPage'));
+const HelpPage = React.lazy(() => import('../components/Pages/HelpPage'));
+const FrequentlyAskedQuestions = React.lazy(() => import('../components/Pages/FrequentlyAskedQuestions'));
+const TermsPage = React.lazy(() => import('../components/Pages/TermsPage'));
+const PrivacyPage = React.lazy(() => import('../components/Pages/PrivacyPage'));
+const CookiesPage = React.lazy(() => import('../components/Pages/CookiesPage'));
+const ProfilePage = React.lazy(() => import('../components/Profile/ProfilePage'));
+const PropertyDetailPage = React.lazy(() =>
+  import('../components/Property/PropertyDetail/PropertyDetailPage').then((m) => ({
+    default: m.default,
+  }))
+);
+const FavoriteProperties = React.lazy(() =>
+  import('../components/Property/FavoriteProperties').then((m) => ({ default: m.default }))
+);
+const DashboardRouter = React.lazy(() => import('../components/Dashboard/DashboardRouter'));
+const AdminRoutes = React.lazy(() => import('./AdminRoutes'));
+const PropertyRoutes = React.lazy(() => import('./PropertyRoutes'));
+const PropertyOwnerDashboard = React.lazy(() =>
+  import('../components/PropertyOwner/PropertyOwnerDashboard').then((m) => ({ default: m.default }))
+);
+const PropertyOnboardingForm = React.lazy(() =>
+  import('../components/PropertyOwner/PropertyOnboarding').then((m) => ({ default: m.default }))
+);
+const ViewingManagement = React.lazy(() =>
+  import('../components/PropertyOwner/ViewingManagement').then((m) => ({ default: m.default }))
+);
+const EnquiriesManagement = React.lazy(() =>
+  import('../components/PropertyOwner/EnquiriesManagement').then((m) => ({ default: m.default }))
+);
+const ApplicationsManagement = React.lazy(() =>
+  import('../components/PropertyOwner/ApplicationsManagement').then((m) => ({ default: m.default }))
+);
+const PaymentsManagement = React.lazy(() =>
+  import('../components/PropertyOwner/PaymentsManagement').then((m) => ({ default: m.default }))
+);
+const MaintenanceManagement = React.lazy(() =>
+  import('../components/PropertyOwner/MaintenanceManagement').then((m) => ({ default: m.default }))
+);
+const AnalyticsDashboard = React.lazy(() =>
+  import('../components/PropertyOwner/AnalyticsDashboard').then((m) => ({ default: m.default }))
+);
 
-// Import RentCalculator component
-import RentCalculator from '../components/RentCalculator/RentCalculator';
-
-// Import Construction Cost Estimator
-import { ConstructionCostEstimator } from '../components/Tools';
-
-// Import Page components
-import AboutPage from '../components/Pages/AboutPage';
-import ContactPage from '../components/Pages/ContactPage';
-import CareersPage from '../components/Pages/CareersPage';
-import HelpPage from '../components/Pages/HelpPage';
-import FrequentlyAskedQuestions from '../components/Pages/FrequentlyAskedQuestions';
-// @ts-ignore - SimpleTermsPage is a JSX file without type definitions
-import TermsPage from '../components/Pages/SimpleTermsPage';
-import PrivacyPage from '../components/Pages/PrivacyPage';
-import CookiesPage from '../components/Pages/CookiesPage';
-
-const CalculatorPage = () => (
-  <div className="container mx-auto px-4 py-8">
-    <RentCalculator />
+const PageLoader = () => (
+  <div className="min-h-[50vh] flex items-center justify-center bg-charcoal-950 text-stone-300">
+    Loading…
   </div>
 );
 
-// Import the ProfilePage component
-import ProfilePage from '../components/Profile/ProfilePage';
-
-// Property Owner Dashboard Components
-import {
-  PropertyOwnerDashboard,
-  PropertyOnboardingForm,
-  ViewingManagement,
-  EnquiriesManagement,
-  ApplicationsManagement,
-  PaymentsManagement,
-  MaintenanceManagement,
-  AnalyticsDashboard
-} from '../components/PropertyOwner';
+const withSuspense = (element: React.ReactNode) => (
+  <Suspense fallback={<PageLoader />}>{element}</Suspense>
+);
 
 const AppRoutes: React.FC = () => {
   return (
     <ErrorBoundary>
       <Routes>
-        {/* Public Routes */}
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
-          <Route path="search" element={<SearchPage />} />
+          <Route path="search" element={<ListingsComingSoon />} />
+          <Route path="verified-properties" element={<ListingsComingSoon />} />
           <Route path="unauthorized" element={<UnauthorizedPage />} />
-
-          {/* Property Routes */}
-          <Route path="property/:id" element={<PropertyDetailPage />} />
-
-          {/* Calculator Route */}
-          <Route path="calculator" element={<CalculatorPage />} />
-          
-          {/* Construction Cost Estimator Route */}
-          <Route path="construction-estimator" element={<ConstructionCostEstimator />} />
-
-          {/* Favorites */}
+          <Route path="property/:id" element={withSuspense(<PropertyDetailPage />)} />
+          <Route path="calculator" element={withSuspense(<RentCalculatorPage />)} />
+          <Route path="construction-estimator" element={withSuspense(<ConstructionCostEstimator />)} />
           <Route
             path="favorites"
             element={
               <ProtectedRoute>
-                <FavoriteProperties />
+                {withSuspense(<FavoriteProperties />)}
               </ProtectedRoute>
             }
           />
-
-          {/* Footer Routes */}
-          <Route path="about" element={<AboutPage />} />
-          <Route path="contact" element={<ContactPage />} />
-          <Route path="careers" element={<CareersPage />} />
-          <Route path="help" element={<HelpPage />} />
-          <Route path="faq" element={<FrequentlyAskedQuestions />} />
-          <Route path="terms" element={<TermsPage />} />
-          <Route path="privacy" element={<PrivacyPage />} />
-          <Route path="cookies" element={<CookiesPage />} />
+          <Route path="about" element={withSuspense(<AboutPage />)} />
+          <Route path="contact" element={withSuspense(<ContactPage />)} />
+          <Route path="careers" element={withSuspense(<CareersPage />)} />
+          <Route path="help" element={withSuspense(<HelpPage />)} />
+          <Route path="faq" element={withSuspense(<FrequentlyAskedQuestions />)} />
+          <Route path="terms" element={withSuspense(<TermsPage />)} />
+          <Route path="privacy" element={withSuspense(<PrivacyPage />)} />
+          <Route path="cookies" element={withSuspense(<CookiesPage />)} />
         </Route>
 
-        {/* Auth Routes */}
         <Route path="/auth">
           <Route
             path="login"
@@ -160,13 +150,12 @@ const AppRoutes: React.FC = () => {
           />
         </Route>
 
-        {/* Protected Routes */}
         <Route path="/dashboard" element={<Layout />}>
           <Route
             index
             element={
               <ProtectedRoute>
-                <DashboardRouter />
+                {withSuspense(<DashboardRouter />)}
               </ProtectedRoute>
             }
           />
@@ -174,7 +163,7 @@ const AppRoutes: React.FC = () => {
             path="homeowner"
             element={
               <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
-                <DashboardRouter />
+                {withSuspense(<DashboardRouter />)}
               </ProtectedRoute>
             }
           />
@@ -182,44 +171,40 @@ const AppRoutes: React.FC = () => {
             path="homeseeker"
             element={
               <ProtectedRoute requiredRoles={[UserRole.HOME_SEEKER]}>
-                <DashboardRouter />
+                {withSuspense(<DashboardRouter />)}
               </ProtectedRoute>
             }
           />
         </Route>
 
-        {/* Admin Routes */}
         <Route
           path="/admin/*"
           element={
             <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
-              <AdminRoutes />
+              {withSuspense(<AdminRoutes />)}
             </ProtectedRoute>
           }
         />
 
-        {/* Property Routes - includes listing, verification, and role conversion */}
-        <Route path="/*" element={<PropertyRoutes />} />
+        <Route path="/*" element={withSuspense(<PropertyRoutes />)} />
 
-        {/* Profile Routes */}
         <Route path="/profile" element={<Layout />}>
           <Route
             index
             element={
               <ProtectedRoute>
-                <ProfilePage />
+                {withSuspense(<ProfilePage />)}
               </ProtectedRoute>
             }
           />
         </Route>
 
-        {/* Property Owner Routes */}
         <Route path="/owner" element={<Layout />}>
           <Route
             index
             element={
               <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
-                <PropertyOwnerDashboard />
+                {withSuspense(<PropertyOwnerDashboard />)}
               </ProtectedRoute>
             }
           />
@@ -227,7 +212,7 @@ const AppRoutes: React.FC = () => {
             path="properties/new"
             element={
               <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
-                <PropertyOnboardingForm />
+                {withSuspense(<PropertyOnboardingForm />)}
               </ProtectedRoute>
             }
           />
@@ -235,7 +220,7 @@ const AppRoutes: React.FC = () => {
             path="properties"
             element={
               <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
-                <PropertyOwnerDashboard />
+                {withSuspense(<PropertyOwnerDashboard />)}
               </ProtectedRoute>
             }
           />
@@ -243,7 +228,7 @@ const AppRoutes: React.FC = () => {
             path="viewings"
             element={
               <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
-                <ViewingManagement />
+                {withSuspense(<ViewingManagement />)}
               </ProtectedRoute>
             }
           />
@@ -251,7 +236,7 @@ const AppRoutes: React.FC = () => {
             path="enquiries"
             element={
               <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
-                <EnquiriesManagement />
+                {withSuspense(<EnquiriesManagement />)}
               </ProtectedRoute>
             }
           />
@@ -259,7 +244,7 @@ const AppRoutes: React.FC = () => {
             path="applications"
             element={
               <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
-                <ApplicationsManagement />
+                {withSuspense(<ApplicationsManagement />)}
               </ProtectedRoute>
             }
           />
@@ -267,7 +252,7 @@ const AppRoutes: React.FC = () => {
             path="payments"
             element={
               <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
-                <PaymentsManagement />
+                {withSuspense(<PaymentsManagement />)}
               </ProtectedRoute>
             }
           />
@@ -275,7 +260,7 @@ const AppRoutes: React.FC = () => {
             path="maintenance"
             element={
               <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
-                <MaintenanceManagement />
+                {withSuspense(<MaintenanceManagement />)}
               </ProtectedRoute>
             }
           />
@@ -283,13 +268,12 @@ const AppRoutes: React.FC = () => {
             path="analytics"
             element={
               <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
-                <AnalyticsDashboard />
+                {withSuspense(<AnalyticsDashboard />)}
               </ProtectedRoute>
             }
           />
         </Route>
 
-        {/* Catch-all route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </ErrorBoundary>

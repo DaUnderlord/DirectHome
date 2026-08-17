@@ -6,7 +6,24 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        display: ['Syne', 'Georgia', 'serif'],
+        sans: ['DM Sans', 'Inter', 'system-ui', 'sans-serif'],
+      },
       colors: {
+        charcoal: {
+          950: '#0F1419',
+          900: '#151B22',
+          800: '#1C242D',
+          700: '#252F3A',
+          600: '#2E3A47',
+        },
+        gold: {
+          300: '#E0C98A',
+          400: '#D4B97A',
+          500: '#C9A962',
+          600: '#B8944D',
+        },
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',

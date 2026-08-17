@@ -17,12 +17,15 @@ import {
   LocationTier
 } from '../../types/construction';
 import constructionCostService from '../../services/constructionCostService';
+import ToolShell from '../UI/ToolShell';
+import ResultPaywall, { useToolUnlock } from '../UI/ResultPaywall';
 
 const BREAKDOWN_BAR_COLORS: Record<string, string> = {
   Materials: 'bg-blue-500',
   Labor: 'bg-green-500',
   'Professional Fees': 'bg-purple-500',
   'Permits & Approvals': 'bg-yellow-500',
+  'Add-ons': 'bg-teal-500',
   Contingency: 'bg-orange-500',
   'VAT (7.5%)': 'bg-red-500',
 };
@@ -32,10 +35,34 @@ const parsePositiveInt = (value: string, fallback: number, min = 1): number => {
   return Number.isFinite(parsed) && parsed >= min ? parsed : fallback;
 };
 
+const ESTIMATOR_FAQ = [
+  {
+    question: 'How accurate is this estimate?',
+    answer:
+      'Estimates use 2024+ Nigerian market prices for materials, labor, and fees. Actual costs vary by site conditions, contractor rates, and material availability — always get multiple quotes.',
+  },
+  {
+    question: 'Which locations are supported?',
+    answer:
+      'Pricing tiers cover Lagos, Abuja, Port Harcourt, and other states with location multipliers applied automatically.',
+  },
+  {
+    question: 'Does it include professional fees and permits?',
+    answer:
+      'Yes. The breakdown includes architect and engineering fees (by building type), permits, contingency, and VAT at 7.5%.',
+  },
+  {
+    question: 'How much does it cost?',
+    answer:
+      'You can fill in every step for free. Unlocking the full estimate and download is ₦399 per session.',
+  },
+];
+
 const ConstructionCostEstimator: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [estimate, setEstimate] = useState<ConstructionEstimate | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const { unlocked, unlock } = useToolUnlock('construction-estimator');
   
   const [specs, setSpecs] = useState<ConstructionSpecs>({
     buildingType: BuildingType.BUNGALOW,
@@ -130,6 +157,7 @@ Materials: ${formatCurrency(estimate.breakdown.materials)}
 Labor: ${formatCurrency(estimate.breakdown.labor)}
 Professional Fees: ${formatCurrency(estimate.breakdown.professional)}
 Permits & Approvals: ${formatCurrency(estimate.breakdown.permits)}
+Add-ons: ${formatCurrency(estimate.breakdown.addons)}
 Contingency (10-15%): ${formatCurrency(estimate.breakdown.contingency)}
 VAT (7.5%): ${formatCurrency(estimate.vat)}
 
@@ -144,6 +172,14 @@ ${estimate.materialCosts.map(item =>
   `${item.description}: ${item.quantity} ${item.unit} @ ${formatCurrency(item.unitCost)} = ${formatCurrency(item.totalCost)}`
 ).join('\n')}
 
+ADD-ONS
+=======
+${estimate.addonCosts.length
+  ? estimate.addonCosts.map(item =>
+      `${item.description}: ${item.quantity} ${item.unit} @ ${formatCurrency(item.unitCost)} = ${formatCurrency(item.totalCost)}`
+    ).join('\n')
+  : 'None selected'}
+
 LABOR BREAKDOWN
 ===============
 ${estimate.laborCosts.map(item =>
@@ -153,9 +189,8 @@ ${estimate.laborCosts.map(item =>
 PROFESSIONAL FEES
 =================
 Architect: ${formatCurrency(estimate.professionalFees.architect)}
-Engineer: ${formatCurrency(estimate.professionalFees.engineer)}
-Surveyor: ${formatCurrency(estimate.professionalFees.surveyor)}
-Project Manager: ${formatCurrency(estimate.professionalFees.projectManager)}
+${estimate.professionalFees.structuralEngineer > 0 ? `Structural Engineer: ${formatCurrency(estimate.professionalFees.structuralEngineer)}\n` : ''}Electrical Engineer: ${formatCurrency(estimate.professionalFees.electricalEngineer)}
+${estimate.professionalFees.mechanicalEngineer > 0 ? `Mechanical Engineer: ${formatCurrency(estimate.professionalFees.mechanicalEngineer)}\n` : ''}Project Manager: ${formatCurrency(estimate.professionalFees.projectManager)}
 
 PERMITS & APPROVALS
 ===================
@@ -179,16 +214,16 @@ specific site requirements, and material availability.
 
   const renderStep1 = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">Building Type & Size</h3>
+      <h3 className="text-lg font-semibold text-stone-100">Building Type & Size</h3>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-stone-300 mb-2">
           Building Type
         </label>
         <select
           value={specs.buildingType}
           onChange={(e) => setSpecs({ ...specs, buildingType: e.target.value as BuildingType })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-2 bg-charcoal-800 border border-charcoal-600 rounded-lg text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
         >
           <option value={BuildingType.BUNGALOW}>Bungalow</option>
           <option value={BuildingType.DUPLEX}>Duplex</option>
@@ -200,7 +235,7 @@ specific site requirements, and material availability.
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-stone-300 mb-2">
             Number of Bedrooms
           </label>
           <input
@@ -209,12 +244,12 @@ specific site requirements, and material availability.
             max="20"
             value={specs.numberOfBedrooms}
             onChange={(e) => setSpecs({ ...specs, numberOfBedrooms: parsePositiveInt(e.target.value, specs.numberOfBedrooms) })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 bg-charcoal-800 border border-charcoal-600 rounded-lg text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-stone-300 mb-2">
             Number of Bathrooms
           </label>
           <input
@@ -223,14 +258,14 @@ specific site requirements, and material availability.
             max="20"
             value={specs.numberOfBathrooms}
             onChange={(e) => setSpecs({ ...specs, numberOfBathrooms: parsePositiveInt(e.target.value, specs.numberOfBathrooms) })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 bg-charcoal-800 border border-charcoal-600 rounded-lg text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-stone-300 mb-2">
             Number of Floors
           </label>
           <input
@@ -248,12 +283,12 @@ specific site requirements, and material availability.
                   : specs.features
               });
             }}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 bg-charcoal-800 border border-charcoal-600 rounded-lg text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-stone-300 mb-2">
             Total Area (sqm)
           </label>
           <input
@@ -262,7 +297,7 @@ specific site requirements, and material availability.
             max="5000"
             value={specs.totalSquareMeters}
             onChange={(e) => setSpecs({ ...specs, totalSquareMeters: parsePositiveInt(e.target.value, specs.totalSquareMeters, 50) })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 bg-charcoal-800 border border-charcoal-600 rounded-lg text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
           />
         </div>
       </div>
@@ -271,10 +306,10 @@ specific site requirements, and material availability.
 
   const renderStep2 = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">Location</h3>
+      <h3 className="text-lg font-semibold text-stone-100">Location</h3>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-stone-300 mb-2">
           State/City
         </label>
         <select
@@ -290,7 +325,7 @@ specific site requirements, and material availability.
               }
             });
           }}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-2 bg-charcoal-800 border border-charcoal-600 rounded-lg text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
         >
           {nigerianStates.map(state => (
             <option key={state.name} value={state.name}>
@@ -299,7 +334,7 @@ specific site requirements, and material availability.
             </option>
           ))}
         </select>
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-2 text-sm text-stone-500">
           Location affects material and labor costs. Major cities (Lagos, Abuja) have higher costs.
         </p>
       </div>
@@ -308,11 +343,11 @@ specific site requirements, and material availability.
 
   const renderStep3 = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">Finishing Quality</h3>
+      <h3 className="text-lg font-semibold text-stone-100">Finishing Quality</h3>
       
       <div className="grid grid-cols-1 gap-4">
         {[
-          { value: FinishingQuality.BASIC, label: 'Basic', desc: 'Standard materials, simple finishes' },
+          { value: FinishingQuality.ECONOMY, label: 'Economy', desc: 'Budget materials, simple finishes' },
           { value: FinishingQuality.STANDARD, label: 'Standard', desc: 'Good quality materials, decent finishes' },
           { value: FinishingQuality.PREMIUM, label: 'Premium', desc: 'High-quality materials, excellent finishes' },
           { value: FinishingQuality.LUXURY, label: 'Luxury', desc: 'Top-tier materials, luxury finishes' }
@@ -322,17 +357,17 @@ specific site requirements, and material availability.
             onClick={() => setSpecs({ ...specs, finishingQuality: quality.value })}
             className={`p-4 border-2 rounded-lg text-left transition-all ${
               specs.finishingQuality === quality.value
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-gold-500 bg-gold-500/10'
+                : 'border-charcoal-600 hover:border-charcoal-500'
             }`}
           >
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-semibold text-gray-900">{quality.label}</div>
-                <div className="text-sm text-gray-600">{quality.desc}</div>
+                <div className="font-semibold text-stone-100">{quality.label}</div>
+                <div className="text-sm text-stone-400">{quality.desc}</div>
               </div>
               {specs.finishingQuality === quality.value && (
-                <IconCheck size={24} className="text-blue-500" />
+                <IconCheck size={24} className="text-gold-400" />
               )}
             </div>
           </button>
@@ -356,11 +391,11 @@ specific site requirements, and material availability.
 
     return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">Additional Features</h3>
+      <h3 className="text-lg font-semibold text-stone-100">Additional Features</h3>
       
       <div className="grid grid-cols-2 gap-4">
         {optionalFeatures.map(feature => (
-          <label key={feature.key} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+          <label key={feature.key} className="flex items-center space-x-3 p-3 border border-charcoal-600 rounded-lg hover:bg-charcoal-800/50 cursor-pointer">
             <input
               type="checkbox"
               checked={specs.features[feature.key as keyof typeof specs.features] as boolean}
@@ -368,16 +403,16 @@ specific site requirements, and material availability.
                 ...specs,
                 features: { ...specs.features, [feature.key]: e.target.checked }
               })}
-              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              className="w-5 h-5 text-gold-500 rounded focus:ring-2 focus:ring-gold-500 bg-charcoal-800 border-charcoal-600"
             />
-            <span className="text-sm font-medium text-gray-700">{feature.label}</span>
+            <span className="text-sm font-medium text-stone-300">{feature.label}</span>
           </label>
         ))}
       </div>
 
       {specs.features.hasGarage && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-stone-300 mb-2">
             Number of Parking Spaces
           </label>
           <input
@@ -389,7 +424,7 @@ specific site requirements, and material availability.
               ...specs,
               features: { ...specs.features, numberOfParkingSpaces: parsePositiveInt(e.target.value, specs.features.numberOfParkingSpaces) }
             })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 bg-charcoal-800 border border-charcoal-600 rounded-lg text-stone-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
           />
         </div>
       )}
@@ -404,15 +439,15 @@ specific site requirements, and material availability.
       <div className="space-y-6">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-lg">
-            <div className="text-sm opacity-90 mb-1">Total Estimated Cost</div>
+          <div className="bg-gradient-to-br from-gold-600 to-gold-500 text-charcoal-950 p-6 rounded-lg">
+            <div className="text-sm opacity-80 mb-1">Total Estimated Cost</div>
             <div className="text-3xl font-bold">{formatCurrency(estimate.grandTotal)}</div>
-            <div className="text-sm opacity-75 mt-2">
+            <div className="text-sm opacity-70 mt-2">
               {formatCurrency(estimate.costPerSquareMeter)}/sqm
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-lg">
+          <div className="bg-gradient-to-br from-emerald-700 to-emerald-600 text-white p-6 rounded-lg">
             <div className="text-sm opacity-90 mb-1">Estimated Duration</div>
             <div className="text-3xl font-bold">{estimate.estimatedDuration.months} months</div>
             <div className="text-sm opacity-75 mt-2">
@@ -420,7 +455,7 @@ specific site requirements, and material availability.
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-lg">
+          <div className="bg-gradient-to-br from-charcoal-700 to-charcoal-800 text-stone-100 p-6 rounded-lg border border-charcoal-600">
             <div className="text-sm opacity-90 mb-1">Building Size</div>
             <div className="text-3xl font-bold">{estimate.specs.totalSquareMeters} sqm</div>
             <div className="text-sm opacity-75 mt-2">
@@ -430,27 +465,30 @@ specific site requirements, and material availability.
         </div>
 
         {/* Cost Breakdown */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h4 className="text-lg font-semibold text-gray-900 mb-4">Cost Breakdown</h4>
+        <div className="bg-charcoal-800/50 p-6 rounded-lg border border-charcoal-700">
+          <h4 className="text-lg font-semibold text-stone-100 mb-4">Cost Breakdown</h4>
           <div className="space-y-3">
             {[
-              { label: 'Materials', amount: estimate.breakdown.materials, color: 'blue' },
-              { label: 'Labor', amount: estimate.breakdown.labor, color: 'green' },
-              { label: 'Professional Fees', amount: estimate.breakdown.professional, color: 'purple' },
-              { label: 'Permits & Approvals', amount: estimate.breakdown.permits, color: 'yellow' },
-              { label: 'Contingency', amount: estimate.breakdown.contingency, color: 'orange' },
-              { label: 'VAT (7.5%)', amount: estimate.vat, color: 'red' }
+              { label: 'Materials', amount: estimate.breakdown.materials },
+              { label: 'Labor', amount: estimate.breakdown.labor },
+              { label: 'Professional Fees', amount: estimate.breakdown.professional },
+              { label: 'Permits & Approvals', amount: estimate.breakdown.permits },
+              ...(estimate.breakdown.addons > 0
+                ? [{ label: 'Add-ons', amount: estimate.breakdown.addons }]
+                : []),
+              { label: 'Contingency', amount: estimate.breakdown.contingency },
+              { label: 'VAT (7.5%)', amount: estimate.vat }
             ].map(item => {
               const percentage = (item.amount / estimate.grandTotal) * 100;
               return (
                 <div key={item.label}>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-700">{item.label}</span>
-                    <span className="font-semibold text-gray-900">
+                    <span className="text-stone-400">{item.label}</span>
+                    <span className="font-semibold text-stone-100">
                       {formatCurrency(item.amount)} ({percentage.toFixed(1)}%)
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-charcoal-700 rounded-full h-2">
                     <div
                       className={`${BREAKDOWN_BAR_COLORS[item.label] || 'bg-blue-500'} h-2 rounded-full`}
                       style={{ width: `${percentage}%` }}
@@ -463,29 +501,29 @@ specific site requirements, and material availability.
         </div>
 
         {/* Material Costs Table */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h4 className="text-lg font-semibold text-gray-900 mb-4">Material Costs</h4>
+        <div className="bg-charcoal-800/50 p-6 rounded-lg border border-charcoal-700">
+          <h4 className="text-lg font-semibold text-stone-100 mb-4">Material Costs</h4>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-charcoal-700">
               <thead>
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Unit Cost</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-stone-500 uppercase">Item</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-stone-500 uppercase">Quantity</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-stone-500 uppercase">Unit Cost</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-stone-500 uppercase">Total</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-charcoal-700">
                 {estimate.materialCosts.slice(0, 10).map((item, index) => (
                   <tr key={index}>
-                    <td className="px-4 py-2 text-sm text-gray-900">{item.description}</td>
-                    <td className="px-4 py-2 text-sm text-gray-600 text-right">
+                    <td className="px-4 py-2 text-sm text-stone-200">{item.description}</td>
+                    <td className="px-4 py-2 text-sm text-stone-400 text-right">
                       {item.quantity} {item.unit}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-600 text-right">
+                    <td className="px-4 py-2 text-sm text-stone-400 text-right">
                       {formatCurrency(item.unitCost)}
                     </td>
-                    <td className="px-4 py-2 text-sm font-medium text-gray-900 text-right">
+                    <td className="px-4 py-2 text-sm font-medium text-stone-100 text-right">
                       {formatCurrency(item.totalCost)}
                     </td>
                   </tr>
@@ -494,31 +532,53 @@ specific site requirements, and material availability.
             </table>
           </div>
           {estimate.materialCosts.length > 10 && (
-            <p className="text-sm text-gray-500 mt-3">
+            <p className="text-sm text-stone-500 mt-3">
               Showing 10 of {estimate.materialCosts.length} items. Download full report for complete details.
             </p>
           )}
         </div>
 
+        {estimate.addonCosts.length > 0 && (
+          <div className="bg-charcoal-800/50 p-6 rounded-lg border border-charcoal-700">
+            <h4 className="text-lg font-semibold text-stone-100 mb-4">Add-ons</h4>
+            <div className="space-y-2">
+              {estimate.addonCosts.map((item) => (
+                <div key={item.description} className="flex justify-between">
+                  <span className="text-stone-400">{item.description}</span>
+                  <span className="font-semibold text-stone-100">{formatCurrency(item.totalCost)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Professional Fees */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h4 className="text-lg font-semibold text-gray-900 mb-4">Professional Fees</h4>
+        <div className="bg-charcoal-800/50 p-6 rounded-lg border border-charcoal-700">
+          <h4 className="text-lg font-semibold text-stone-100 mb-4">Professional Fees</h4>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span className="text-gray-700">Architect</span>
-              <span className="font-semibold">{formatCurrency(estimate.professionalFees.architect)}</span>
+              <span className="text-stone-400">Architect</span>
+              <span className="font-semibold text-stone-100">{formatCurrency(estimate.professionalFees.architect)}</span>
             </div>
+            {estimate.professionalFees.structuralEngineer > 0 && (
+              <div className="flex justify-between">
+                <span className="text-stone-400">Structural Engineer</span>
+                <span className="font-semibold text-stone-100">{formatCurrency(estimate.professionalFees.structuralEngineer)}</span>
+              </div>
+            )}
             <div className="flex justify-between">
-              <span className="text-gray-700">Structural Engineer</span>
-              <span className="font-semibold">{formatCurrency(estimate.professionalFees.engineer)}</span>
+              <span className="text-stone-400">Electrical Engineer</span>
+              <span className="font-semibold text-stone-100">{formatCurrency(estimate.professionalFees.electricalEngineer)}</span>
             </div>
+            {estimate.professionalFees.mechanicalEngineer > 0 && (
+              <div className="flex justify-between">
+                <span className="text-stone-400">Mechanical Engineer</span>
+                <span className="font-semibold text-stone-100">{formatCurrency(estimate.professionalFees.mechanicalEngineer)}</span>
+              </div>
+            )}
             <div className="flex justify-between">
-              <span className="text-gray-700">Land Surveyor</span>
-              <span className="font-semibold">{formatCurrency(estimate.professionalFees.surveyor)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-700">Project Manager</span>
-              <span className="font-semibold">{formatCurrency(estimate.professionalFees.projectManager)}</span>
+              <span className="text-stone-400">Project Manager</span>
+              <span className="font-semibold text-stone-100">{formatCurrency(estimate.professionalFees.projectManager)}</span>
             </div>
           </div>
         </div>
@@ -526,15 +586,15 @@ specific site requirements, and material availability.
         {/* Download Button */}
         <button
           onClick={downloadReport}
-          className="w-full flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="w-full flex items-center justify-center px-6 py-3 bg-gold-500 text-charcoal-950 font-semibold rounded-lg hover:bg-gold-400 transition-colors"
         >
           <IconDownload size={20} className="mr-2" />
           Download Full Report
         </button>
 
         {/* Disclaimer */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <p className="text-sm text-yellow-800">
+        <div className="bg-gold-500/10 border border-gold-500/30 rounded-lg p-4">
+          <p className="text-sm text-gold-200/90">
             <strong>Disclaimer:</strong> This is an estimate based on average market prices in Nigeria as of 2024. 
             Actual costs may vary based on specific site conditions, material availability, contractor rates, 
             and market fluctuations. Always get multiple quotes from licensed contractors.
@@ -553,21 +613,27 @@ specific site requirements, and material availability.
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-12">
-      <div className="max-w-4xl mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Construction Cost Estimator
-          </h1>
-          <p className="text-lg text-gray-600">
-            Get a detailed estimate for building your property in Nigeria
-          </p>
-        </div>
-
+    <ToolShell
+      meta={{
+        title: 'Construction Cost Estimator Nigeria — Build Budget Tool',
+        description:
+          'Construction cost estimator for Nigeria. Get detailed build estimates for bungalows, duplexes, and apartments with materials, labor, fees, and VAT. Unlock results for ₦399.',
+        path: '/construction-estimator',
+      }}
+      eyebrow="₦399 to unlock results"
+      heroTitle={
+        <>
+          Construction Cost Estimator for{' '}
+          <span className="text-gold-400">Nigeria</span>
+        </>
+      }
+      heroSubtitle="Step-by-step estimate for materials, labor, professional fees, permits, add-ons, and VAT — based on current Nigerian market prices. Fill in the form, then unlock your report for ₦399."
+      heroImage="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1920&h=1080&fit=crop"
+      faq={ESTIMATOR_FAQ}
+    >
         {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-8 overflow-x-auto">
+          <div className="flex items-center justify-between min-w-[480px]">
             {steps.map((step, index) => {
               const Icon = step.icon;
               const isActive = currentStep === step.number;
@@ -579,18 +645,18 @@ specific site requirements, and material availability.
                     <div
                       className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                         isActive
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-gold-500 text-charcoal-950'
                           : isCompleted
-                          ? 'bg-green-500 text-white'
-                          : 'bg-gray-200 text-gray-400'
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-charcoal-700 text-stone-500'
                       }`}
                     >
                       {isCompleted ? <IconCheck size={24} /> : <Icon size={24} />}
                     </div>
-                    <span className="text-xs mt-2 text-gray-600">{step.title}</span>
+                    <span className="text-xs mt-2 text-stone-400">{step.title}</span>
                   </div>
                   {index < steps.length - 1 && (
-                    <div className={`flex-1 h-1 mx-2 ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}`} />
+                    <div className={`flex-1 h-1 mx-2 ${isCompleted ? 'bg-emerald-600' : 'bg-charcoal-700'}`} />
                   )}
                 </React.Fragment>
               );
@@ -599,18 +665,26 @@ specific site requirements, and material availability.
         </div>
 
         {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div>
           {currentStep === 1 && renderStep1()}
           {currentStep === 2 && renderStep2()}
           {currentStep === 3 && renderStep3()}
           {currentStep === 4 && renderStep4()}
-          {currentStep === 5 && renderEstimate()}
+          {currentStep === 5 && (
+            unlocked ? renderEstimate() : (
+              <ResultPaywall
+                toolId="construction-estimator"
+                title="Unlock your construction estimate"
+                onUnlocked={unlock}
+              />
+            )
+          )}
 
           {/* Navigation Buttons */}
           {currentStep < 5 && (
             <div className="mt-8">
               {validationError && (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
                   {validationError}
                 </div>
               )}
@@ -618,7 +692,7 @@ specific site requirements, and material availability.
               <button
                 onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
                 disabled={currentStep === 1}
-                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 border border-charcoal-600 rounded-lg text-stone-300 hover:bg-charcoal-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
@@ -626,7 +700,7 @@ specific site requirements, and material availability.
               {currentStep < 4 ? (
                 <button
                   onClick={() => setCurrentStep(currentStep + 1)}
-                  className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="flex items-center px-6 py-2 bg-gold-500 text-charcoal-950 font-semibold rounded-lg hover:bg-gold-400"
                 >
                   Next
                   <IconChevronRight size={20} className="ml-1" />
@@ -634,7 +708,7 @@ specific site requirements, and material availability.
               ) : (
                 <button
                   onClick={handleCalculate}
-                  className="flex items-center px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  className="flex items-center px-6 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-500"
                 >
                   <IconCalculator size={20} className="mr-2" />
                   Calculate Estimate
@@ -651,15 +725,14 @@ specific site requirements, and material availability.
                   setCurrentStep(1);
                   setEstimate(null);
                 }}
-                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-6 py-2 border border-charcoal-600 rounded-lg text-stone-300 hover:bg-charcoal-800"
               >
                 Start New Estimate
               </button>
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </ToolShell>
   );
 };
 

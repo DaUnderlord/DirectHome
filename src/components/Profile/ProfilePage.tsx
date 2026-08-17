@@ -186,8 +186,8 @@ const ProfilePage: React.FC = () => {
         </div>
       )}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">My Profile</h1>
-        <p className="text-gray-600">Manage your account settings and preferences</p>
+        <h1 className="font-display text-3xl font-bold text-stone-100 mb-2">My Profile</h1>
+        <p className="text-stone-400">Manage your account settings and preferences</p>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">

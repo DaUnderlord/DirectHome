@@ -1,37 +1,34 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import logoImage from '../../assets/logo.png';
+import pinMark from '../../assets/dh-pin-mark.png';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
   withText?: boolean;
+  markTarget?: boolean;
 }
 
-const Logo: React.FC<LogoProps> = ({ size = 'md', withText = false }) => {
-  const logoSizes = {
-    sm: 'h-8',
-    md: 'h-10',
-    lg: 'h-12',
-  };
-
-  const textClasses = {
-    sm: 'text-base',
-    md: 'text-lg',
-    lg: 'text-xl',
+const Logo: React.FC<LogoProps> = ({ size = 'md', markTarget = false }) => {
+  const pinSizes = {
+    sm: 'h-8 w-8',
+    md: 'h-10 w-10',
+    lg: 'h-12 w-12',
   };
 
   return (
-    <Link to="/" className="flex items-center space-x-2 no-underline">
-      <img 
-        src={logoImage} 
-        alt="Logo" 
-        className={`${logoSizes[size]}`}
+    <Link
+      to="/"
+      className="flex items-center gap-2.5 no-underline"
+      id={markTarget ? 'dh-logo-target' : undefined}
+    >
+      <img
+        src={pinMark}
+        alt=""
+        className={`${pinSizes[size]} object-contain mix-blend-lighten`}
       />
-      {withText && (
-        <span className={`font-bold text-gray-900 ${textClasses[size]}`}>
-          Real Estate
-        </span>
-      )}
+      <span className="font-display font-bold tracking-[0.18em] uppercase text-[11px] sm:text-xs text-stone-100">
+        Direct<span className="text-gold-400">Home</span>
+      </span>
     </Link>
   );
 };

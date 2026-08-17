@@ -85,23 +85,23 @@ const VerificationPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-charcoal-950 dh-app flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-            <IconMail className="w-8 h-8 text-blue-600" />
+          <div className="w-16 h-16 bg-gold-500/15 border border-gold-500/30 rounded-full flex items-center justify-center">
+            <IconMail className="w-8 h-8 text-gold-400" />
           </div>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-          Verify Your Account
+        <h2 className="mt-6 text-center font-display text-3xl font-bold text-stone-100">
+          Verify your account
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-2 text-center text-sm text-stone-400">
           We've sent verification codes to secure your account
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-charcoal-900/80 border border-charcoal-700 py-8 px-4 shadow sm:rounded-2xl sm:px-10">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-600">{error}</p>
