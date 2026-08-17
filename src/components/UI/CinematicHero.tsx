@@ -73,9 +73,6 @@ const CinematicHero: React.FC = () => {
       )}
 
       <div className={`cinematic-copy ${phase !== 'playing' ? 'is-in' : ''}`}>
-        <p className="text-gold-400 text-[11px] md:text-sm font-semibold tracking-[0.28em] uppercase mb-5">
-          Built for Nigeria
-        </p>
         <h1 className="font-display text-4xl md:text-5xl lg:text-[4.35rem] font-bold text-stone-50 leading-[1.05] tracking-tight">
           Plan your build.
           <br />
@@ -84,8 +81,7 @@ const CinematicHero: React.FC = () => {
         <span className="gold-rule mt-7 mb-6" />
         <p className="text-lg md:text-xl text-stone-300/90 leading-relaxed max-w-2xl">
           Two flagship tools you won&apos;t find anywhere else — a Construction Cost Estimator and
-          Rent Calculator tuned for Nigerian prices, locations, and market realities. Fill in the
-          details, then unlock your report for ₦399.
+          Rent Calculator tuned for Nigerian prices, locations, and market realities.
         </p>
         <div className="mt-10 flex flex-wrap gap-4">
           <Link
