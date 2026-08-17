@@ -15,16 +15,9 @@ interface FooterLinkProps {
 }
 
 const FooterLink: React.FC<FooterLinkProps> = ({ label, to }) => {
-  const handleClick = () => {
-    setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 100);
-  };
-
   return (
     <Link
       to={to}
-      onClick={handleClick}
       className="text-paper-300 hover:text-paper-50 transition-colors duration-200 block"
     >
       {label}
