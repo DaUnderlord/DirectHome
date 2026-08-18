@@ -38,18 +38,19 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
           <div className="paper-grain" />
         </div>
 
-        <div className="intro-stamp">
-          <span className={`intro-ring ${leaving ? 'is-leaving' : ''}`} />
-          <span className={`intro-ring intro-ring-late ${leaving ? 'is-leaving' : ''}`} />
-          <PinMark ref={pinRef} className={`cinematic-pin ${leaving ? 'is-docking' : ''}`} />
+        <div className={`cinematic-logo-row ${leaving ? 'is-docking' : ''}`}>
+          <div className="intro-stamp" aria-hidden>
+            <span className={`intro-ring ${leaving ? 'is-leaving' : ''}`} />
+            <span className={`intro-ring intro-ring-late ${leaving ? 'is-leaving' : ''}`} />
+          </div>
+          <PinMark ref={pinRef} className="cinematic-pin" />
+          <p className={`cinematic-wordmark ${leaving ? 'is-leaving' : ''}`}>
+            Direct<span>Home</span>
+          </p>
         </div>
-
-        <p className={`cinematic-wordmark ${leaving ? 'is-leaving' : ''}`}>
-          Direct<span>Home</span>
-        </p>
         <span className={`cinematic-line ${leaving ? 'is-leaving' : ''}`} />
         <p className={`cinematic-kicker ${leaving ? 'is-leaving' : ''}`}>
-          Nigeria · Build · Rent
+          Build · Estimate · List
         </p>
       </div>
 

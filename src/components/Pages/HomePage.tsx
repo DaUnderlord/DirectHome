@@ -2,10 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   IconHammer,
-  IconCalculator,
   IconBuildingSkyscraper,
   IconArrowRight,
-  IconShieldCheck,
   IconChartBar,
   IconMapPin,
 } from '@tabler/icons-react';
@@ -17,9 +15,9 @@ import plateRent from '../../assets/plate-rent.png';
 
 const HomePage: React.FC = () => {
   usePageMeta({
-    title: 'DirectHome — Construction & Rent Calculators for Nigeria',
+    title: 'DirectHome — Build cost planning for Nigeria',
     description:
-      'Construction Cost Estimator and Rent Calculator built for Nigeria. Plan your build budget and rent affordability — unlock results for ₦399. Property listings coming soon.',
+      'Plan your build budget before you break ground. Construction cost estimator for Nigerian cities — unlock a full report for ₦399. Property listings coming soon.',
     path: '/',
   });
 
@@ -35,7 +33,7 @@ const HomePage: React.FC = () => {
           </h2>
           <span className="brass-rule mt-6" />
           <p className="mt-5 text-ink-600 max-w-xl">
-            Start with a budget before you sign a lease or pour a foundation.
+            Start with a build budget before you pour a foundation.
           </p>
         </div>
       </section>
@@ -79,30 +77,30 @@ const HomePage: React.FC = () => {
           <img src={plateRent} alt="Bright Lagos apartment living room" />
         </div>
         <div className="folio-essay bg-paper-100">
-          <p className="text-courtyard-700 text-[11px] font-semibold tracking-[0.28em] uppercase mb-4">Rent</p>
+          <p className="text-courtyard-700 text-[11px] font-semibold tracking-[0.28em] uppercase mb-4">Marketplace</p>
           <h3 className="font-display text-[1.85rem] md:text-4xl font-semibold text-ink-950 mb-4">
-            Rent Calculator
+            Listings, next
           </h3>
           <p className="text-ink-600 leading-relaxed mb-6">
-            Affordability against income, agency fees, caution deposit, service charge, and a
-            side-by-side comparison before you hand anyone a year&apos;s rent.
+            Owners will list directly. Seekers will enquire without an agent in the middle.
+            The estimator ships now; public search follows.
           </p>
           <ul className="space-y-3 mb-8 text-sm text-ink-600">
             <li className="flex items-start gap-2">
-              <IconShieldCheck size={16} className="text-brass-500 mt-0.5 shrink-0" />
-              Affordability check against your monthly income
+              <IconMapPin size={16} className="text-brass-500 mt-0.5 shrink-0" />
+              Owners can already submit a property for review
             </li>
             <li className="flex items-start gap-2">
               <IconChartBar size={16} className="text-brass-500 mt-0.5 shrink-0" />
-              Total move-in cost, not just the asking rent
+              Public listings stay gated until we open search
             </li>
           </ul>
           <Link
-            to="/calculator"
+            to="/search"
             className="inline-flex items-center gap-2 text-courtyard-700 font-semibold hover:gap-3 transition-all"
           >
-            <IconCalculator size={18} />
-            Calculate rent
+            <IconBuildingSkyscraper size={18} />
+            See listing plans
             <IconArrowRight size={18} />
           </Link>
         </div>

@@ -33,7 +33,7 @@ import {
 } from '../../../types/propertyOwner';
 
 const STEPS = [
-  { id: 1, title: 'Basic Info', icon: IconHome },
+  { id: 1, title: 'Info', icon: IconHome },
   { id: 2, title: 'Location', icon: IconMapPin },
   { id: 3, title: 'Features', icon: IconSettings },
   { id: 4, title: 'Condition', icon: IconCheck },
@@ -195,11 +195,16 @@ const PropertyOnboardingForm: React.FC = () => {
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) return;
 
+    if (!user?.id) {
+      setErrors({ submit: 'Please sign in as a home owner to submit a property.' });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const property = await createProperty({
         ...formData,
-        ownerId: user?.id || 'owner-1',
+        ownerId: user.id,
         status: 'pending_review'
       });
 
@@ -210,7 +215,9 @@ const PropertyOnboardingForm: React.FC = () => {
       }
     } catch (error) {
       console.error('Error creating property:', error);
-      setErrors({ submit: 'Failed to create property. Please try again.' });
+      setErrors({
+        submit: error instanceof Error ? error.message : 'Failed to create property. Please try again.',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -280,26 +287,39 @@ const PropertyOnboardingForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8">
-      <Container size="lg">
-        {/* Header */}
-        <div className="mb-8">
+    <div className="min-h-screen bg-paper-100 py-6 sm:py-8 overflow-x-hidden">
+      <Container size="lg" className="min-w-0">
+        <div className="mb-6 sm:mb-8">
           <button
             onClick={() => navigate('/owner/properties')}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+            className="flex items-center text-ink-600 hover:text-ink-950 mb-4 text-sm"
           >
-            <IconArrowLeft size={20} className="mr-2" />
+            <IconArrowLeft size={18} stroke={1.5} className="mr-2" />
             Back to Properties
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">Add New Property</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="font-display text-2xl sm:text-3xl font-semibold text-ink-950">Add New Property</h1>
+          <p className="text-ink-600 mt-2 text-sm sm:text-base">
             Complete all steps to list your property on DirectHome
           </p>
         </div>
 
-        {/* Progress Steps */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-          <div className="flex items-center justify-between overflow-x-auto">
+        <div className="md:hidden border border-paper-200 bg-paper-50 p-4 mb-6">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-courtyard-700 font-semibold">
+              Step {currentStep} of {STEPS.length}
+            </p>
+            <p className="text-sm font-medium text-ink-950 truncate">{STEPS[currentStep - 1].title}</p>
+          </div>
+          <div className="h-1 bg-paper-200">
+            <div
+              className="h-1 bg-courtyard-700 transition-all"
+              style={{ width: `${(currentStep / STEPS.length) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="hidden md:block bg-paper-50 border border-paper-200 p-4 lg:p-6 mb-8">
+          <div className="flex items-center">
             {STEPS.map((step, index) => {
               const StepIcon = step.icon;
               const isActive = currentStep === step.id;
@@ -309,34 +329,34 @@ const PropertyOnboardingForm: React.FC = () => {
                 <React.Fragment key={step.id}>
                   <button
                     onClick={() => goToStep(step.id)}
-                    className={`flex flex-col items-center min-w-[80px] ${
-                      isActive || isCompleted ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                    className={`flex flex-col items-center shrink-0 px-1 ${
+                      isActive || isCompleted ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'
                     }`}
                     disabled={!isActive && !isCompleted && step.id > currentStep}
                   >
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-all ${
-                      isCompleted ? 'bg-green-500 text-white' :
-                      isActive ? 'bg-blue-600 text-white' :
-                      'bg-gray-100 text-gray-400'
+                    <div className={`w-10 h-10 flex items-center justify-center mb-2 transition-all ${
+                      isCompleted ? 'bg-courtyard-700 text-paper-50' :
+                      isActive ? 'bg-courtyard-700 text-paper-50' :
+                      'bg-paper-200 text-ink-400'
                     }`}>
                       {isCompleted ? (
-                        <IconCheck size={24} />
+                        <IconCheck size={18} stroke={1.5} />
                       ) : (
-                        <StepIcon size={24} />
+                        <StepIcon size={18} stroke={1.4} />
                       )}
                     </div>
-                    <span className={`text-xs font-medium text-center ${
-                      isActive ? 'text-blue-600' :
-                      isCompleted ? 'text-green-600' :
-                      'text-gray-400'
+                    <span className={`text-[11px] font-medium text-center whitespace-nowrap ${
+                      isActive ? 'text-courtyard-700' :
+                      isCompleted ? 'text-courtyard-600' :
+                      'text-ink-400'
                     }`}>
                       {step.title}
                     </span>
                   </button>
                   
                   {index < STEPS.length - 1 && (
-                    <div className={`flex-1 h-1 mx-2 rounded ${
-                      currentStep > step.id ? 'bg-green-500' : 'bg-gray-200'
+                    <div className={`flex-1 h-px mx-2 min-w-2 ${
+                      currentStep > step.id ? 'bg-courtyard-700' : 'bg-paper-200'
                     }`} />
                   )}
                 </React.Fragment>
@@ -345,53 +365,51 @@ const PropertyOnboardingForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Form Content */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="bg-paper-50 border border-paper-200 p-4 sm:p-6 lg:p-8 min-w-0">
           {errors.submit && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            <div className="mb-6 p-4 bg-laterite-500/10 border border-laterite-500/30 text-laterite-600 text-sm">
               {errors.submit}
             </div>
           )}
           
           {renderStepContent()}
 
-          {/* Navigation Buttons */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 sm:items-center sm:justify-between mt-8 pt-6 border-t border-paper-200">
             <button
               onClick={prevStep}
               disabled={currentStep === 1}
-              className={`flex items-center px-6 py-3 rounded-xl font-medium transition-all ${
+              className={`flex items-center justify-center px-5 py-3 font-medium transition-all w-full sm:w-auto ${
                 currentStep === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-paper-200 text-ink-400 cursor-not-allowed'
+                  : 'btn-outline-ink'
               }`}
             >
-              <IconArrowLeft size={20} className="mr-2" />
+              <IconArrowLeft size={18} stroke={1.5} className="mr-2" />
               Previous
             </button>
 
             {currentStep < STEPS.length ? (
               <button
                 onClick={nextStep}
-                className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all"
+                className="btn-courtyard justify-center w-full sm:w-auto"
               >
                 Next Step
-                <IconArrowRight size={20} className="ml-2" />
+                <IconArrowRight size={18} stroke={1.5} className="ml-2" />
               </button>
             ) : (
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="flex items-center px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-medium hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50"
+                className="btn-courtyard justify-center w-full sm:w-auto disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-paper-50 mr-2" />
                     Submitting...
                   </>
                 ) : (
                   <>
-                    <IconCheck size={20} className="mr-2" />
+                    <IconCheck size={18} stroke={1.5} className="mr-2" />
                     Submit Property
                   </>
                 )}

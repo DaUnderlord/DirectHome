@@ -586,8 +586,9 @@ specific site requirements, and material availability.
       eyebrow="₦399 to unlock results"
       heroTitle={
         <>
-          Construction Cost Estimator for{' '}
-          <span className="italic text-courtyard-700">Nigeria</span>
+          Build cost estimator
+          <br />
+          <span className="italic text-courtyard-700">for Nigeria.</span>
         </>
       }
       heroSubtitle="Step-by-step estimate for materials, labor, professional fees, permits, add-ons, and VAT — based on current Nigerian market prices."

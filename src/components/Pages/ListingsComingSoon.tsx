@@ -9,7 +9,7 @@ const ListingsComingSoon: React.FC = () => {
   usePageMeta({
     title: 'Property Listings Coming Soon',
     description:
-      'DirectHome property listings are launching soon. Use our Construction Cost Estimator and Rent Calculator while you wait — unlock results for ₦399.',
+      'DirectHome property listings are launching soon. Use the Construction Cost Estimator while you wait — unlock a report for ₦399.',
     path: '/search',
   });
 
@@ -23,7 +23,7 @@ const ListingsComingSoon: React.FC = () => {
             <span className="italic text-courtyard-700">coming soon</span>
           </>
         }
-        subtitle="We're building a direct marketplace for Nigerian property — no agents, no middlemen. In the meantime, plan your build and rent budget with our flagship tools."
+        subtitle="We're building a direct marketplace for Nigerian property — no agents, no middlemen. In the meantime, plan a build with the estimator. Owners can already submit a listing for review."
         image={courtyard}
       />
 
@@ -36,8 +36,8 @@ const ListingsComingSoon: React.FC = () => {
             Listings launch in progress
           </h2>
           <p className="text-ink-600 max-w-lg mx-auto mb-10 leading-relaxed">
-            Owners and seekers will connect here soon. Use our flagship calculators today — they&apos;re
-            built for the Nigerian market. Results are ₦399 to unlock.
+            Owners and seekers will connect here soon. Use the Construction Cost Estimator today.
+            Results are ₦399 to unlock.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-12">
@@ -45,9 +45,9 @@ const ListingsComingSoon: React.FC = () => {
               <IconHammer size={20} />
               Construction Cost Estimator
             </Link>
-            <Link to="/calculator" className="btn-outline-ink justify-center">
+            <Link to="/auth/register" className="btn-outline-ink justify-center">
               <IconCalculator size={20} />
-              Rent Calculator
+              List as an owner
             </Link>
           </div>
 

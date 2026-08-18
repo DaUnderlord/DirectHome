@@ -1,19 +1,28 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema } from '../../../validations/auth';
 import { useAuth } from '../../../context/AuthContext';
-import { AuthErrorType, UserRole } from '../../../types/auth';
+import { AuthErrorType } from '../../../types/auth';
+import { getPostLoginPath } from '../../../utils/authRedirect';
 
 const fieldClass =
   'w-full px-3 py-3 min-h-[44px] text-base rounded-sm bg-paper-50 border border-paper-300 text-ink-950 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-courtyard-500 focus:border-courtyard-700';
 
-const LoginForm: React.FC = () => {
+interface LoginFormProps {
+  redirect?: string | null;
+}
+
+const LoginForm: React.FC<LoginFormProps> = ({ redirect = null }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+
+  const queryRedirect = new URLSearchParams(location.search).get('redirect');
+  const postLoginRedirect = redirect ?? queryRedirect;
 
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(loginSchema),
@@ -30,29 +39,27 @@ const LoginForm: React.FC = () => {
 
     try {
       const response = await login(formData);
-
-      switch (response.user.role) {
-        case UserRole.HOME_OWNER:
-          navigate('/dashboard/homeowner', { replace: true });
-          break;
-        case UserRole.HOME_SEEKER:
-          navigate('/dashboard/homeseeker', { replace: true });
-          break;
-        case UserRole.ADMIN:
-          navigate('/admin', { replace: true });
-          break;
-        default:
-          navigate('/dashboard', { replace: true });
-      }
+      navigate(getPostLoginPath(response.user.role, postLoginRedirect), { replace: true });
     } catch (error: any) {
       console.error('Login error:', error);
 
-      if (error.type === AuthErrorType.INVALID_CREDENTIALS) {
-        setServerError('Invalid email/phone or password');
-      } else if (error.type === AuthErrorType.ACCOUNT_SUSPENDED) {
+      const message =
+        error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
+          ? error.message
+          : 'An error occurred. Please try again later.';
+
+      if (error?.type === AuthErrorType.INVALID_CREDENTIALS) {
+        setServerError(
+          /phone|invalid login/i.test(message)
+            ? 'Sign in with the email address you registered with.'
+            : message.includes('Invalid')
+              ? message
+              : 'Invalid email or password.'
+        );
+      } else if (error?.type === AuthErrorType.ACCOUNT_SUSPENDED) {
         setServerError('Your account has been suspended. Please contact support.');
       } else {
-        setServerError('An error occurred. Please try again later.');
+        setServerError(message);
       }
     } finally {
       setIsLoading(false);
@@ -70,13 +77,13 @@ const LoginForm: React.FC = () => {
 
         <div>
           <label htmlFor="emailOrPhone" className="block text-sm font-medium text-ink-800 mb-1">
-            Email or Phone<span className="text-courtyard-700 ml-1">*</span>
+            Email<span className="text-courtyard-700 ml-1">*</span>
           </label>
           <input
             id="emailOrPhone"
-            type="text"
-            placeholder="Enter your email or phone number"
-            autoComplete="username email tel"
+            type="email"
+            placeholder="you@example.com"
+            autoComplete="username email"
             inputMode="email"
             className={`${fieldClass} ${errors.emailOrPhone ? 'border-red-500' : ''}`}
             {...register('emailOrPhone')}

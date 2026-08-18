@@ -14,13 +14,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Login Schema
 export const loginSchema = z.object({
-  emailOrPhone: z.string().min(1, 'Email or phone number is required')
-    .refine((value) => {
-      // Check if input is email or valid Nigerian phone
-      const isEmail = EMAIL_REGEX.test(value);
-      const isPhone = PHONE_REGEX.test(value);
-      return isEmail || isPhone;
-    }, 'Please enter a valid email or Nigerian phone number'),
+  emailOrPhone: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
   password: z.string().min(1, 'Password is required'),
   rememberMe: z.boolean().optional().default(false),
 });

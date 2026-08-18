@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { IconHammer, IconCalculator } from '@tabler/icons-react';
+import { IconHammer, IconBuildingSkyscraper } from '@tabler/icons-react';
 import SplashScreen from './SplashScreen';
 import heroCourtyard from '../../assets/hero-courtyard-day.png';
 import heroVeranda from '../../assets/hero-veranda-day.png';
@@ -41,7 +41,7 @@ const CinematicHero: React.FC = () => {
 
   useEffect(() => {
     if (phase !== 'playing') return;
-    const t = window.setTimeout(beginReveal, 1200);
+    const t = window.setTimeout(beginReveal, 2400);
     return () => window.clearTimeout(t);
   }, [phase, beginReveal]);
 
@@ -99,25 +99,25 @@ const CinematicHero: React.FC = () => {
         <div className="lookbook-plan" />
 
         <div className={`lookbook-copy ${phase !== 'playing' ? 'is-in' : ''}`}>
-          <p className="lookbook-kicker">Built for Nigeria</p>
+          <p className="lookbook-kicker">Plan before you build</p>
           <h1 className="font-display text-[2.05rem] sm:text-[2.6rem] md:text-5xl lg:text-[4.15rem] font-semibold text-ink-950 leading-[1.1] tracking-tight">
-            Tools for the
+            Your build budget,
             <br />
-            <span className="italic text-courtyard-700">Nigerian house.</span>
+            <span className="italic text-courtyard-700">before the first block.</span>
           </h1>
           <span className="brass-rule mt-6 mb-5 md:mt-7 md:mb-6" />
           <p className="text-base sm:text-lg md:text-xl text-ink-600 leading-relaxed max-w-xl">
-            A construction cost estimator and rent calculator priced for Lagos, Abuja, Port Harcourt,
-            and the rest of the country — before you break ground or sign a lease.
+            Estimate construction costs for Lagos, Abuja, Port Harcourt, and beyond — then list
+            directly when our marketplace opens.
           </p>
           <div className="mt-8 md:mt-10 flex flex-col sm:flex-row sm:flex-wrap gap-3">
             <Link to="/construction-estimator" className="btn-courtyard justify-center w-full sm:w-auto">
               <IconHammer size={18} />
               Estimate a build
             </Link>
-            <Link to="/calculator" className="btn-outline-ink justify-center w-full sm:w-auto">
-              <IconCalculator size={18} />
-              Rent calculator
+            <Link to="/search" className="btn-outline-ink justify-center w-full sm:w-auto">
+              <IconBuildingSkyscraper size={18} />
+              Listings coming soon
             </Link>
           </div>
         </div>

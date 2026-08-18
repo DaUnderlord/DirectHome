@@ -22,7 +22,8 @@ const MediaStep: React.FC<MediaStepProps> = ({ data, errors, onChange }) => {
       url: URL.createObjectURL(file),
       type: 'image' as const,
       isPrimary: data.images.length === 0 && index === 0,
-      uploadedAt: new Date()
+      uploadedAt: new Date(),
+      file,
     }));
 
     onChange({ images: [...data.images, ...newImages] });
@@ -37,7 +38,8 @@ const MediaStep: React.FC<MediaStepProps> = ({ data, errors, onChange }) => {
       url: URL.createObjectURL(file),
       type: 'video' as const,
       isPrimary: false,
-      uploadedAt: new Date()
+      uploadedAt: new Date(),
+      file,
     }));
 
     onChange({ videos: [...data.videos, ...newVideos] });

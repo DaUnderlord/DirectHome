@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, type ReactNode } from 'react';
 import {
   createPaymentRef,
   isFlutterwaveConfigured,
@@ -16,12 +16,14 @@ import { useAuth } from '../../context/AuthContext';
 interface ResultPaywallProps {
   toolId: PaidToolId;
   title?: string;
+  description?: ReactNode;
   onUnlocked: () => void;
 }
 
 const ResultPaywall: React.FC<ResultPaywallProps> = ({
   toolId,
   title = 'Unlock your results',
+  description,
   onUnlocked,
 }) => {
   const { user } = useAuth();
@@ -97,8 +99,12 @@ const ResultPaywall: React.FC<ResultPaywallProps> = ({
       <p className="text-courtyard-700 text-[11px] tracking-[0.28em] uppercase mb-3">Unlock report</p>
       <h3 className="font-display text-2xl font-semibold text-ink-950 mb-2">{title}</h3>
       <p className="text-ink-600 max-w-md mx-auto mb-6">
-        Your estimate is ready. Pay <span className="text-courtyard-700 font-semibold">₦{TOOL_REPORT_PRICE_NGN}</span> to
-        view the full breakdown. One payment unlocks this tool for the rest of your session.
+        {description || (
+          <>
+            Your estimate is ready. Pay <span className="text-courtyard-700 font-semibold">₦{TOOL_REPORT_PRICE_NGN}</span> to
+            view the full breakdown. One payment unlocks this tool for the rest of your session.
+          </>
+        )}
       </p>
 
       <form onSubmit={handlePay} className="max-w-sm mx-auto space-y-3 text-left">
@@ -150,15 +156,16 @@ export function useToolUnlock(toolId: PaidToolId) {
 interface PaidResultsGateProps {
   toolId: PaidToolId;
   title: string;
+  description?: ReactNode;
   ready: boolean;
   children: React.ReactNode;
 }
 
-export function PaidResultsGate({ toolId, title, ready, children }: PaidResultsGateProps) {
+export function PaidResultsGate({ toolId, title, description, ready, children }: PaidResultsGateProps) {
   const { unlocked, unlock } = useToolUnlock(toolId);
   if (!ready) return null;
   if (!unlocked) {
-    return <ResultPaywall toolId={toolId} title={title} onUnlocked={unlock} />;
+    return <ResultPaywall toolId={toolId} title={title} description={description} onUnlocked={unlock} />;
   }
   return <>{children}</>;
 }

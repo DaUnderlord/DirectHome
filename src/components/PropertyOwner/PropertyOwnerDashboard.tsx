@@ -13,13 +13,10 @@ import {
   IconChartBar,
   IconBell,
   IconCalendar,
-  IconClipboardList,
   IconArrowRight,
   IconTrendingUp,
   IconTrendingDown,
   IconClock,
-  IconCheck,
-  IconAlertCircle,
   IconBuilding
 } from '@tabler/icons-react';
 import { format } from 'date-fns';
@@ -111,40 +108,47 @@ const PropertyOwnerDashboard: React.FC = () => {
     }).format(amount);
   };
 
+  const toneClass = {
+    courtyard: 'bg-courtyard-700',
+    brass: 'bg-brass-500',
+    ink: 'bg-ink-800',
+    laterite: 'bg-laterite-500',
+  } as const;
+
   const QuickStatCard = ({ 
     title, 
     value, 
     icon: Icon, 
-    color, 
+    tone, 
     trend, 
     trendValue,
     onClick 
   }: { 
     title: string; 
     value: string | number; 
-    icon: React.ComponentType<any>; 
-    color: string;
+    icon: React.ComponentType<{ size?: number; stroke?: number; className?: string }>; 
+    tone: keyof typeof toneClass;
     trend?: 'up' | 'down';
     trendValue?: string;
     onClick?: () => void;
   }) => (
     <div 
-      className={`bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer ${onClick ? 'hover:border-blue-200' : ''}`}
+      className={`bg-paper-50 border border-paper-200 p-5 sm:p-6 ${onClick ? 'cursor-pointer hover:border-brass-500' : ''}`}
       onClick={onClick}
     >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-gray-500 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-ink-400 font-semibold mb-2">{title}</p>
+          <p className="font-display text-3xl font-semibold text-ink-950 leading-none">{value}</p>
           {trend && trendValue && (
-            <div className={`flex items-center mt-2 text-sm ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-              {trend === 'up' ? <IconTrendingUp size={16} /> : <IconTrendingDown size={16} />}
+            <div className={`flex items-center mt-3 text-sm ${trend === 'up' ? 'text-courtyard-600' : 'text-laterite-600'}`}>
+              {trend === 'up' ? <IconTrendingUp size={16} stroke={1.5} /> : <IconTrendingDown size={16} stroke={1.5} />}
               <span className="ml-1">{trendValue}</span>
             </div>
           )}
         </div>
-        <div className={`p-3 rounded-xl ${color}`}>
-          <Icon size={24} className="text-white" />
+        <div className={`p-2.5 ${toneClass[tone]} shrink-0`}>
+          <Icon size={22} stroke={1.4} className="text-paper-50" />
         </div>
       </div>
     </div>
@@ -155,37 +159,37 @@ const PropertyOwnerDashboard: React.FC = () => {
     count, 
     description, 
     icon: Icon, 
-    color,
+    tone,
     actionLabel,
     onClick 
   }: { 
     title: string; 
     count: number;
     description: string;
-    icon: React.ComponentType<any>; 
-    color: string;
+    icon: React.ComponentType<{ size?: number; stroke?: number; className?: string }>; 
+    tone: keyof typeof toneClass;
     actionLabel: string;
     onClick: () => void;
   }) => (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+    <div className="bg-paper-50 border border-paper-200 p-5 sm:p-6">
       <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-xl ${color}`}>
-          <Icon size={24} className="text-white" />
+        <div className={`p-2.5 ${toneClass[tone]}`}>
+          <Icon size={22} stroke={1.4} className="text-paper-50" />
         </div>
         {count > 0 && (
-          <span className="bg-red-100 text-red-600 text-sm font-semibold px-3 py-1 rounded-full">
+          <span className="bg-laterite-500/10 text-laterite-600 text-xs font-semibold tracking-wide px-2.5 py-1">
             {count} pending
           </span>
         )}
       </div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-1">{title}</h3>
-      <p className="text-sm text-gray-500 mb-4">{description}</p>
+      <h3 className="font-display text-lg font-semibold text-ink-950 mb-1">{title}</h3>
+      <p className="text-sm text-ink-600 mb-4">{description}</p>
       <button 
         onClick={onClick}
-        className="flex items-center text-blue-600 hover:text-blue-700 font-medium text-sm"
+        className="flex items-center text-courtyard-700 hover:text-courtyard-600 font-medium text-sm"
       >
         {actionLabel}
-        <IconArrowRight size={16} className="ml-1" />
+        <IconArrowRight size={16} stroke={1.5} className="ml-1" />
       </button>
     </div>
   );
@@ -240,35 +244,29 @@ const PropertyOwnerDashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <QuickStatCard
             title="Total Properties"
-            value={dashboardStats?.totalProperties || properties.length}
+            value={Math.max(dashboardStats?.totalProperties ?? 0, properties.length)}
             icon={IconBuilding}
-            color="bg-blue-500"
-            trend="up"
-            trendValue="+2 this month"
+            tone="courtyard"
             onClick={() => navigate('/owner/properties')}
           />
           <QuickStatCard
             title="Occupancy Rate"
-            value={`${dashboardStats?.occupancyRate || 85}%`}
+            value={`${dashboardStats?.occupancyRate ?? 0}%`}
             icon={IconHome}
-            color="bg-green-500"
-            trend="up"
-            trendValue="+5% vs last month"
+            tone="brass"
           />
           <QuickStatCard
             title="Total Revenue"
             value={formatCurrency(dashboardStats?.totalRevenue || 0)}
             icon={IconCash}
-            color="bg-purple-500"
-            trend="up"
-            trendValue="+12% this quarter"
+            tone="ink"
             onClick={() => navigate('/owner/payments')}
           />
           <QuickStatCard
             title="Pending Payments"
             value={formatCurrency(dashboardStats?.pendingPayments || 0)}
             icon={IconClock}
-            color="bg-orange-500"
+            tone="laterite"
             onClick={() => navigate('/owner/payments')}
           />
         </div>
@@ -280,7 +278,7 @@ const PropertyOwnerDashboard: React.FC = () => {
             count={pendingViewings.length}
             description="Manage property viewing schedules"
             icon={IconEye}
-            color="bg-indigo-500"
+            tone="courtyard"
             actionLabel="View all requests"
             onClick={() => navigate('/owner/viewings')}
           />
@@ -289,7 +287,7 @@ const PropertyOwnerDashboard: React.FC = () => {
             count={openEnquiries.length}
             description="Respond to potential tenants"
             icon={IconMessage}
-            color="bg-teal-500"
+            tone="brass"
             actionLabel="View enquiries"
             onClick={() => navigate('/owner/enquiries')}
           />
@@ -298,7 +296,7 @@ const PropertyOwnerDashboard: React.FC = () => {
             count={pendingApplications.length}
             description="Review tenant applications"
             icon={IconUsers}
-            color="bg-pink-500"
+            tone="ink"
             actionLabel="Review applications"
             onClick={() => navigate('/owner/applications')}
           />
@@ -307,7 +305,7 @@ const PropertyOwnerDashboard: React.FC = () => {
             count={pendingMaintenance.length}
             description="Track repair requests"
             icon={IconTool}
-            color="bg-amber-500"
+            tone="laterite"
             actionLabel="View requests"
             onClick={() => navigate('/owner/maintenance')}
           />
@@ -316,22 +314,22 @@ const PropertyOwnerDashboard: React.FC = () => {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Properties Overview */}
-          <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="lg:col-span-2 bg-paper-50 border border-paper-200 p-5 sm:p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Your Properties</h2>
-              <Link to="/owner/properties" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+              <h2 className="font-display text-xl font-semibold text-ink-950">Your Properties</h2>
+              <Link to="/owner/properties" className="text-courtyard-700 hover:text-courtyard-600 text-sm font-medium">
                 View all
               </Link>
             </div>
             
             {properties.length === 0 ? (
               <div className="text-center py-12">
-                <IconHome size={48} className="mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No properties yet</h3>
-                <p className="text-gray-500 mb-4">Start by adding your first property listing</p>
+                <IconHome size={48} stroke={1.25} className="mx-auto text-paper-300 mb-4" />
+                <h3 className="font-display text-lg font-semibold text-ink-950 mb-2">No properties yet</h3>
+                <p className="text-ink-600 mb-4">Start by adding your first property listing</p>
                 <button 
                   onClick={() => navigate('/owner/properties/new')}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-6 py-2.5 bg-courtyard-700 text-paper-50 hover:bg-courtyard-600"
                 >
                   Add Property
                 </button>
@@ -341,7 +339,7 @@ const PropertyOwnerDashboard: React.FC = () => {
                 {properties.slice(0, 3).map(property => (
                   <div 
                     key={property.id}
-                    className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+                    className="flex items-center p-4 bg-paper-100 border border-paper-200 hover:border-brass-500 transition-colors cursor-pointer"
                     onClick={() => navigate(`/owner/properties/${property.id}`)}
                   >
                     <img 
@@ -356,10 +354,10 @@ const PropertyOwnerDashboard: React.FC = () => {
                         <span className="text-sm font-semibold text-blue-600">
                           {formatCurrency(property.pricing.rentPrice)}/yr
                         </span>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          property.status === 'active' ? 'bg-green-100 text-green-700' :
-                          property.status === 'pending_review' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-gray-100 text-gray-700'
+                        <span className={`text-xs px-2 py-1 ${
+                          property.status === 'active' ? 'bg-courtyard-700 text-paper-50' :
+                          property.status === 'pending' || property.status === 'pending_review' ? 'bg-paper-200 text-brass-600' :
+                          'bg-paper-200 text-ink-700'
                         }`}>
                           {property.status.replace('_', ' ')}
                         </span>
@@ -375,10 +373,10 @@ const PropertyOwnerDashboard: React.FC = () => {
           {/* Recent Activity & Notifications */}
           <div className="space-y-6">
             {/* Upcoming Viewings */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="bg-paper-50 border border-paper-200 p-5 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Upcoming Viewings</h2>
-                <Link to="/owner/viewings" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                <h2 className="font-display text-lg font-semibold text-ink-950">Upcoming Viewings</h2>
+                <Link to="/owner/viewings" className="text-courtyard-700 hover:text-courtyard-600 text-sm font-medium">
                   View all
                 </Link>
               </div>
@@ -415,10 +413,10 @@ const PropertyOwnerDashboard: React.FC = () => {
             </div>
 
             {/* Recent Notifications */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="bg-paper-50 border border-paper-200 p-5 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>
-                <Link to="/owner/notifications" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                <h2 className="font-display text-lg font-semibold text-ink-950">Notifications</h2>
+                <Link to="/owner/notifications" className="text-courtyard-700 hover:text-courtyard-600 text-sm font-medium">
                   View all
                 </Link>
               </div>
@@ -428,33 +426,38 @@ const PropertyOwnerDashboard: React.FC = () => {
               ) : (
                 <div className="space-y-3">
                   {notifications.slice(0, 4).map(notification => (
-                    <div 
-                      key={notification.id} 
-                      className={`flex items-start p-3 rounded-lg ${
-                        notification.read ? 'bg-gray-50' : 'bg-blue-50'
+                    <button
+                      type="button"
+                      key={notification.id}
+                      onClick={() => {
+                        if (notification.actionUrl) navigate(notification.actionUrl);
+                      }}
+                      className={`w-full flex items-start p-3 text-left ${
+                        notification.read ? 'bg-paper-100' : 'bg-courtyard-50'
                       }`}
                     >
-                      <div className={`p-2 rounded-lg ${
-                        notification.read ? 'bg-gray-200' : 'bg-blue-100'
+                      <div className={`p-2 ${
+                        notification.read ? 'bg-paper-200' : 'bg-courtyard-700'
                       }`}>
-                        {notification.type === 'new_enquiry' && <IconMessage size={16} className="text-blue-600" />}
-                        {notification.type === 'viewing_request' && <IconEye size={16} className="text-indigo-600" />}
-                        {notification.type === 'application_received' && <IconUsers size={16} className="text-pink-600" />}
-                        {notification.type === 'payment_received' && <IconCash size={16} className="text-green-600" />}
-                        {notification.type === 'maintenance_request' && <IconTool size={16} className="text-amber-600" />}
+                        {notification.type === 'new_enquiry' && <IconMessage size={16} className={notification.read ? 'text-ink-600' : 'text-paper-50'} />}
+                        {notification.type === 'viewing_request' && <IconEye size={16} className={notification.read ? 'text-ink-600' : 'text-paper-50'} />}
+                        {notification.type === 'application_received' && <IconUsers size={16} className={notification.read ? 'text-ink-600' : 'text-paper-50'} />}
+                        {notification.type === 'payment_received' && <IconCash size={16} className={notification.read ? 'text-ink-600' : 'text-paper-50'} />}
+                        {notification.type === 'maintenance_request' && <IconTool size={16} className={notification.read ? 'text-ink-600' : 'text-paper-50'} />}
+                        {notification.type === 'system_alert' && <IconBell size={16} className={notification.read ? 'text-ink-600' : 'text-paper-50'} />}
                       </div>
-                      <div className="ml-3 flex-1">
-                        <p className={`text-sm ${notification.read ? 'text-gray-600' : 'text-gray-900 font-medium'}`}>
+                      <div className="ml-3 flex-1 min-w-0">
+                        <p className={`text-sm ${notification.read ? 'text-ink-600' : 'text-ink-950 font-medium'}`}>
                           {notification.title}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-ink-500 mt-1">
                           {format(new Date(notification.createdAt), 'MMM d, h:mm a')}
                         </p>
                       </div>
                       {!notification.read && (
-                        <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                        <div className="w-2 h-2 bg-courtyard-700 rounded-full shrink-0"></div>
                       )}
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}

@@ -176,7 +176,7 @@ const MapInsightsWidget: React.FC<MapInsightsWidgetProps> = ({
             </button>
             
             <Link
-              to="/rent-calculator?tab=market-map"
+              to="/search"
               className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
             >
               View Map
@@ -283,7 +283,7 @@ const MapInsightsWidget: React.FC<MapInsightsWidgetProps> = ({
           </p>
           
           <Link
-            to="/rent-calculator?tab=market-map"
+            to="/search"
             className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center space-x-1"
           >
             <span>Explore full map</span>

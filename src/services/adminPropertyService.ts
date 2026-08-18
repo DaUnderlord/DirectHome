@@ -153,6 +153,10 @@ class AdminPropertyService {
         updated_at: new Date().toISOString()
       };
 
+      if (request.status === 'active') {
+        updateData.published_at = new Date().toISOString();
+      }
+
       if (request.adminNotes) {
         updateData.admin_notes = request.adminNotes;
       }

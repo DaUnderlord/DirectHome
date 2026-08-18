@@ -62,7 +62,7 @@ const AboutPage: React.FC = () => {
   usePageMeta({
     title: 'About DirectHome',
     description:
-      'DirectHome is building a Nigeria-first platform to plan construction costs, check rent affordability, and connect owners with seekers — without agents.',
+      'DirectHome is building a Nigeria-first platform to plan construction costs and connect owners with seekers — without agents.',
     path: '/about',
   });
 
@@ -83,9 +83,9 @@ const AboutPage: React.FC = () => {
           <IconHammer size={18} />
           Estimate a build
         </Link>
-        <Link to="/calculator" className="btn-outline-ink">
+        <Link to="/auth/register" className="btn-outline-ink">
           <IconCalculator size={18} />
-          Check rent
+          Create an account
         </Link>
       </PageHero>
 
@@ -100,8 +100,7 @@ const AboutPage: React.FC = () => {
               </div>
               <p className="text-ink-600 leading-relaxed mb-5">
                 Quality housing should not require opaque fees and a house agent in every conversation.
-                We started with two tools people actually need — a construction cost estimator and a rent
-                calculator — and we are building a direct marketplace next.
+                We started with the construction cost estimator people actually need — and we are building a direct marketplace next.
               </p>
               <p className="text-ink-400 leading-relaxed">
                 The long-term goal is simple: owners and seekers meet here, with clear numbers and no middlemen.

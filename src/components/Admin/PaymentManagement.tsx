@@ -8,7 +8,7 @@ type TabType = 'all' | PaidToolId;
 const tabs: { id: TabType; label: string }[] = [
   { id: 'all', label: 'All payments' },
   { id: 'construction-estimator', label: 'Construction estimator' },
-  { id: 'rent-calculator', label: 'Rent calculator' },
+  { id: 'rent-calculator', label: 'Legacy rent tool' },
 ];
 
 function formatNaira(amount: number) {

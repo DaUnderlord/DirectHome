@@ -24,7 +24,8 @@ export enum PropertyStatus {
   RENTED = 'rented',
   SOLD = 'sold',
   INACTIVE = 'inactive',
-  DRAFT = 'draft'
+  DRAFT = 'draft',
+  REJECTED = 'rejected'
 }
 
 // Type alias for database compatibility

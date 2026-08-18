@@ -6,7 +6,6 @@ import {
   IconBuildingEstate,
   IconHeart,
   IconChevronDown,
-  IconCalculator,
   IconInfoCircle,
   IconHelp
 } from '@tabler/icons-react';
@@ -149,13 +148,6 @@ const Navigation: React.FC = () => {
           active={isActive('/favorites')}
         />
       )}
-
-      <NavItem
-        icon={<IconCalculator size={18} />}
-        label="Rent Calculator"
-        to="/calculator"
-        active={isActive('/calculator')}
-      />
 
       <NavItem
         icon={<IconInfoCircle size={18} />}

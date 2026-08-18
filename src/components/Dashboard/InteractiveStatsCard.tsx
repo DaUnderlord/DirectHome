@@ -11,7 +11,7 @@ interface InteractiveStatsCardProps {
   value: number | string;
   change?: number;
   trend?: 'up' | 'down' | 'stable';
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ComponentType<{ size?: number; className?: string; stroke?: number }>;
   color: 'blue' | 'green' | 'yellow' | 'purple' | 'red' | 'indigo';
   onClick?: () => void;
   loading?: boolean;
@@ -160,8 +160,8 @@ const InteractiveStatsCard: React.FC<InteractiveStatsCardProps> = ({
       <div className="relative z-10">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
-          <div className={`p-3 ${colorClasses.iconBg}`}>
-            <Icon className="text-paper-50" size={22} />
+          <div className={`p-2.5 ${colorClasses.iconBg}`}>
+            <Icon className="text-paper-50" size={20} stroke={1.4} />
           </div>
           
           {onClick && (

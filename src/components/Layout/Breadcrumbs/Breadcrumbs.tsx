@@ -28,7 +28,7 @@ const routeNameMap: Record<string, string> = {
   'dashboard': 'Dashboard',
   'homeowner': 'Homeowner',
   'homeseeker': 'Home Seeker',
-  'calculator': 'Rent Calculator',
+  'construction-estimator': 'Construction Estimator',
   'auth': 'Authentication',
   'login': 'Login',
   'register': 'Register',

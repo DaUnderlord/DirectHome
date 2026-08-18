@@ -5,15 +5,15 @@ import ContentPage from '../UI/ContentPage';
 const faqs = [
   {
     q: 'How does DirectHome work?',
-    a: 'Use the Construction Cost Estimator and Rent Calculator to plan with Nigerian prices. Property listings — owner to seeker, no agents — are launching next.',
+    a: 'Use the Construction Cost Estimator to plan a build with Nigerian prices. Property listings — owner to seeker, no agents — are launching next.',
   },
   {
     q: 'Do I need an account?',
-    a: 'No for filling in the tools. Unlocking a full report is ₦399 per tool, per browser session. Accounts are free.',
+    a: 'No for filling in the estimator. Unlocking a full report is ₦399 per browser session. Accounts are free.',
   },
   {
     q: 'Are the calculators accurate?',
-    a: 'They use city-tier material, labour, and fee rates. Treat them as planning figures and confirm with contractors or landlords.',
+    a: 'The estimator uses city-tier material, labour, and fee rates. Treat it as a planning figure and confirm with contractors.',
   },
   {
     q: 'When can I list or search properties?',

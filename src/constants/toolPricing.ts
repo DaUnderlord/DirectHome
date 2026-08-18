@@ -4,7 +4,7 @@ export type PaidToolId = 'construction-estimator' | 'rent-calculator';
 
 export const TOOL_LABELS: Record<PaidToolId, string> = {
   'construction-estimator': 'Construction Cost Estimator',
-  'rent-calculator': 'Rent Calculator',
+  'rent-calculator': 'Legacy rent tool',
 };
 
 const storageKey = (toolId: PaidToolId) => `dh-paid-${toolId}`;

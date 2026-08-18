@@ -46,11 +46,7 @@ api.interceptors.response.use(
   (error) => {
     // Handle authentication errors
     if (error.response?.status === 401) {
-      // Clear auth data and dispatch unauthorized event
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_refresh_token');
-      localStorage.removeItem('auth_expires_at');
-      window.dispatchEvent(new Event('directhome:unauthorized'));
+      console.warn('API request returned 401. Leaving the current session in place.');
     }
     
     // Handle rate limiting

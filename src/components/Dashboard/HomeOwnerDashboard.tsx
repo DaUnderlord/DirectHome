@@ -202,33 +202,33 @@ const HomeOwnerDashboard: React.FC<HomeOwnerDashboardProps> = ({
       </div>
 
       {/* Quick Actions */}
-      <div className="glass-card rounded-2xl p-6 border border-white/20 shadow-lg backdrop-blur-xl">
-        <h3 className="text-xl font-semibold text-gray-900 mb-6">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="border border-paper-200 bg-paper-50 p-5 sm:p-6">
+        <h3 className="font-display text-xl font-semibold text-ink-950 mb-6">Quick Actions</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <Link 
             to="/property/create" 
-            className="group bg-courtyard-700 hover:bg-courtyard-600 text-paper-50 py-4 px-6 flex items-center justify-center"
+            className="btn-courtyard justify-center"
           >
-            <IconPlus className="h-5 w-5 mr-2" />
-            <span className="font-semibold">Add New Property</span>
+            <IconPlus className="h-5 w-5" stroke={1.5} />
+            <span>Add New Property</span>
           </Link>
           
           <Link 
             to="/my-properties" 
-            className="group relative overflow-hidden glass-card hover:shadow-lg text-gray-700 hover:text-gray-900 py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center border border-white/30"
+            className="btn-outline-ink justify-center"
           >
-            <IconHome className="h-5 w-5 mr-2" />
-            <span className="font-semibold">My Properties</span>
+            <IconHome className="h-5 w-5" stroke={1.5} />
+            <span>My Properties</span>
           </Link>
           
           <Link 
             to="/owner/viewings" 
-            className="group relative overflow-hidden glass-card hover:shadow-lg text-gray-700 hover:text-gray-900 py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center border border-white/30"
+            className="btn-outline-ink justify-center"
           >
-            <IconCalendar className="h-5 w-5 mr-2" />
-            <span className="font-semibold">Appointments</span>
+            <IconCalendar className="h-5 w-5" stroke={1.5} />
+            <span>Appointments</span>
             {pendingAppointments.length > 0 && (
-              <span className="ml-2 bg-yellow-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              <span className="ml-2 bg-brass-500 text-paper-50 text-xs h-5 w-5 flex items-center justify-center">
                 {pendingAppointments.length}
               </span>
             )}
@@ -236,10 +236,10 @@ const HomeOwnerDashboard: React.FC<HomeOwnerDashboardProps> = ({
           
           <Link 
             to="/analytics" 
-            className="group relative overflow-hidden glass-card hover:shadow-lg text-gray-700 hover:text-gray-900 py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center border border-white/30"
+            className="btn-outline-ink justify-center"
           >
-            <IconChartBar className="h-5 w-5 mr-2" />
-            <span className="font-semibold">Analytics</span>
+            <IconChartBar className="h-5 w-5" stroke={1.5} />
+            <span>Analytics</span>
           </Link>
         </div>
       </div>

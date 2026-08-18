@@ -37,7 +37,7 @@ const Footer: React.FC = () => {
               <Logo size="lg" inverted />
             </div>
             <p className="text-paper-300 mb-6 leading-relaxed max-w-sm">
-              Tools for the Nigerian house — construction estimates, rent affordability, and a marketplace launching without middlemen.
+              Plan before you build — construction estimates and a marketplace launching without middlemen.
             </p>
             <div className="flex space-x-4">
               {[
@@ -61,7 +61,6 @@ const Footer: React.FC = () => {
             <h4 className="text-sm tracking-[0.2em] uppercase text-paper-200 mb-4">Tools</h4>
             <div className="space-y-2">
               <FooterLink to="/construction-estimator" label="Construction Cost Estimator" />
-              <FooterLink to="/calculator" label="Rent Calculator" />
               <FooterLink to="/search" label="Property Listings (Soon)" />
             </div>
           </div>

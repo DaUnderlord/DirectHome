@@ -22,7 +22,7 @@ const LoginPage: React.FC = () => {
           </div>
         )}
         
-        <LoginForm />
+        <LoginForm redirect={redirect} />
       </div>
     </AuthLayout>
   );

@@ -16,7 +16,6 @@ import ErrorBoundary from '../components/ErrorBoundary/ErrorBoundary';
 import HomePage from '../components/Pages/HomePage';
 import ListingsComingSoon from '../components/Pages/ListingsComingSoon';
 
-const RentCalculatorPage = React.lazy(() => import('../components/Pages/RentCalculatorPage'));
 const ConstructionCostEstimator = React.lazy(() =>
   import('../components/Tools/ConstructionCostEstimator').then((m) => ({
     default: m.default,
@@ -66,6 +65,12 @@ const MaintenanceManagement = React.lazy(() =>
 const AnalyticsDashboard = React.lazy(() =>
   import('../components/PropertyOwner/AnalyticsDashboard').then((m) => ({ default: m.default }))
 );
+const OwnerPropertyDetail = React.lazy(() =>
+  import('../components/PropertyOwner/OwnerPropertyDetail').then((m) => ({ default: m.default }))
+);
+const NotificationsManagement = React.lazy(() =>
+  import('../components/PropertyOwner/NotificationsManagement').then((m) => ({ default: m.default }))
+);
 
 const PageLoader = () => (
   <div className="min-h-[50vh] flex items-center justify-center bg-paper-100 text-ink-600 font-display">
@@ -87,7 +92,8 @@ const AppRoutes: React.FC = () => {
           <Route path="verified-properties" element={<ListingsComingSoon />} />
           <Route path="unauthorized" element={<UnauthorizedPage />} />
           <Route path="property/:id" element={withSuspense(<PropertyDetailPage />)} />
-          <Route path="calculator" element={withSuspense(<RentCalculatorPage />)} />
+          <Route path="calculator" element={<Navigate to="/construction-estimator" replace />} />
+          <Route path="rent-calculator" element={<Navigate to="/construction-estimator" replace />} />
           <Route path="construction-estimator" element={withSuspense(<ConstructionCostEstimator />)} />
           <Route
             path="favorites"
@@ -217,6 +223,14 @@ const AppRoutes: React.FC = () => {
             }
           />
           <Route
+            path="properties/:id"
+            element={
+              <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
+                {withSuspense(<OwnerPropertyDetail />)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="properties"
             element={
               <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
@@ -269,6 +283,14 @@ const AppRoutes: React.FC = () => {
             element={
               <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
                 {withSuspense(<AnalyticsDashboard />)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="notifications"
+            element={
+              <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
+                {withSuspense(<NotificationsManagement />)}
               </ProtectedRoute>
             }
           />

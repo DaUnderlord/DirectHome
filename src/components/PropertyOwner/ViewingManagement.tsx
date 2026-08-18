@@ -12,9 +12,9 @@ import {
   IconX,
   IconRefresh,
   IconKey,
-  IconMessageCircle,
   IconFilter,
-  IconArrowLeft
+  IconArrowLeft,
+  IconPlus,
 } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import Container from '../UI/Container';
@@ -29,19 +29,25 @@ const ViewingManagement: React.FC = () => {
     fetchViewings,
     updateViewingStatus,
     generateAccessCode,
-    addViewingFeedback
+    addViewingFeedback,
   } = usePropertyOwnerStore();
 
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed'>('all');
   const [selectedViewing, setSelectedViewing] = useState<ViewingRequest | null>(null);
   const [feedbackModal, setFeedbackModal] = useState(false);
-  const [feedback, setFeedback] = useState({ rating: 5, interested: false, comments: '', followUpRequired: false });
+  const [feedback, setFeedback] = useState({
+    rating: 5,
+    interested: false,
+    comments: '',
+    followUpRequired: false,
+  });
 
   useEffect(() => {
-    fetchViewings(user?.id || 'owner-1');
+    if (!user?.id) return;
+    void fetchViewings(user.id);
   }, [user?.id, fetchViewings]);
 
-  const filteredViewings = viewings.filter(v => {
+  const filteredViewings = viewings.filter((v) => {
     if (filter === 'all') return true;
     if (filter === 'pending') return v.status === ViewingStatus.PENDING;
     if (filter === 'confirmed') return v.status === ViewingStatus.CONFIRMED;
@@ -66,184 +72,203 @@ const ViewingManagement: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: ViewingStatus) => {
+  const getStatusClass = (status: ViewingStatus) => {
     switch (status) {
-      case ViewingStatus.PENDING: return 'bg-yellow-100 text-yellow-700';
-      case ViewingStatus.CONFIRMED: return 'bg-blue-100 text-blue-700';
-      case ViewingStatus.COMPLETED: return 'bg-green-100 text-green-700';
-      case ViewingStatus.CANCELLED: return 'bg-red-100 text-red-700';
-      case ViewingStatus.NO_SHOW: return 'bg-gray-100 text-gray-700';
-      case ViewingStatus.RESCHEDULED: return 'bg-purple-100 text-purple-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case ViewingStatus.PENDING:
+        return 'bg-paper-200 text-brass-600';
+      case ViewingStatus.CONFIRMED:
+        return 'bg-courtyard-700 text-paper-50';
+      case ViewingStatus.COMPLETED:
+        return 'bg-courtyard-100 text-courtyard-700';
+      case ViewingStatus.CANCELLED:
+      case ViewingStatus.NO_SHOW:
+        return 'bg-paper-200 text-laterite-600';
+      default:
+        return 'bg-paper-200 text-ink-700';
     }
   };
 
+  const stats = [
+    {
+      label: 'Pending',
+      value: viewings.filter((v) => v.status === ViewingStatus.PENDING).length,
+      tone: 'text-brass-700',
+    },
+    {
+      label: 'Confirmed',
+      value: viewings.filter((v) => v.status === ViewingStatus.CONFIRMED).length,
+      tone: 'text-courtyard-700',
+    },
+    {
+      label: 'Completed',
+      value: viewings.filter((v) => v.status === ViewingStatus.COMPLETED).length,
+      tone: 'text-ink-950',
+    },
+    {
+      label: 'Cancelled',
+      value: viewings.filter((v) => v.status === ViewingStatus.CANCELLED).length,
+      tone: 'text-laterite-700',
+    },
+  ];
+
   if (isLoadingViewings) {
     return (
-      <div className="min-h-screen bg-paper-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-paper-100 flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-courtyard-700 mx-auto mb-4" />
+          <p className="text-ink-600">Loading viewing requests…</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-paper-100 py-8">
-      <Container size="xl">
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => navigate('/owner')}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
-          >
-            <IconArrowLeft size={20} className="mr-2" />
-            Back to Dashboard
-          </button>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Viewing Requests</h1>
-              <p className="text-gray-600 mt-1">Manage property viewing schedules</p>
-            </div>
-            <div className="flex items-center space-x-2 mt-4 md:mt-0">
-              <IconFilter size={20} className="text-gray-500" />
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value as typeof filter)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Viewings</option>
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="completed">Completed</option>
-              </select>
-            </div>
+    <div className="min-h-screen bg-paper-100 py-6 sm:py-8 overflow-x-hidden">
+      <Container size="xl" className="min-w-0">
+        <button
+          type="button"
+          onClick={() => navigate('/owner')}
+          className="flex items-center text-ink-600 hover:text-ink-950 mb-4 text-sm"
+        >
+          <IconArrowLeft size={18} stroke={1.5} className="mr-2 shrink-0" />
+          Back to dashboard
+        </button>
+
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-courtyard-700 font-semibold mb-2">
+              Owner tools
+            </p>
+            <h1 className="font-display text-2xl sm:text-3xl font-semibold text-ink-950">
+              Viewing Requests
+            </h1>
+            <p className="text-ink-600 mt-2 text-sm max-w-xl">
+              Confirm or decline property tours. Requests appear here when seekers book a viewing
+              on a live listing.
+            </p>
           </div>
+          <label className="flex items-center gap-2 text-sm text-ink-600 shrink-0">
+            <IconFilter size={16} stroke={1.5} />
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value as typeof filter)}
+              className="min-h-11 px-3 bg-paper-50 border border-paper-300 text-ink-950 focus:ring-2 focus:ring-courtyard-500"
+            >
+              <option value="all">All viewings</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="completed">Completed</option>
+            </select>
+          </label>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <p className="text-sm text-gray-500">Pending</p>
-            <p className="text-2xl font-bold text-yellow-600">
-              {viewings.filter(v => v.status === ViewingStatus.PENDING).length}
-            </p>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <p className="text-sm text-gray-500">Confirmed</p>
-            <p className="text-2xl font-bold text-blue-600">
-              {viewings.filter(v => v.status === ViewingStatus.CONFIRMED).length}
-            </p>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <p className="text-sm text-gray-500">Completed</p>
-            <p className="text-2xl font-bold text-green-600">
-              {viewings.filter(v => v.status === ViewingStatus.COMPLETED).length}
-            </p>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <p className="text-sm text-gray-500">Cancelled</p>
-            <p className="text-2xl font-bold text-red-600">
-              {viewings.filter(v => v.status === ViewingStatus.CANCELLED).length}
-            </p>
-          </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+          {stats.map((stat) => (
+            <div key={stat.label} className="bg-paper-50 border border-paper-200 p-4">
+              <p className="text-xs uppercase tracking-wide text-ink-500">{stat.label}</p>
+              <p className={`font-display text-2xl sm:text-3xl font-semibold mt-1 ${stat.tone}`}>
+                {stat.value}
+              </p>
+            </div>
+          ))}
         </div>
 
-        {/* Viewings List */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+        <div className="bg-paper-50 border border-paper-200">
           {filteredViewings.length === 0 ? (
-            <div className="p-12 text-center">
-              <IconCalendar size={48} className="mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No viewing requests</h3>
-              <p className="text-gray-500">Viewing requests will appear here when tenants schedule them</p>
+            <div className="p-8 sm:p-12 text-center">
+              <IconCalendar size={40} stroke={1.25} className="mx-auto text-paper-300 mb-3" />
+              <h2 className="font-display text-lg font-semibold text-ink-950 mb-2">
+                No viewing requests yet
+              </h2>
+              <p className="text-ink-600 text-sm max-w-md mx-auto mb-5">
+                When a seeker books a tour of your listing, it will show up here so you can
+                confirm the time. Marketplace bookings are opening soon.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/owner/properties/new')}
+                className="inline-flex items-center px-5 py-2.5 bg-courtyard-700 text-paper-50 hover:bg-courtyard-600"
+              >
+                <IconPlus size={16} className="mr-2" />
+                Add or improve a listing
+              </button>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-paper-200">
               {filteredViewings.map((viewing) => (
-                <div key={viewing.id} className="p-6 hover:bg-gray-50 transition-colors">
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{viewing.propertyTitle}</h3>
-                          <div className="flex items-center mt-1 text-sm text-gray-500">
-                            <IconCalendar size={16} className="mr-1" />
-                            {format(new Date(viewing.requestedDate), 'EEEE, MMMM d, yyyy')}
-                            <IconClock size={16} className="ml-3 mr-1" />
+                <div key={viewing.id} className="p-4 sm:p-6">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="font-display font-semibold text-ink-950 break-words">
+                          {viewing.propertyTitle}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-ink-600">
+                          <span className="inline-flex items-center">
+                            <IconCalendar size={14} className="mr-1 shrink-0" />
+                            {format(new Date(viewing.requestedDate), 'EEE, MMM d, yyyy')}
+                          </span>
+                          <span className="inline-flex items-center">
+                            <IconClock size={14} className="mr-1 shrink-0" />
                             {viewing.requestedTime}
-                          </div>
-                        </div>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(viewing.status)}`}>
-                          {viewing.status.replace('_', ' ')}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                        <div className="flex items-center text-sm">
-                          <IconUser size={16} className="text-gray-400 mr-2" />
-                          <span className="text-gray-700">{viewing.seekerName}</span>
-                        </div>
-                        <div className="flex items-center text-sm">
-                          <IconPhone size={16} className="text-gray-400 mr-2" />
-                          <a href={`tel:${viewing.seekerPhone}`} className="text-blue-600 hover:underline">
-                            {viewing.seekerPhone}
-                          </a>
-                        </div>
-                        <div className="flex items-center text-sm">
-                          <IconMail size={16} className="text-gray-400 mr-2" />
-                          <a href={`mailto:${viewing.seekerEmail}`} className="text-blue-600 hover:underline">
-                            {viewing.seekerEmail}
-                          </a>
+                          </span>
                         </div>
                       </div>
+                      <span className={`px-2.5 py-1 text-xs font-medium shrink-0 ${getStatusClass(viewing.status)}`}>
+                        {viewing.status.replace('_', ' ')}
+                      </span>
+                    </div>
 
-                      {viewing.accessCode && (
-                        <div className="mt-4 inline-flex items-center px-4 py-2 bg-blue-50 rounded-lg">
-                          <IconKey size={16} className="text-blue-600 mr-2" />
-                          <span className="text-sm text-gray-600">Access Code:</span>
-                          <span className="ml-2 font-mono font-bold text-blue-700">{viewing.accessCode}</span>
-                        </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+                      <div className="flex items-center text-ink-700">
+                        <IconUser size={14} className="text-ink-400 mr-2 shrink-0" />
+                        {viewing.seekerName}
+                      </div>
+                      {viewing.seekerPhone && (
+                        <a href={`tel:${viewing.seekerPhone}`} className="flex items-center text-courtyard-700">
+                          <IconPhone size={14} className="mr-2 shrink-0" />
+                          {viewing.seekerPhone}
+                        </a>
                       )}
-
-                      {viewing.feedback && (
-                        <div className="mt-4 p-4 bg-green-50 rounded-lg">
-                          <div className="flex items-center mb-2">
-                            <span className="text-sm font-medium text-gray-700">Feedback:</span>
-                            <span className="ml-2 text-yellow-500">
-                              {'★'.repeat(viewing.feedback.rating)}{'☆'.repeat(5 - viewing.feedback.rating)}
-                            </span>
-                            {viewing.feedback.interested && (
-                              <span className="ml-3 px-2 py-1 bg-green-200 text-green-700 text-xs rounded-full">
-                                Interested
-                              </span>
-                            )}
-                          </div>
-                          {viewing.feedback.comments && (
-                            <p className="text-sm text-gray-600">{viewing.feedback.comments}</p>
-                          )}
-                        </div>
+                      {viewing.seekerEmail && (
+                        <a href={`mailto:${viewing.seekerEmail}`} className="flex items-center text-courtyard-700 break-all">
+                          <IconMail size={14} className="mr-2 shrink-0" />
+                          {viewing.seekerEmail}
+                        </a>
                       )}
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex flex-wrap gap-2 mt-4 lg:mt-0 lg:ml-6">
+                    {viewing.accessCode && (
+                      <div className="inline-flex items-center px-3 py-2 bg-paper-100 border border-paper-200 text-sm">
+                        <IconKey size={14} className="text-courtyard-700 mr-2" />
+                        Access code
+                        <span className="ml-2 font-mono font-semibold text-ink-950">{viewing.accessCode}</span>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-2">
                       {viewing.status === ViewingStatus.PENDING && (
                         <>
                           <button
+                            type="button"
                             onClick={() => handleStatusUpdate(viewing.id, ViewingStatus.CONFIRMED)}
-                            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                            className="flex items-center px-4 py-2 min-h-11 bg-courtyard-700 text-paper-50 hover:bg-courtyard-600"
                           >
                             <IconCheck size={16} className="mr-1" />
                             Accept
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleStatusUpdate(viewing.id, ViewingStatus.RESCHEDULED)}
-                            className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                            className="flex items-center px-4 py-2 min-h-11 border border-paper-300 text-ink-800 hover:border-courtyard-500"
                           >
                             <IconRefresh size={16} className="mr-1" />
                             Reschedule
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleStatusUpdate(viewing.id, ViewingStatus.CANCELLED)}
-                            className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                            className="flex items-center px-4 py-2 min-h-11 border border-laterite-400 text-laterite-600"
                           >
                             <IconX size={16} className="mr-1" />
                             Decline
@@ -253,28 +278,26 @@ const ViewingManagement: React.FC = () => {
                       {viewing.status === ViewingStatus.CONFIRMED && (
                         <>
                           <button
+                            type="button"
                             onClick={() => {
                               setSelectedViewing(viewing);
                               setFeedbackModal(true);
                             }}
-                            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                            className="flex items-center px-4 py-2 min-h-11 bg-courtyard-700 text-paper-50 hover:bg-courtyard-600"
                           >
                             <IconCheck size={16} className="mr-1" />
-                            Mark Complete
+                            Mark complete
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleStatusUpdate(viewing.id, ViewingStatus.NO_SHOW)}
-                            className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                            className="flex items-center px-4 py-2 min-h-11 border border-paper-300 text-ink-800"
                           >
                             <IconX size={16} className="mr-1" />
-                            No Show
+                            No show
                           </button>
                         </>
                       )}
-                      <button className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                        <IconMessageCircle size={16} className="mr-1" />
-                        Message
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -284,82 +307,69 @@ const ViewingManagement: React.FC = () => {
         </div>
       </Container>
 
-      {/* Feedback Modal */}
       {feedbackModal && selectedViewing && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Viewing Feedback</h3>
-            
+        <div className="fixed inset-0 bg-ink-950/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <div className="bg-paper-50 w-full sm:max-w-md sm:border border-paper-200 p-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="font-display text-xl font-semibold text-ink-950 mb-4">Viewing notes</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                <label className="block text-sm font-medium text-ink-800 mb-2">Rating</label>
                 <div className="flex space-x-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       type="button"
-                      onClick={() => setFeedback(prev => ({ ...prev, rating: star }))}
-                      className={`text-2xl ${star <= feedback.rating ? 'text-yellow-500' : 'text-gray-300'}`}
+                      onClick={() => setFeedback((prev) => ({ ...prev, rating: star }))}
+                      className={`text-2xl ${star <= feedback.rating ? 'text-brass-500' : 'text-paper-300'}`}
                     >
                       ★
                     </button>
                   ))}
                 </div>
               </div>
-
-              <div className="flex items-center">
+              <label className="flex items-center text-sm text-ink-700">
                 <input
                   type="checkbox"
-                  id="interested"
                   checked={feedback.interested}
-                  onChange={(e) => setFeedback(prev => ({ ...prev, interested: e.target.checked }))}
-                  className="w-4 h-4 text-blue-600 rounded"
+                  onChange={(e) => setFeedback((prev) => ({ ...prev, interested: e.target.checked }))}
+                  className="w-4 h-4 mr-2 accent-courtyard-700"
                 />
-                <label htmlFor="interested" className="ml-2 text-sm text-gray-700">
-                  Visitor showed interest in the property
-                </label>
-              </div>
-
-              <div className="flex items-center">
+                Visitor showed interest
+              </label>
+              <label className="flex items-center text-sm text-ink-700">
                 <input
                   type="checkbox"
-                  id="followUp"
                   checked={feedback.followUpRequired}
-                  onChange={(e) => setFeedback(prev => ({ ...prev, followUpRequired: e.target.checked }))}
-                  className="w-4 h-4 text-blue-600 rounded"
+                  onChange={(e) => setFeedback((prev) => ({ ...prev, followUpRequired: e.target.checked }))}
+                  className="w-4 h-4 mr-2 accent-courtyard-700"
                 />
-                <label htmlFor="followUp" className="ml-2 text-sm text-gray-700">
-                  Follow-up required
-                </label>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Comments</label>
-                <textarea
-                  value={feedback.comments}
-                  onChange={(e) => setFeedback(prev => ({ ...prev, comments: e.target.value }))}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Any notes about the viewing..."
-                />
-              </div>
+                Follow-up required
+              </label>
+              <textarea
+                value={feedback.comments}
+                onChange={(e) => setFeedback((prev) => ({ ...prev, comments: e.target.value }))}
+                rows={3}
+                className="w-full px-4 py-3 text-base bg-paper-50 border border-paper-300 text-ink-950 focus:ring-2 focus:ring-courtyard-500"
+                placeholder="Any notes about the viewing…"
+              />
             </div>
-
-            <div className="flex justify-end space-x-3 mt-6">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 mt-6">
               <button
+                type="button"
                 onClick={() => {
                   setFeedbackModal(false);
                   setSelectedViewing(null);
                 }}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2.5 min-h-11 border border-paper-300 text-ink-800"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleFeedbackSubmit}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="px-4 py-2.5 min-h-11 bg-courtyard-700 text-paper-50 hover:bg-courtyard-600"
               >
-                Save & Complete
+                Save & complete
               </button>
             </div>
           </div>

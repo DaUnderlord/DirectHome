@@ -91,7 +91,11 @@ const RegisterForm: React.FC = () => {
       navigate('/auth/verify');
     } catch (err) {
       console.error('Registration error:', err);
-      setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
+      const message =
+        err && typeof err === 'object' && 'message' in err && typeof err.message === 'string'
+          ? err.message
+          : 'Registration failed. Please try again.';
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }

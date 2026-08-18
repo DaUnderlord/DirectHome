@@ -7,6 +7,7 @@ import {
   SECURITY_FEATURES,
   ACCESSIBILITY_OPTIONS
 } from '../../../types/propertyOwner';
+import NumberField from '../../UI/NumberField';
 
 interface FeaturesStepProps {
   data: {
@@ -48,7 +49,7 @@ const KITCHEN_OPTIONS = [
   { value: KitchenType.SEMI_OPEN, label: 'Semi-Open Kitchen' }
 ];
 
-const FeaturesStep: React.FC<FeaturesStepProps> = ({ data, errors, onChange }) => {
+const FeaturesStep: React.FC<FeaturesStepProps> = ({ data, onChange }) => {
   const toggleArrayItem = (field: 'securityFeatures' | 'amenities' | 'accessibilityOptions', item: string) => {
     const currentArray = data[field];
     if (currentArray.includes(item)) {
@@ -58,206 +59,138 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({ data, errors, onChange }) =
     }
   };
 
-  const NumberInput = ({ 
-    label, 
-    value, 
-    field, 
-    min = 0, 
-    max = 20 
-  }: { 
-    label: string; 
-    value: number; 
-    field: string; 
-    min?: number; 
-    max?: number;
-  }) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
-      <div className="flex items-center">
-        <button
-          type="button"
-          onClick={() => onChange({ [field]: Math.max(min, value - 1) })}
-          className="w-10 h-10 rounded-l-lg border border-gray-300 bg-gray-50 hover:bg-gray-100 flex items-center justify-center"
-        >
-          -
-        </button>
-        <input
-          type="number"
-          value={value}
-          onChange={(e) => onChange({ [field]: Math.min(max, Math.max(min, parseInt(e.target.value) || 0)) })}
-          className="w-16 h-10 border-t border-b border-gray-300 text-center"
-          min={min}
-          max={max}
-        />
-        <button
-          type="button"
-          onClick={() => onChange({ [field]: Math.min(max, value + 1) })}
-          className="w-10 h-10 rounded-r-lg border border-gray-300 bg-gray-50 hover:bg-gray-100 flex items-center justify-center"
-        >
-          +
-        </button>
-      </div>
-    </div>
-  );
+  const choiceClass = (selected: boolean) =>
+    `p-3 sm:p-4 min-h-12 rounded-sm border text-center transition-colors ${
+      selected
+        ? 'border-courtyard-700 bg-paper-50 text-ink-950'
+        : 'border-paper-300 bg-paper-50 text-ink-800 hover:border-courtyard-500'
+    }`;
+
+  const chipClass = (selected: boolean) =>
+    `px-4 py-2 rounded-sm border text-sm transition-colors ${
+      selected
+        ? 'border-courtyard-700 bg-courtyard-700 text-paper-50'
+        : 'border-paper-300 text-ink-700 hover:border-courtyard-500'
+    }`;
 
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Property Features</h2>
-        <p className="text-gray-600">Describe the features and amenities of your property</p>
+        <h2 className="font-display text-lg sm:text-xl font-semibold text-ink-950 mb-2">Property Features</h2>
+        <p className="text-ink-600 text-sm sm:text-base">Describe the features and amenities of your property</p>
       </div>
 
-      {/* Room Configuration */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Room Configuration</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <NumberInput label="Bedrooms" value={data.bedrooms} field="bedrooms" />
-          <NumberInput label="Bathrooms" value={data.bathrooms} field="bathrooms" />
-          <NumberInput label="Toilets" value={data.toilets} field="toilets" />
-          <NumberInput label="Parking Spaces" value={data.parkingSpaces} field="parkingSpaces" />
+        <h3 className="font-display text-base sm:text-lg font-semibold text-ink-950 mb-4">Room Configuration</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <NumberField label="Bedrooms" value={data.bedrooms} min={0} max={20} onChange={(bedrooms) => onChange({ bedrooms })} />
+          <NumberField label="Bathrooms" value={data.bathrooms} min={0} max={20} onChange={(bathrooms) => onChange({ bathrooms })} />
+          <NumberField label="Toilets" value={data.toilets} min={0} max={20} onChange={(toilets) => onChange({ toilets })} />
+          <NumberField label="Parking Spaces" value={data.parkingSpaces} min={0} max={20} onChange={(parkingSpaces) => onChange({ parkingSpaces })} />
         </div>
       </div>
 
-      {/* Kitchen Type */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Kitchen Type</h3>
-        <div className="grid grid-cols-3 gap-4">
+        <h3 className="font-display text-base sm:text-lg font-semibold text-ink-950 mb-4">Kitchen Type</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {KITCHEN_OPTIONS.map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => onChange({ kitchenType: option.value })}
-              className={`p-4 rounded-xl border-2 text-center transition-all ${
-                data.kitchenType === option.value
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
+              className={choiceClass(data.kitchenType === option.value)}
             >
-              <span className="font-medium text-gray-900">{option.label}</span>
+              <span className="font-medium">{option.label}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Power Supply */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Power Supply</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+        <h3 className="font-display text-base sm:text-lg font-semibold text-ink-950 mb-4">Power Supply</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
           {POWER_SUPPLY_OPTIONS.map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => onChange({ powerSupply: option.value })}
-              className={`p-4 rounded-xl border-2 text-center transition-all ${
-                data.powerSupply === option.value
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
+              className={choiceClass(data.powerSupply === option.value)}
             >
-              <span className="font-medium text-gray-900">{option.label}</span>
+              <span className="font-medium">{option.label}</span>
             </button>
           ))}
         </div>
         {(data.powerSupply === PowerSupplyType.NEPA_ONLY || data.powerSupply === PowerSupplyType.NEPA_WITH_GEN) && (
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Average NEPA Hours per Day
-            </label>
-            <input
-              type="number"
-              value={data.nepaHours || ''}
-              onChange={(e) => onChange({ nepaHours: parseInt(e.target.value) || 0 })}
-              placeholder="e.g., 12"
-              min="0"
-              max="24"
-              className="w-32 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
-            />
-            <span className="ml-2 text-gray-500">hours</span>
-          </div>
+          <NumberField
+            label="Average NEPA Hours per Day"
+            value={data.nepaHours || 0}
+            min={0}
+            max={24}
+            suffix="hrs"
+            placeholder="12"
+            onChange={(nepaHours) => onChange({ nepaHours })}
+          />
         )}
       </div>
 
-      {/* Water Source */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Water Source</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <h3 className="font-display text-base sm:text-lg font-semibold text-ink-950 mb-4">Water Source</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           {WATER_SOURCE_OPTIONS.map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => onChange({ waterSource: option.value })}
-              className={`p-4 rounded-xl border-2 text-center transition-all ${
-                data.waterSource === option.value
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
+              className={choiceClass(data.waterSource === option.value)}
             >
-              <span className="font-medium text-gray-900">{option.label}</span>
+              <span className="font-medium">{option.label}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Security Features */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Security Features</h3>
-        <div className="flex flex-wrap gap-3">
+        <h3 className="font-display text-base sm:text-lg font-semibold text-ink-950 mb-4">Security Features</h3>
+        <div className="flex flex-wrap gap-2">
           {SECURITY_FEATURES.map((feature) => (
             <button
               key={feature}
               type="button"
               onClick={() => toggleArrayItem('securityFeatures', feature)}
-              className={`px-4 py-2 rounded-full border-2 text-sm transition-all ${
-                data.securityFeatures.includes(feature)
-                  ? 'border-green-500 bg-green-50 text-green-700'
-                  : 'border-gray-200 hover:border-gray-300 text-gray-700'
-              }`}
+              className={chipClass(data.securityFeatures.includes(feature))}
             >
-              {data.securityFeatures.includes(feature) && '✓ '}
               {feature}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Amenities */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Amenities</h3>
-        <div className="flex flex-wrap gap-3">
+        <h3 className="font-display text-base sm:text-lg font-semibold text-ink-950 mb-4">Amenities</h3>
+        <div className="flex flex-wrap gap-2">
           {COMMON_AMENITIES.map((amenity) => (
             <button
               key={amenity}
               type="button"
               onClick={() => toggleArrayItem('amenities', amenity)}
-              className={`px-4 py-2 rounded-full border-2 text-sm transition-all ${
-                data.amenities.includes(amenity)
-                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                  : 'border-gray-200 hover:border-gray-300 text-gray-700'
-              }`}
+              className={chipClass(data.amenities.includes(amenity))}
             >
-              {data.amenities.includes(amenity) && '✓ '}
               {amenity}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Accessibility */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Accessibility Options</h3>
-        <div className="flex flex-wrap gap-3">
+        <h3 className="font-display text-base sm:text-lg font-semibold text-ink-950 mb-4">Accessibility Options</h3>
+        <div className="flex flex-wrap gap-2">
           {ACCESSIBILITY_OPTIONS.map((option) => (
             <button
               key={option}
               type="button"
               onClick={() => toggleArrayItem('accessibilityOptions', option)}
-              className={`px-4 py-2 rounded-full border-2 text-sm transition-all ${
-                data.accessibilityOptions.includes(option)
-                  ? 'border-purple-500 bg-purple-50 text-purple-700'
-                  : 'border-gray-200 hover:border-gray-300 text-gray-700'
-              }`}
+              className={chipClass(data.accessibilityOptions.includes(option))}
             >
-              {data.accessibilityOptions.includes(option) && '✓ '}
               {option}
             </button>
           ))}

@@ -80,16 +80,7 @@ const MarketMapQuickAccess: React.FC<MarketMapQuickAccessProps> = ({
   };
 
   // Generate map URL with area focus
-  const getMapUrl = (area?: QuickSearchArea, search?: string) => {
-    const baseUrl = '/rent-calculator?tab=market-map';
-    if (area) {
-      return `${baseUrl}&center=${area.coordinates[0]},${area.coordinates[1]}&zoom=14`;
-    }
-    if (search) {
-      return `${baseUrl}&search=${encodeURIComponent(search)}`;
-    }
-    return baseUrl;
-  };
+  const getMapUrl = (_area?: QuickSearchArea, _search?: string) => '/search';
 
   return (
     <div className={`bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden ${className}`}>
@@ -102,7 +93,7 @@ const MarketMapQuickAccess: React.FC<MarketMapQuickAccessProps> = ({
           </div>
           
           <Link
-            to="/rent-calculator?tab=market-map"
+            to="/search"
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center space-x-2"
           >
             <IconMap className="w-4 h-4" />
@@ -119,7 +110,7 @@ const MarketMapQuickAccess: React.FC<MarketMapQuickAccessProps> = ({
         </div>
         
         <Link
-          to="/rent-calculator?tab=market-map"
+          to="/search"
           className="w-full flex items-center space-x-3 p-3 border border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors group"
         >
           <IconSearch className="w-5 h-5 text-gray-400 group-hover:text-gray-600" />
@@ -283,7 +274,7 @@ const MarketMapQuickAccess: React.FC<MarketMapQuickAccessProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Link
-              to="/rent-calculator?tab=market-map&view=heatmap"
+              to="/search&view=heatmap"
               className="text-xs text-green-600 hover:text-green-700 font-medium flex items-center space-x-1"
             >
               <IconTrendingUp className="w-3 h-3" />
@@ -291,7 +282,7 @@ const MarketMapQuickAccess: React.FC<MarketMapQuickAccessProps> = ({
             </Link>
             
             <Link
-              to="/rent-calculator?tab=market-map&filters=open"
+              to="/search&filters=open"
               className="text-xs text-green-600 hover:text-green-700 font-medium flex items-center space-x-1"
             >
               <IconFilter className="w-3 h-3" />

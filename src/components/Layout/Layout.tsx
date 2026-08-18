@@ -16,7 +16,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     isHomePage ||
     [
       '/construction-estimator',
-      '/calculator',
       '/search',
       '/verified-properties',
       '/about',

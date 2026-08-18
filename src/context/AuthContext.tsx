@@ -68,43 +68,126 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [_expiresAt, setExpiresAt] = useState<number | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
-  const isHandlingSessionRef = useRef(false);
+  const initTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const applySessionRef = useRef<(session: Session, dbProfile?: Record<string, any>) => { user: User; profile: UserProfile }>(
+    () => {
+      throw new Error('applySession is not ready');
+    }
+  );
 
-  // Check for Supabase session on component mount
+  const clearInitTimeout = () => {
+    if (initTimeoutRef.current) {
+      clearTimeout(initTimeoutRef.current);
+      initTimeoutRef.current = null;
+    }
+  };
+
+  const applySession = (
+    session: Session,
+    dbProfile: Record<string, any> = {}
+  ): { user: User; profile: UserProfile } => {
+    setToken(session.access_token);
+    setRefreshToken(session.refresh_token || null);
+    setExpiresAt(session.expires_at ? session.expires_at * 1000 : null);
+
+    localStorage.setItem('auth_token', session.access_token);
+    if (session.refresh_token) {
+      localStorage.setItem('auth_refresh_token', session.refresh_token);
+    }
+    if (session.expires_at) {
+      localStorage.setItem('auth_expires_at', (session.expires_at * 1000).toString());
+    }
+
+    const meta = session.user.user_metadata || {};
+
+    const userData: User = {
+      id: session.user.id,
+      email: session.user.email || dbProfile.email || '',
+      phone: dbProfile.phone || meta.phone || '',
+      firstName: dbProfile.first_name || meta.first_name || '',
+      lastName: dbProfile.last_name || meta.last_name || '',
+      role: mapDbRoleToUserRole(dbProfile.role || meta.role || 'homeseeker'),
+      emailVerified: session.user.email_confirmed_at !== null,
+      phoneVerified: dbProfile.phone_verified || false,
+      verificationStatus: dbProfile.verification_status === 'verified'
+        ? VerificationStatus.VERIFIED
+        : VerificationStatus.PENDING,
+      accountStatus:
+        !dbProfile.account_status || dbProfile.account_status === 'active'
+          ? AccountStatus.ACTIVE
+          : AccountStatus.SUSPENDED,
+      lastLogin: new Date(),
+      createdAt: new Date(session.user.created_at),
+      updatedAt: new Date(dbProfile.updated_at || session.user.created_at),
+    };
+
+    const userProfile: UserProfile = {
+      userId: session.user.id,
+      avatar: dbProfile.avatar_url,
+      bio: dbProfile.bio,
+      notificationPreferences: dbProfile.notification_preferences || {
+        email: true,
+        sms: true,
+        push: true,
+        newMessages: true,
+        appointmentReminders: true,
+        marketingUpdates: false,
+      },
+      createdAt: new Date(dbProfile.created_at || session.user.created_at),
+      updatedAt: new Date(dbProfile.updated_at || session.user.created_at),
+    };
+
+    setUser(userData);
+    setProfile(userProfile);
+    setStatus(AuthStatus.AUTHENTICATED);
+    setIsInitializing(false);
+    clearInitTimeout();
+    return { user: userData, profile: userProfile };
+  };
+
+  applySessionRef.current = applySession;
+
+  const hydrateProfile = (session: Session) => {
+    window.setTimeout(() => {
+      void (async () => {
+        try {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          if (profileError) {
+            console.warn('Profile fetch error (using auth metadata fallback):', profileError);
+            return;
+          }
+
+          if (profileData) {
+            applySessionRef.current(session, profileData);
+          }
+        } catch (error) {
+          console.warn('Profile hydrate failed:', error);
+        }
+      })();
+    }, 0);
+  };
+
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
     let isMounted = true;
 
     const initializeAuth = async () => {
       try {
-        // Get current session from Supabase with retry logic
-        let retries = 3;
-        let session = null;
-        let sessionError = null;
-
-        while (retries > 0 && !session) {
-          const result = await supabase.auth.getSession();
-          session = result.data.session;
-          sessionError = result.error;
-          
-          if (sessionError && retries > 1) {
-            console.warn(`Session fetch attempt failed, retrying... (${retries - 1} attempts left)`);
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            retries--;
-          } else {
-            break;
-          }
-        }
+        const { data, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError) {
           console.error('Session error:', sessionError);
           setStatus(AuthStatus.UNAUTHENTICATED);
-          setIsInitializing(false);
           return;
         }
 
-        if (session) {
-          await handleSession(session);
+        if (data.session) {
+          applySessionRef.current(data.session);
+          hydrateProfile(data.session);
         } else {
           setStatus(AuthStatus.UNAUTHENTICATED);
         }
@@ -112,132 +195,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error('Authentication check failed:', error);
         setStatus(AuthStatus.UNAUTHENTICATED);
       } finally {
-        setIsInitializing(false);
+        if (isMounted) setIsInitializing(false);
       }
     };
 
-    // Add timeout to prevent infinite loading (5 seconds max for mobile)
-    timeoutId = setTimeout(() => {
-      if (isMounted) {
-        console.warn('Auth initialization timeout - proceeding as unauthenticated');
-        setIsInitializing(false);
-        setStatus(AuthStatus.UNAUTHENTICATED);
-      }
-    }, 5000);
+    initTimeoutRef.current = setTimeout(() => {
+      if (!isMounted) return;
+      setIsInitializing(false);
+    }, 8000);
 
     initializeAuth();
 
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event);
-      if (session) {
-        if (isHandlingSessionRef.current) return;
-        isHandlingSessionRef.current = true;
-        try {
-          await handleSession(session);
-        } finally {
-          isHandlingSessionRef.current = false;
+    // Keep this callback synchronous. Awaiting inside it deadlocks
+    // supabase.auth.signInWithPassword() on the login page.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        if (event === 'SIGNED_OUT') {
+          clearAuthData();
+          setStatus(AuthStatus.UNAUTHENTICATED);
         }
-      } else {
-        clearAuthData();
-        setStatus(AuthStatus.UNAUTHENTICATED);
+        return;
       }
+
+      if (event === 'INITIAL_SESSION') return;
+
+      applySessionRef.current(session);
+      hydrateProfile(session);
     });
-
-    const handleUnauthorized = async () => {
-      if (!isMounted) return;
-      try {
-        await supabase.auth.signOut();
-      } catch (e) {
-        console.error('Error signing out after unauthorized:', e);
-      } finally {
-        clearAuthData();
-        setStatus(AuthStatus.UNAUTHENTICATED);
-      }
-    };
-
-    window.addEventListener('directhome:unauthorized', handleUnauthorized);
 
     return () => {
       isMounted = false;
-      clearTimeout(timeoutId);
-      window.removeEventListener('directhome:unauthorized', handleUnauthorized);
+      clearInitTimeout();
       subscription.unsubscribe();
     };
   }, []);
-
-  // Handle session and fetch user profile
-  const handleSession = async (session: Session) => {
-    try {
-      setToken(session.access_token);
-      setRefreshToken(session.refresh_token || null);
-      setExpiresAt(session.expires_at ? session.expires_at * 1000 : null);
-
-      localStorage.setItem('auth_token', session.access_token);
-      if (session.refresh_token) {
-        localStorage.setItem('auth_refresh_token', session.refresh_token);
-      }
-      if (session.expires_at) {
-        localStorage.setItem('auth_expires_at', (session.expires_at * 1000).toString());
-      }
-
-      // Fetch user profile from database
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error('Profile fetch error:', profileError);
-      }
-
-      const dbProfile: any = profileData || {};
-
-      const userData: User = {
-        id: session.user.id,
-        email: session.user.email || dbProfile.email || '',
-        phone: dbProfile.phone || '',
-        firstName: dbProfile.first_name || '',
-        lastName: dbProfile.last_name || '',
-        role: mapDbRoleToUserRole(dbProfile.role || 'homeseeker'),
-        emailVerified: session.user.email_confirmed_at !== null,
-        phoneVerified: dbProfile.phone_verified || false,
-        verificationStatus: dbProfile.verification_status === 'verified' 
-          ? VerificationStatus.VERIFIED 
-          : VerificationStatus.PENDING,
-        accountStatus: dbProfile.account_status === 'active' 
-          ? AccountStatus.ACTIVE 
-          : AccountStatus.SUSPENDED,
-        lastLogin: new Date(),
-        createdAt: new Date(session.user.created_at),
-        updatedAt: new Date(dbProfile.updated_at || session.user.created_at),
-      };
-
-      const userProfile: UserProfile = {
-        userId: session.user.id,
-        avatar: dbProfile.avatar_url,
-        bio: dbProfile.bio,
-        notificationPreferences: dbProfile.notification_preferences || {
-          email: true,
-          sms: true,
-          push: true,
-          newMessages: true,
-          appointmentReminders: true,
-          marketingUpdates: false,
-        },
-        createdAt: new Date(dbProfile.created_at || session.user.created_at),
-        updatedAt: new Date(dbProfile.updated_at || session.user.created_at),
-      };
-
-      setUser(userData);
-      setProfile(userProfile);
-      setStatus(AuthStatus.AUTHENTICATED);
-    } catch (error) {
-      console.error('Error handling session:', error);
-      setStatus(AuthStatus.ERROR);
-    }
-  };
 
   // Helper function to fetch user data (kept for compatibility)
   const fetchUserData = async (_authToken: string): Promise<void> => {
@@ -265,8 +256,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
 
     try {
+      const identifier = credentials.emailOrPhone.trim();
+      const email = identifier.includes('@') ? identifier.toLowerCase() : identifier;
+
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: credentials.emailOrPhone,
+        email,
         password: credentials.password,
       });
 
@@ -278,69 +272,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('No session returned');
       }
 
-      const metadata: any = data.user.user_metadata || {};
-      const roleFromMeta = metadata.role || metadata.user_role;
+      const sessionUser = applySession(data.session);
+      hydrateProfile(data.session);
 
-      const userData: User = {
-        id: data.user.id,
-        email: data.user.email || '',
-        phone: metadata.phone || '',
-        firstName: metadata.first_name || metadata.firstName || '',
-        lastName: metadata.last_name || metadata.lastName || '',
-        role: mapDbRoleToUserRole(roleFromMeta || 'homeseeker'),
-        emailVerified: data.user.email_confirmed_at !== null,
-        phoneVerified: false,
-        verificationStatus: VerificationStatus.PENDING,
-        accountStatus: AccountStatus.ACTIVE,
-        lastLogin: new Date(),
-        createdAt: new Date(data.user.created_at),
-        updatedAt: new Date(),
-      };
-
-      const userProfile: UserProfile = {
-        userId: data.user.id,
-        avatar: metadata.avatar_url,
-        bio: metadata.bio,
-        notificationPreferences: {
-          email: true,
-          sms: true,
-          push: true,
-          newMessages: true,
-          appointmentReminders: true,
-          marketingUpdates: false,
-        },
-        createdAt: new Date(data.user.created_at),
-        updatedAt: new Date(),
-      };
-
-      setUser(userData);
-      setProfile(userProfile);
-      setToken(data.session.access_token);
-      setRefreshToken(data.session.refresh_token || null);
-      setExpiresAt(data.session.expires_at ? data.session.expires_at * 1000 : null);
-      setStatus(AuthStatus.AUTHENTICATED);
-      setIsInitializing(false);
-
-      localStorage.setItem('auth_token', data.session.access_token);
-      if (data.session.refresh_token) {
-        localStorage.setItem('auth_refresh_token', data.session.refresh_token);
-      }
-      if (data.session.expires_at) {
-        localStorage.setItem('auth_expires_at', (data.session.expires_at * 1000).toString());
-      }
-
-      const response: AuthResponse = {
-        user: userData,
-        profile: userProfile,
+      return {
+        user: sessionUser.user,
+        profile: sessionUser.profile,
         token: data.session.access_token,
         refreshToken: data.session.refresh_token || '',
         expiresAt: data.session.expires_at ? data.session.expires_at * 1000 : Date.now() + 3600000,
       };
-
-      return response;
     } catch (error: any) {
       console.error('Login failed:', error);
-      setStatus(AuthStatus.ERROR);
+      setStatus(AuthStatus.UNAUTHENTICATED);
       const authError: AuthError = {
         type: AuthErrorType.INVALID_CREDENTIALS,
         message: error.message || 'Invalid email or password. Please try again.'
@@ -355,6 +299,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
 
     try {
+      const safeRole =
+        data.role === UserRole.HOME_OWNER ? 'homeowner' : 'homeseeker';
+
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -362,7 +309,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           data: {
             first_name: data.firstName,
             last_name: data.lastName,
-            role: mapUserRoleToDbRole(data.role as UserRole),
+            role: safeRole,
             phone: data.phone,
           },
         },
@@ -384,7 +331,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           phone: data.phone,
           first_name: data.firstName,
           last_name: data.lastName,
-          role: mapUserRoleToDbRole(data.role as UserRole),
+          role: safeRole,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });
@@ -412,7 +359,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         type: isAlreadyRegistered ? AuthErrorType.INVALID_CREDENTIALS : AuthErrorType.SERVER_ERROR,
         message: isAlreadyRegistered
           ? 'An account with this email already exists. Please log in instead.'
-          : (error.message || 'Registration failed. Please try again.'),
+          : /failed to fetch|networkerror|load failed/i.test(error?.message || '')
+            ? 'Cannot reach DirectHome servers. Check your connection and try again.'
+            : (error.message || 'Registration failed. Please try again.'),
       };
       setError(authError);
       throw authError;
@@ -696,7 +645,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     status,
     error,
     isAuthenticated: status === AuthStatus.AUTHENTICATED,
-    isLoading: isInitializing && status !== AuthStatus.AUTHENTICATED,
+    isLoading: isInitializing && status !== AuthStatus.AUTHENTICATED && status !== AuthStatus.AUTHENTICATING,
     login,
     register,
     logout,

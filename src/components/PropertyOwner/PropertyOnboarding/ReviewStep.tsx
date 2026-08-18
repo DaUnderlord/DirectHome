@@ -140,7 +140,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ formData, onEdit }) => {
               Images: {formData.media?.images?.length || 0} uploaded
             </p>
             {formData.media?.images && formData.media.images.length > 0 && (
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {formData.media.images.slice(0, 8).map((img, i) => (
                   <img
                     key={i}

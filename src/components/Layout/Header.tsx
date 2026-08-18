@@ -2,7 +2,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   IconHammer,
-  IconCalculator,
   IconUser,
   IconDashboard,
   IconLogin,
@@ -43,7 +42,7 @@ const Header: React.FC<HeaderProps> = ({ toggle }) => {
         </div>
 
         <div className="flex-shrink-0 min-w-0">
-          <div className={phase === 'playing' ? 'opacity-0' : 'opacity-100 transition-opacity duration-500 delay-300'}>
+          <div className={phase === 'playing' ? 'opacity-0' : 'opacity-100 transition-opacity duration-500 delay-150'}>
             <Logo size="md" markTarget />
           </div>
         </div>
@@ -52,8 +51,8 @@ const Header: React.FC<HeaderProps> = ({ toggle }) => {
           <Link to="/construction-estimator" className={navLinkMobile} aria-label="Construction Estimator">
             <IconHammer size={20} />
           </Link>
-          <Link to="/calculator" className={navLinkMobile} aria-label="Rent Calculator">
-            <IconCalculator size={20} />
+          <Link to="/search" className={navLinkMobile} aria-label="Listings coming soon">
+            <IconBuildingSkyscraper size={20} />
           </Link>
           {isAuthenticated ? (
             <Link to="/profile" className={navLinkMobile} aria-label="Profile">
@@ -70,10 +69,6 @@ const Header: React.FC<HeaderProps> = ({ toggle }) => {
           <Link to="/construction-estimator" className={navLink}>
             <IconHammer size={16} />
             <span>Build Cost</span>
-          </Link>
-          <Link to="/calculator" className={navLink}>
-            <IconCalculator size={16} />
-            <span>Rent Calculator</span>
           </Link>
           <Link to="/search" className={navLink}>
             <IconBuildingSkyscraper size={16} />

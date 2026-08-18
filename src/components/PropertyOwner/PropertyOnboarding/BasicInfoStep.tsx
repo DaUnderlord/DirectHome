@@ -3,6 +3,7 @@ import {
   NigerianPropertyType,
   PropertyCategory
 } from '../../../types/propertyOwner';
+import NumberField, { toolInputClass, toolSelectClass } from '../../UI/NumberField';
 
 interface BasicInfoStepProps {
   data: {
@@ -59,8 +60,8 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ data, errors, onChange })
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Basic Property Information</h2>
-        <p className="text-gray-600">Tell us about your property</p>
+        <h2 className="font-display text-lg sm:text-xl font-semibold text-ink-950 mb-2">Basic Property Information</h2>
+        <p className="text-ink-600 text-sm sm:text-base">Tell us about your property</p>
       </div>
 
       {/* Property Title */}
@@ -73,8 +74,8 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ data, errors, onChange })
           value={data.title}
           onChange={(e) => onChange({ title: e.target.value })}
           placeholder="e.g., Spacious 3 Bedroom Flat in Lekki Phase 1"
-          className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-            errors['basicInfo.title'] ? 'border-red-500' : 'border-gray-300'
+          className={`${toolInputClass} ${
+            errors['basicInfo.title'] ? 'border-red-500' : ''
           }`}
         />
         {errors['basicInfo.title'] && (
@@ -96,10 +97,10 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ data, errors, onChange })
               key={category.value}
               type="button"
               onClick={() => onChange({ category: category.value })}
-              className={`p-4 rounded-xl border-2 text-left transition-all ${
+              className={`p-3 sm:p-4 border text-left transition-all ${
                 data.category === category.value
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-courtyard-700 bg-courtyard-50'
+                  : 'border-paper-200 hover:border-paper-300'
               }`}
             >
               <span className="block font-medium text-gray-900">{category.label}</span>
@@ -117,7 +118,7 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ data, errors, onChange })
         <select
           value={data.propertyType}
           onChange={(e) => onChange({ propertyType: e.target.value as NigerianPropertyType })}
-          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className={toolSelectClass}
         >
           {PROPERTY_TYPES.map((type) => (
             <option key={type.value} value={type.value}>
@@ -127,25 +128,15 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ data, errors, onChange })
         </select>
       </div>
 
-      {/* Property Size */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Property Size (sqm) <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="number"
-          value={data.size || ''}
-          onChange={(e) => onChange({ size: parseInt(e.target.value) || 0 })}
-          placeholder="e.g., 150"
-          min="0"
-          className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-            errors['basicInfo.size'] ? 'border-red-500' : 'border-gray-300'
-          }`}
-        />
-        {errors['basicInfo.size'] && (
-          <p className="mt-1 text-sm text-red-500">{errors['basicInfo.size']}</p>
-        )}
-      </div>
+      <NumberField
+        label="Property Size (sqm) *"
+        value={data.size || 0}
+        min={0}
+        suffix="sqm"
+        placeholder="150"
+        error={errors['basicInfo.size']}
+        onChange={(size) => onChange({ size })}
+      />
 
       {/* Description */}
       <div>
@@ -157,8 +148,8 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ data, errors, onChange })
           onChange={(e) => onChange({ description: e.target.value })}
           placeholder="Describe your property in detail. Include unique features, nearby amenities, and what makes it special..."
           rows={5}
-          className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-            errors['basicInfo.description'] ? 'border-red-500' : 'border-gray-300'
+          className={`${toolInputClass} min-h-[8rem] ${
+            errors['basicInfo.description'] ? 'border-red-500' : ''
           }`}
         />
         {errors['basicInfo.description'] && (

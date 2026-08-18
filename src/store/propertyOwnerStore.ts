@@ -27,8 +27,108 @@ import {
   WaterSource,
   KitchenType,
   FurnishingStatus,
-  BuildingCondition
+  BuildingCondition,
+  PropertyMedia
 } from '../types/propertyOwner';
+
+async function uploadOwnerMedia(ownerId: string, items: PropertyMedia[] = []) {
+  const rows: { url: string; is_primary: boolean; display_order: number }[] = [];
+
+  for (let i = 0; i < items.length; i += 1) {
+    const item = items[i];
+    if (item.file) {
+      const ext = (item.file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `${ownerId}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from('property-media').upload(path, item.file, {
+        upsert: false,
+        contentType: item.file.type || undefined,
+      });
+      if (error) {
+        throw new Error(error.message);
+      }
+      const { data } = supabase.storage.from('property-media').getPublicUrl(path);
+      rows.push({ url: data.publicUrl, is_primary: Boolean(item.isPrimary), display_order: i });
+    } else if (item.url && !item.url.startsWith('blob:')) {
+      rows.push({ url: item.url, is_primary: Boolean(item.isPrimary), display_order: i });
+    }
+  }
+
+  return rows;
+}
+
+function asNumber(value: unknown, fallback = 0) {
+  const next = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(next) ? next : fallback;
+}
+
+function mapOwnerProperty(p: Record<string, any>, extras?: Partial<PropertyOnboarding>): PropertyOnboarding {
+  const images = Array.isArray(p.property_images) ? p.property_images : [];
+  const listingType = p.listing_type === 'sale' ? PropertyCategory.SALE : PropertyCategory.RENT;
+  const rawStatus = String(p.status || 'draft');
+  const status = (
+    rawStatus === 'pending' ? 'pending_review' : rawStatus
+  ) as PropertyOnboarding['status'];
+
+  return {
+    id: p.id,
+    ownerId: p.owner_id,
+    basicInfo: {
+      title: p.title || '',
+      propertyType: (p.property_type as NigerianPropertyType) || NigerianPropertyType.THREE_BEDROOM,
+      category: listingType,
+      description: p.description || '',
+      size: asNumber(p.square_footage),
+      landmarks: [],
+    },
+    location: {
+      fullAddress: p.address || '',
+      state: p.state || '',
+      lga: p.lga || p.city || '',
+      latitude: p.latitude ?? undefined,
+      longitude: p.longitude ?? undefined,
+      accessRoute: '',
+    },
+    features: extras?.features || {
+      bedrooms: asNumber(p.bedrooms, 1),
+      bathrooms: asNumber(p.bathrooms, 1),
+      toilets: asNumber(p.toilets, 1),
+      kitchenType: KitchenType.CLOSED,
+      parkingSpaces: 0,
+      powerSupply: PowerSupplyType.NEPA_ONLY,
+      waterSource: WaterSource.MAINS,
+      securityFeatures: [],
+      amenities: Array.isArray(p.amenities) ? p.amenities : [],
+      accessibilityOptions: [],
+    },
+    condition: extras?.condition || {
+      furnishingStatus: p.furnished ? FurnishingStatus.FURNISHED : FurnishingStatus.UNFURNISHED,
+      buildingCondition: BuildingCondition.GOOD,
+      maintenanceStatus: 'Good',
+    },
+    media: {
+      images: images.map((img: { id?: string; url?: string; is_primary?: boolean; created_at?: string }) => ({
+        id: img.id || img.url || crypto.randomUUID(),
+        url: img.url || '',
+        type: 'image' as const,
+        isPrimary: Boolean(img.is_primary),
+        uploadedAt: new Date(img.created_at || Date.now()),
+      })).filter((img: { url: string }) => Boolean(img.url)),
+      videos: [],
+    },
+    pricing: {
+      rentPrice: asNumber(p.price),
+      cautionFee: p.caution_fee == null ? undefined : asNumber(p.caution_fee),
+      legalFee: p.legal_fee == null ? undefined : asNumber(p.legal_fee),
+      serviceCharge: p.service_charge == null ? undefined : asNumber(p.service_charge),
+      agencyFee: p.agency_fee == null ? undefined : asNumber(p.agency_fee),
+      paymentCycle: p.payment_frequency === 'yearly' ? PaymentCycle.YEARLY : PaymentCycle.MONTHLY,
+      negotiable: Boolean(p.negotiable),
+    },
+    status,
+    createdAt: new Date(p.created_at || Date.now()),
+    updatedAt: new Date(p.updated_at || Date.now()),
+  };
+}
 
 interface PropertyOwnerState {
   // Properties
@@ -494,101 +594,81 @@ export const usePropertyOwnerStore = create<PropertyOwnerState>()(
         
         // Property Actions
         fetchProperties: async (ownerId: string) => {
+          if (!ownerId) {
+            set({ isLoadingProperties: false });
+            return;
+          }
+
           set({ isLoadingProperties: true });
           try {
-            // Fetch from Supabase
             const { data, error } = await supabase
               .from('properties')
               .select('*')
-              .eq('owner_id', ownerId);
-            
+              .eq('owner_id', ownerId)
+              .order('created_at', { ascending: false });
+
             if (error) {
               console.error('Error fetching properties:', error);
-              // Return empty array on error - no mock data
-              set({ properties: [], isLoadingProperties: false });
+              set({ isLoadingProperties: false });
               return;
             }
-            
-            if (data && data.length > 0) {
-              // Transform Supabase data to PropertyOnboarding format
-              const properties = data.map(p => ({
-                id: p.id,
-                ownerId: p.owner_id,
-                basicInfo: {
-                  title: p.title || '',
-                  propertyType: p.property_type as NigerianPropertyType || NigerianPropertyType.THREE_BEDROOM,
-                  category: p.listing_type === 'rent' ? PropertyCategory.RENT : PropertyCategory.SALE,
-                  description: p.description || '',
-                  size: p.square_footage || 0,
-                  landmarks: []
-                },
-                location: {
-                  fullAddress: p.address || '',
-                  state: p.state || '',
-                  lga: p.lga || '',
-                  latitude: p.latitude ?? undefined,
-                  longitude: p.longitude ?? undefined,
-                  accessRoute: ''
-                },
-                features: {
-                  bedrooms: p.bedrooms || 1,
-                  bathrooms: p.bathrooms || 1,
-                  toilets: p.toilets || 1,
-                  kitchenType: KitchenType.CLOSED,
-                  parkingSpaces: 0,
-                  powerSupply: PowerSupplyType.NEPA_ONLY,
-                  waterSource: WaterSource.MAINS,
-                  securityFeatures: [],
-                  amenities: p.amenities || [],
-                  accessibilityOptions: []
-                },
-                condition: {
-                  furnishingStatus: p.furnished ? FurnishingStatus.FURNISHED : FurnishingStatus.UNFURNISHED,
-                  buildingCondition: BuildingCondition.GOOD,
-                  maintenanceStatus: 'Good'
-                },
-                media: {
-                  images: [] as any[], // Images would be fetched separately
-                  videos: []
-                },
-                pricing: {
-                  rentPrice: p.price || 0,
-                  cautionFee: p.caution_fee ?? undefined,
-                  legalFee: p.legal_fee ?? undefined,
-                  serviceCharge: p.service_charge ?? undefined,
-                  paymentCycle: p.payment_frequency === 'yearly' ? PaymentCycle.YEARLY : PaymentCycle.MONTHLY,
-                  negotiable: false
-                },
-                status: (p.status || 'draft') as 'draft' | 'pending_review' | 'active' | 'inactive' | 'suspended',
-                createdAt: new Date(p.created_at || Date.now()),
-                updatedAt: new Date(p.updated_at || Date.now())
-              }));
-              set({ properties, isLoadingProperties: false });
-            } else {
-              // No data - show empty state
-              set({ properties: [], isLoadingProperties: false });
+
+            const rows = data || [];
+            const ids = rows.map((row) => row.id).filter(Boolean);
+            let imagesByProperty = new Map<string, { id: string; url: string; is_primary?: boolean; created_at?: string }[]>();
+
+            if (ids.length > 0) {
+              const { data: imageRows } = await supabase
+                .from('property_images')
+                .select('id, url, is_primary, created_at, property_id')
+                .in('property_id', ids);
+
+              if (Array.isArray(imageRows)) {
+                imagesByProperty = imageRows.reduce((map, image) => {
+                  const list = map.get(image.property_id) || [];
+                  list.push(image);
+                  map.set(image.property_id, list);
+                  return map;
+                }, new Map<string, { id: string; url: string; is_primary?: boolean; created_at?: string }[]>());
+              }
             }
+
+            const properties = rows.map((row) =>
+              mapOwnerProperty({
+                ...row,
+                property_images: imagesByProperty.get(row.id) || [],
+              })
+            );
+
+            set({ properties, isLoadingProperties: false });
           } catch (err) {
             console.error('Error in fetchProperties:', err);
-            set({ properties: [], isLoadingProperties: false });
+            set({ isLoadingProperties: false });
           }
         },
         
         createProperty: async (property: Partial<PropertyOnboarding>) => {
           set({ isLoadingProperties: true });
-          
+
           try {
-            // Prepare data for Supabase - ensure types match database schema
+            if (!property.ownerId) {
+              throw new Error('You must be signed in to list a property.');
+            }
+
+            const listingType =
+              property.basicInfo?.category === PropertyCategory.SALE ? 'sale' : 'rent';
+
             const propertyData: any = {
               owner_id: property.ownerId,
               title: property.basicInfo?.title || '',
               description: property.basicInfo?.description || '',
-              property_type: (property.basicInfo?.propertyType || 'apartment') as any,
-              listing_type: (property.basicInfo?.category === PropertyCategory.RENT ? 'rent' : 'sale') as 'rent' | 'sale',
+              property_type: property.basicInfo?.propertyType || 'apartment',
+              listing_type: listingType,
               address: property.location?.fullAddress || '',
               city: property.location?.lga || '',
               state: property.location?.state || '',
               lga: property.location?.lga || '',
+              country: 'Nigeria',
               latitude: property.location?.latitude ?? null,
               longitude: property.location?.longitude ?? null,
               bedrooms: property.features?.bedrooms || 1,
@@ -598,95 +678,75 @@ export const usePropertyOwnerStore = create<PropertyOwnerState>()(
               furnished: property.condition?.furnishingStatus === FurnishingStatus.FURNISHED,
               amenities: property.features?.amenities || [],
               price: property.pricing?.rentPrice || 0,
+              currency: 'NGN',
               caution_fee: property.pricing?.cautionFee ?? null,
               legal_fee: property.pricing?.legalFee ?? null,
               service_charge: property.pricing?.serviceCharge ?? null,
+              agency_fee: property.pricing?.agencyFee ?? null,
               payment_frequency: property.pricing?.paymentCycle === PaymentCycle.YEARLY ? 'yearly' : 'monthly',
-              status: 'pending' as 'pending'
+              negotiable: property.pricing?.negotiable ?? true,
+              status: 'pending',
+              verification_status: 'pending',
             };
-            
+
             const { data, error } = await supabase
               .from('properties')
               .insert(propertyData)
               .select()
               .single();
-            
+
             if (error) {
-              console.error('Error creating property:', error);
-              set({ isLoadingProperties: false });
               throw new Error(error.message || 'Failed to create property. Please try again.');
             }
-            
-            // Transform returned data to PropertyOnboarding format
-            const newProperty: PropertyOnboarding = {
-              id: data.id,
-              ownerId: data.owner_id,
-              basicInfo: {
-                title: data.title || '',
-                propertyType: data.property_type as NigerianPropertyType || NigerianPropertyType.THREE_BEDROOM,
-                category: data.listing_type === 'rent' ? PropertyCategory.RENT : PropertyCategory.SALE,
-                description: data.description || '',
-                size: data.square_footage || 0,
-                landmarks: []
-              },
-              location: {
-                fullAddress: data.address || '',
-                state: data.state || '',
-                lga: data.lga || '',
-                latitude: data.latitude,
-                longitude: data.longitude,
-                accessRoute: ''
-              },
-              features: property.features || {
-                bedrooms: data.bedrooms || 1,
-                bathrooms: data.bathrooms || 1,
-                toilets: data.toilets || 1,
-                kitchenType: KitchenType.CLOSED,
-                parkingSpaces: 0,
-                powerSupply: PowerSupplyType.NEPA_ONLY,
-                waterSource: WaterSource.MAINS,
-                securityFeatures: [],
-                amenities: data.amenities || [],
-                accessibilityOptions: []
-              },
-              condition: property.condition || {
-                furnishingStatus: data.furnished ? FurnishingStatus.FURNISHED : FurnishingStatus.UNFURNISHED,
-                buildingCondition: BuildingCondition.GOOD,
-                maintenanceStatus: 'Good'
-              },
-              media: {
-                images: (data.images || []).map((url: string, idx: number) => ({
-                  id: `img-${idx}`,
-                  url,
-                  type: 'image' as const,
-                  isPrimary: idx === 0,
-                  uploadedAt: new Date()
-                })),
-                videos: []
-              },
-              pricing: {
-                rentPrice: data.price || 0,
-                cautionFee: data.caution_fee,
-                legalFee: data.legal_fee,
-                serviceCharge: data.service_charge,
-                paymentCycle: data.payment_frequency === 'yearly' ? PaymentCycle.YEARLY : PaymentCycle.MONTHLY,
-                negotiable: false
-              },
-              status: data.status || 'pending',
-              createdAt: new Date(data.created_at),
-              updatedAt: new Date(data.updated_at)
+
+            const uploaded = await uploadOwnerMedia(
+              property.ownerId,
+              [
+                ...(property.media?.images || []),
+                ...(property.media?.videos || []),
+              ]
+            );
+
+            if (uploaded.length > 0) {
+              const { error: imageError } = await supabase.from('property_images').insert(
+                uploaded.map((row) => ({
+                  property_id: data.id,
+                  url: row.url,
+                  thumbnail_url: row.url,
+                  is_primary: row.is_primary,
+                  display_order: row.display_order,
+                }))
+              );
+              if (imageError) {
+                console.error('Property created but images failed to save:', imageError);
+              }
+            }
+
+            const newProperty = mapOwnerProperty(data, {
+              features: property.features,
+              condition: property.condition,
+            });
+            newProperty.media = {
+              images: uploaded.map((row, idx) => ({
+                id: `img-${idx}`,
+                url: row.url,
+                type: 'image' as const,
+                isPrimary: row.is_primary,
+                uploadedAt: new Date(),
+              })),
+              videos: [],
             };
-            
-            set(state => ({
-              properties: [...state.properties, newProperty],
-              isLoadingProperties: false
+
+            set((state) => ({
+              properties: [newProperty, ...state.properties.filter((item) => item.id !== newProperty.id)],
+              isLoadingProperties: false,
             }));
-            
+
             return newProperty;
           } catch (err) {
             console.error('Error in createProperty:', err);
             set({ isLoadingProperties: false });
-            return null;
+            throw err;
           }
         },
         
@@ -992,8 +1052,28 @@ export const usePropertyOwnerStore = create<PropertyOwnerState>()(
         // Financial Actions
         fetchFinancials: async (ownerId: string, _period?: { start: Date; end: Date }) => {
           set({ isLoadingFinancials: true });
+
+          const emptySummary = (occupancyRate = 0): FinancialSummary => ({
+            totalRentCollected: 0,
+            totalOutstanding: 0,
+            totalExpenses: 0,
+            netIncome: 0,
+            occupancyRate,
+            period: {
+              start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+              end: new Date()
+            }
+          });
           
           try {
+            const { data: listingRows } = await supabase
+              .from('properties')
+              .select('id, status')
+              .eq('owner_id', ownerId);
+            const listings = listingRows || [];
+            const liveCount = listings.filter((row: { status?: string }) => row.status === 'active').length;
+            const occupancyRate = listings.length ? Math.round((liveCount / listings.length) * 100) : 0;
+
             const { data, error } = await supabase
               .from('payments')
               .select(`
@@ -1002,10 +1082,13 @@ export const usePropertyOwnerStore = create<PropertyOwnerState>()(
                 tenant:profiles!payments_payer_id_fkey(first_name, last_name)
               `)
               .eq('recipient_id', ownerId);
-              
-            if (error) throw error;
+
+            if (error || !data) {
+              set({ payments: [], expenses: [], financialSummary: emptySummary(occupancyRate), isLoadingFinancials: false });
+              return;
+            }
             
-            const payments = (data || []).map((p: any) => ({
+            const payments = data.map((p: any) => ({
               id: p.id,
               propertyId: p.property_id || '',
               propertyTitle: p.properties?.title || 'Unknown Property',
@@ -1020,27 +1103,29 @@ export const usePropertyOwnerStore = create<PropertyOwnerState>()(
               notes: p.notes
             }));
             
-            const expenses: Expense[] = []; // No expenses table yet
-            
+            const expenses: Expense[] = [];
             const totalRentCollected = payments.filter((p: any) => p.status === PaymentStatus.PAID).reduce((acc: number, curr: any) => acc + curr.amount, 0);
             const totalOutstanding = payments.filter((p: any) => p.status !== PaymentStatus.PAID).reduce((acc: number, curr: any) => acc + curr.amount, 0);
-            
-            const financialSummary: FinancialSummary = {
-              totalRentCollected,
-              totalOutstanding,
-              totalExpenses: 0,
-              netIncome: totalRentCollected,
-              occupancyRate: 85, // Might need to calculate this from properties
-              period: {
-                start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-                end: new Date()
-              }
-            };
-            
-            set({ payments, expenses, financialSummary, isLoadingFinancials: false });
+
+            set({
+              payments,
+              expenses,
+              financialSummary: {
+                totalRentCollected,
+                totalOutstanding,
+                totalExpenses: 0,
+                netIncome: totalRentCollected,
+                occupancyRate,
+                period: {
+                  start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+                  end: new Date()
+                }
+              },
+              isLoadingFinancials: false
+            });
           } catch (err) {
             console.error('Error fetching financials:', err);
-            set({ payments: [], expenses: [], financialSummary: null, isLoadingFinancials: false });
+            set({ payments: [], expenses: [], financialSummary: emptySummary(), isLoadingFinancials: false });
           }
         },
         
@@ -1195,34 +1280,40 @@ export const usePropertyOwnerStore = create<PropertyOwnerState>()(
         },
         
         // Analytics Actions
-        fetchAnalytics: async (_ownerId: string) => {
+        fetchAnalytics: async (ownerId: string) => {
           set({ isLoadingAnalytics: true });
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          const analytics: PropertyAnalytics[] = [
-            {
-              propertyId: 'prop-1',
-              views: 245,
-              enquiries: 18,
-              viewings: 8,
-              applications: 3,
-              conversionRate: 12.5,
-              averageTimeToRent: 21,
-              tenantSatisfaction: 4.5
-            },
-            {
-              propertyId: 'prop-2',
-              views: 189,
-              enquiries: 12,
-              viewings: 5,
-              applications: 2,
-              conversionRate: 10.5,
-              averageTimeToRent: 28,
-              tenantSatisfaction: 4.8
+          try {
+            const { data, error } = await supabase
+              .from('properties')
+              .select('id, view_count, inquiry_count, favorite_count, status, created_at')
+              .eq('owner_id', ownerId);
+
+            if (error) {
+              console.error('Error fetching analytics:', error);
+              set({ analytics: [], isLoadingAnalytics: false });
+              return;
             }
-          ];
-          
-          set({ analytics, isLoadingAnalytics: false });
+
+            const analytics: PropertyAnalytics[] = (data || []).map((row) => {
+              const views = Number(row.view_count || 0);
+              const enquiries = Number(row.inquiry_count || 0);
+              return {
+                propertyId: row.id,
+                views,
+                enquiries,
+                viewings: 0,
+                applications: 0,
+                conversionRate: views > 0 ? Math.round((enquiries / views) * 1000) / 10 : 0,
+                averageTimeToRent: 0,
+                tenantSatisfaction: 0,
+              };
+            });
+
+            set({ analytics, isLoadingAnalytics: false });
+          } catch (err) {
+            console.error('Error in fetchAnalytics:', err);
+            set({ analytics: [], isLoadingAnalytics: false });
+          }
         },
         
         fetchDashboardStats: async (ownerId: string) => {
@@ -1244,7 +1335,7 @@ export const usePropertyOwnerStore = create<PropertyOwnerState>()(
             const activeListings = properties.filter(p => p.status === 'active').length;
             
             // Calculate total revenue from active properties
-            const totalRevenue = properties.reduce((sum, p) => sum + (p.price || 0), 0);
+            const totalRevenue = properties.reduce((sum, p) => sum + asNumber(p.price), 0);
             
             const dashboardStats: OwnerDashboardStats = {
               totalProperties,
@@ -1280,9 +1371,86 @@ export const usePropertyOwnerStore = create<PropertyOwnerState>()(
         },
         
         // Notification Actions
-        fetchNotifications: async (_ownerId: string) => {
-          // Return empty array - no mock data
-          set({ notifications: [], unreadCount: 0 });
+        fetchNotifications: async (ownerId: string) => {
+          try {
+            const { data, error } = await supabase
+              .from('properties')
+              .select('id, title, status, created_at, updated_at')
+              .eq('owner_id', ownerId)
+              .order('updated_at', { ascending: false });
+
+            if (error) {
+              set({ notifications: [], unreadCount: 0 });
+              return;
+            }
+
+            const notifications: Notification[] = (data || []).map((row: {
+              id: string;
+              title?: string;
+              status?: string;
+              created_at?: string;
+              updated_at?: string;
+            }) => {
+              const title = row.title || 'Untitled listing';
+              const status = row.status || 'draft';
+              const createdAt = new Date(row.updated_at || row.created_at || Date.now());
+              const actionUrl = `/owner/properties/${row.id}`;
+
+              if (status === 'pending' || status === 'pending_review') {
+                return {
+                  id: `listing-review-${row.id}`,
+                  type: NotificationType.SYSTEM_ALERT,
+                  title: 'Listing in review',
+                  message: `"${title}" is with DirectHome for review. We'll update you when it goes live.`,
+                  propertyId: row.id,
+                  actionUrl,
+                  read: false,
+                  createdAt,
+                };
+              }
+              if (status === 'active') {
+                return {
+                  id: `listing-live-${row.id}`,
+                  type: NotificationType.SYSTEM_ALERT,
+                  title: 'Listing is live',
+                  message: `"${title}" is published. Seekers can contact you when marketplace messaging opens.`,
+                  propertyId: row.id,
+                  actionUrl,
+                  read: true,
+                  createdAt,
+                };
+              }
+              if (status === 'rejected') {
+                return {
+                  id: `listing-rejected-${row.id}`,
+                  type: NotificationType.SYSTEM_ALERT,
+                  title: 'Listing needs changes',
+                  message: `"${title}" was not approved. Open the listing to review the details.`,
+                  propertyId: row.id,
+                  actionUrl,
+                  read: false,
+                  createdAt,
+                };
+              }
+              return {
+                id: `listing-draft-${row.id}`,
+                type: NotificationType.SYSTEM_ALERT,
+                title: 'Draft listing saved',
+                message: `"${title}" is saved as a draft.`,
+                propertyId: row.id,
+                actionUrl,
+                read: true,
+                createdAt,
+              };
+            });
+
+            set({
+              notifications,
+              unreadCount: notifications.filter((item) => !item.read).length,
+            });
+          } catch {
+            set({ notifications: [], unreadCount: 0 });
+          }
         },
         
         markNotificationRead: async (id: string) => {
@@ -1306,9 +1474,26 @@ export const usePropertyOwnerStore = create<PropertyOwnerState>()(
       }),
       {
         name: 'property-owner-store',
+        version: 2,
         partialize: (state) => ({
           currentProperty: state.currentProperty
-        })
+            ? {
+                ...state.currentProperty,
+                media: { images: [], videos: [] },
+              }
+            : null,
+        }),
+        merge: (persistedState, currentState) => {
+          const persisted = (persistedState || {}) as { currentProperty?: PropertyOnboarding | null };
+          return {
+            ...currentState,
+            currentProperty: persisted.currentProperty ?? currentState.currentProperty,
+          };
+        },
+        migrate: (persistedState) => {
+          const persisted = (persistedState || {}) as { currentProperty?: PropertyOnboarding | null };
+          return { currentProperty: persisted.currentProperty ?? null };
+        },
       }
     )
   )

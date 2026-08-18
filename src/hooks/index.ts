@@ -5,4 +5,3 @@ export * from './useProperty';
 export * from './usePropertyFilters';
 export * from './useMessaging';
 export * from './useAppointment';
-export * from './useRentCalculator';

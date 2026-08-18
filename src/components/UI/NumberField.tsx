@@ -13,6 +13,7 @@ interface NumberFieldProps {
   placeholder?: string;
   allowDecimal?: boolean;
   hint?: string;
+  error?: string;
   className?: string;
 }
 
@@ -39,6 +40,7 @@ const NumberField: React.FC<NumberFieldProps> = ({
   placeholder,
   allowDecimal = false,
   hint,
+  error,
   className = '',
 }) => {
   const [draft, setDraft] = useState(Number.isFinite(value) ? String(value) : '');
@@ -99,7 +101,9 @@ const NumberField: React.FC<NumberFieldProps> = ({
             setFocused(false);
             commit(draft);
           }}
-          className={`${fieldClass} ${prefix ? 'pl-10' : ''} ${suffix ? 'pr-14' : ''}`}
+          className={`${fieldClass} ${prefix ? 'pl-10' : ''} ${suffix ? 'pr-14' : ''} ${
+            error ? 'border-red-500 focus:ring-red-400 focus:border-red-500' : ''
+          }`}
         />
         {suffix && (
           <span className="absolute inset-y-0 right-0 pr-4 flex items-center text-ink-500 pointer-events-none">
@@ -107,7 +111,11 @@ const NumberField: React.FC<NumberFieldProps> = ({
           </span>
         )}
       </span>
-      {hint && <span className="mt-1 block text-xs text-ink-500">{hint}</span>}
+      {error ? (
+        <span className="mt-1 block text-sm text-red-600">{error}</span>
+      ) : hint ? (
+        <span className="mt-1 block text-xs text-ink-500">{hint}</span>
+      ) : null}
     </label>
   );
 };

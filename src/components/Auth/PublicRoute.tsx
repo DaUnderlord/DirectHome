@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { getPostLoginPath } from '../../utils/authRedirect';
 
 interface PublicRouteProps {
   children: React.ReactNode;
@@ -8,20 +9,18 @@ interface PublicRouteProps {
 }
 
 const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   
-  // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="flex justify-center items-center h-screen bg-paper-100">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-courtyard-700"></div>
       </div>
     );
   }
   
-  // If route is restricted and user is authenticated, redirect to dashboard
-  if (restricted && isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+  if (restricted && isAuthenticated && user) {
+    return <Navigate to={getPostLoginPath(user.role)} replace />;
   }
   
   return <>{children}</>;

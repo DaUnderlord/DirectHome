@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { usePropertyOwnerStore } from '../../store/propertyOwnerStore';
@@ -7,13 +7,33 @@ import {
   IconMessage,
   IconCalendar,
   IconUsers,
-  IconTrendingUp,
   IconArrowLeft,
-  IconStar,
-  IconClock,
-  IconChartBar
+  IconChartBar,
+  IconPlus,
+  IconHome,
+  IconHeart,
 } from '@tabler/icons-react';
 import Container from '../UI/Container';
+
+const formatCount = (value: number) =>
+  new Intl.NumberFormat('en-NG', { maximumFractionDigits: 0 }).format(value);
+
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+    maximumFractionDigits: 0,
+  }).format(amount);
+
+const statusLabel: Record<string, string> = {
+  draft: 'Draft',
+  pending: 'In review',
+  pending_review: 'In review',
+  active: 'Live',
+  inactive: 'Paused',
+  suspended: 'Paused',
+  rejected: 'Rejected',
+};
 
 const AnalyticsDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -23,263 +43,268 @@ const AnalyticsDashboard: React.FC = () => {
     analytics,
     dashboardStats,
     isLoadingAnalytics,
+    isLoadingProperties,
     fetchAnalytics,
     fetchDashboardStats,
-    fetchProperties
+    fetchProperties,
   } = usePropertyOwnerStore();
 
   useEffect(() => {
-    const ownerId = user?.id || 'owner-1';
-    fetchAnalytics(ownerId);
-    fetchDashboardStats(ownerId);
-    fetchProperties(ownerId);
+    if (!user?.id) return;
+    void fetchAnalytics(user.id);
+    void fetchDashboardStats(user.id);
+    void fetchProperties(user.id);
   }, [user?.id, fetchAnalytics, fetchDashboardStats, fetchProperties]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
+  const totals = useMemo(() => {
+    const views = analytics.reduce((sum, item) => sum + item.views, 0);
+    const enquiries = analytics.reduce((sum, item) => sum + item.enquiries, 0);
+    const viewings = analytics.reduce((sum, item) => sum + item.viewings, 0);
+    const applications = analytics.reduce((sum, item) => sum + item.applications, 0);
+    const askingRent = properties.reduce((sum, property) => sum + (property.pricing?.rentPrice || 0), 0);
+    const live = properties.filter((property) => property.status === 'active').length;
+    const pending = properties.filter((property) =>
+      ['pending', 'pending_review'].includes(property.status)
+    ).length;
+    const enquiryRate = views > 0 ? (enquiries / views) * 100 : 0;
 
-  const getPropertyAnalytics = (propertyId: string) => {
-    return analytics.find(a => a.propertyId === propertyId);
-  };
+    return { views, enquiries, viewings, applications, askingRent, live, pending, enquiryRate };
+  }, [analytics, properties]);
 
-  if (isLoadingAnalytics) {
+  const rankedProperties = useMemo(() => {
+    return [...properties].sort((a, b) => {
+      const aViews = analytics.find((item) => item.propertyId === a.id)?.views || 0;
+      const bViews = analytics.find((item) => item.propertyId === b.id)?.views || 0;
+      return bViews - aViews;
+    });
+  }, [properties, analytics]);
+
+  const funnelMax = Math.max(totals.views, totals.enquiries, totals.viewings, totals.applications, 1);
+
+  const isLoading = isLoadingAnalytics || isLoadingProperties;
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-paper-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-paper-100 flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-courtyard-700 mx-auto mb-4" />
+          <p className="text-ink-600">Loading analytics…</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-paper-100 py-8">
-      <Container size="xl">
-        {/* Header */}
-        <div className="mb-8">
+    <div className="min-h-screen bg-paper-100 py-6 sm:py-8 overflow-x-hidden">
+      <Container size="xl" className="min-w-0">
+        <div className="mb-6 sm:mb-8">
           <button
+            type="button"
             onClick={() => navigate('/owner')}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+            className="flex items-center text-ink-600 hover:text-ink-950 mb-4 text-sm"
           >
-            <IconArrowLeft size={20} className="mr-2" />
-            Back to Dashboard
+            <IconArrowLeft size={18} stroke={1.5} className="mr-2 shrink-0" />
+            Back to dashboard
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">Analytics & Insights</h1>
-          <p className="text-gray-600 mt-1">Track your property performance and trends</p>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-courtyard-700 font-semibold mb-2">
+            Owner tools
+          </p>
+          <h1 className="font-display text-2xl sm:text-3xl font-semibold text-ink-950 leading-tight">
+            Listing performance
+          </h1>
+          <p className="text-ink-600 mt-2 text-sm sm:text-base max-w-xl">
+            Views and enquiries on your DirectHome listings. Viewing requests and applications
+            will appear here as the marketplace opens.
+          </p>
         </div>
 
-        {/* Overview Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white">
-            <div className="flex items-center justify-between mb-2">
-              <IconEye size={24} />
-              <IconTrendingUp size={20} />
-            </div>
-            <p className="text-blue-100 text-sm">Total Views</p>
-            <p className="text-3xl font-bold">
-              {analytics.reduce((sum, a) => sum + a.views, 0).toLocaleString()}
-            </p>
-          </div>
-          <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white">
-            <div className="flex items-center justify-between mb-2">
-              <IconMessage size={24} />
-            </div>
-            <p className="text-green-100 text-sm">Total Enquiries</p>
-            <p className="text-3xl font-bold">
-              {analytics.reduce((sum, a) => sum + a.enquiries, 0)}
-            </p>
-          </div>
-          <div className="bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl p-6 text-white">
-            <div className="flex items-center justify-between mb-2">
-              <IconCalendar size={24} />
-            </div>
-            <p className="text-purple-100 text-sm">Total Viewings</p>
-            <p className="text-3xl font-bold">
-              {analytics.reduce((sum, a) => sum + a.viewings, 0)}
-            </p>
-          </div>
-          <div className="bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl p-6 text-white">
-            <div className="flex items-center justify-between mb-2">
-              <IconUsers size={24} />
-            </div>
-            <p className="text-orange-100 text-sm">Applications</p>
-            <p className="text-3xl font-bold">
-              {analytics.reduce((sum, a) => sum + a.applications, 0)}
-            </p>
-          </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          {[
+            { label: 'Views', value: formatCount(totals.views), icon: IconEye, tone: 'bg-courtyard-700' },
+            { label: 'Enquiries', value: formatCount(totals.enquiries), icon: IconMessage, tone: 'bg-brass-500' },
+            { label: 'Viewings', value: formatCount(totals.viewings), icon: IconCalendar, tone: 'bg-ink-800' },
+            { label: 'Applications', value: formatCount(totals.applications), icon: IconUsers, tone: 'bg-laterite-500' },
+          ].map((card) => {
+            const Icon = card.icon;
+            return (
+              <div key={card.label} className="bg-paper-50 border border-paper-200 p-4 sm:p-5 min-w-0">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-ink-400 font-semibold leading-snug">
+                    {card.label}
+                  </p>
+                  <span className={`p-2 ${card.tone} shrink-0`}>
+                    <Icon size={16} stroke={1.4} className="text-paper-50" />
+                  </span>
+                </div>
+                <p className="font-display text-2xl sm:text-3xl font-semibold text-ink-950 leading-none">
+                  {card.value}
+                </p>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Avg. Conversion Rate</h3>
-              <IconTrendingUp size={20} className="text-green-500" />
-            </div>
-            <p className="text-4xl font-bold text-gray-900 mb-2">
-              {(analytics.reduce((sum, a) => sum + a.conversionRate, 0) / (analytics.length || 1)).toFixed(1)}%
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="bg-paper-50 border border-paper-200 p-4 sm:p-5">
+            <p className="text-[11px] uppercase tracking-[0.16em] text-ink-400 font-semibold mb-2">Live listings</p>
+            <p className="font-display text-3xl font-semibold text-ink-950">{dashboardStats?.activeListings ?? totals.live}</p>
+            <p className="text-sm text-ink-600 mt-2">
+              {totals.pending} in review · {properties.length} total
             </p>
-            <p className="text-sm text-gray-500">Enquiry to rental conversion</p>
           </div>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Avg. Time to Rent</h3>
-              <IconClock size={20} className="text-blue-500" />
-            </div>
-            <p className="text-4xl font-bold text-gray-900 mb-2">
-              {Math.round(analytics.reduce((sum, a) => sum + a.averageTimeToRent, 0) / (analytics.length || 1))} days
+          <div className="bg-paper-50 border border-paper-200 p-4 sm:p-5">
+            <p className="text-[11px] uppercase tracking-[0.16em] text-ink-400 font-semibold mb-2">Enquiry rate</p>
+            <p className="font-display text-3xl font-semibold text-ink-950">
+              {totals.enquiryRate.toFixed(1)}%
             </p>
-            <p className="text-sm text-gray-500">From listing to tenant</p>
+            <p className="text-sm text-ink-600 mt-2">Enquiries as a share of views</p>
           </div>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Tenant Satisfaction</h3>
-              <IconStar size={20} className="text-yellow-500" />
-            </div>
-            <p className="text-4xl font-bold text-gray-900 mb-2">
-              {(analytics.reduce((sum, a) => sum + a.tenantSatisfaction, 0) / (analytics.length || 1)).toFixed(1)}
-              <span className="text-lg text-gray-500">/5</span>
+          <div className="bg-paper-50 border border-paper-200 p-4 sm:p-5">
+            <p className="text-[11px] uppercase tracking-[0.16em] text-ink-400 font-semibold mb-2">Asking rent listed</p>
+            <p className="font-display text-2xl sm:text-3xl font-semibold text-ink-950 break-words">
+              {formatCurrency(totals.askingRent)}
             </p>
-            <p className="text-sm text-gray-500">Average rating</p>
+            <p className="text-sm text-ink-600 mt-2">Combined yearly asking price</p>
           </div>
         </div>
 
-        {/* Property Performance */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-8">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-900">Property Performance</h2>
+        <div className="bg-paper-50 border border-paper-200 p-4 sm:p-6 mb-6 sm:mb-8">
+          <div className="flex items-center gap-2 mb-5">
+            <IconChartBar size={18} stroke={1.5} className="text-courtyard-700" />
+            <h2 className="font-display text-lg font-semibold text-ink-950">Interest funnel</h2>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">Property</th>
-                  <th className="px-6 py-4 text-center text-sm font-medium text-gray-500">Views</th>
-                  <th className="px-6 py-4 text-center text-sm font-medium text-gray-500">Enquiries</th>
-                  <th className="px-6 py-4 text-center text-sm font-medium text-gray-500">Viewings</th>
-                  <th className="px-6 py-4 text-center text-sm font-medium text-gray-500">Applications</th>
-                  <th className="px-6 py-4 text-center text-sm font-medium text-gray-500">Conversion</th>
-                  <th className="px-6 py-4 text-center text-sm font-medium text-gray-500">Rating</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {properties.map((property) => {
-                  const propertyAnalytics = getPropertyAnalytics(property.id!);
-                  return (
-                    <tr key={property.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <img
-                            src={property.media.images[0]?.url || 'https://via.placeholder.com/50'}
-                            alt={property.basicInfo.title}
-                            className="w-12 h-12 rounded-lg object-cover mr-4"
-                          />
+          <div className="space-y-4">
+            {[
+              { label: 'Views', value: totals.views },
+              { label: 'Enquiries', value: totals.enquiries },
+              { label: 'Viewings', value: totals.viewings },
+              { label: 'Applications', value: totals.applications },
+            ].map((row) => (
+              <div key={row.label}>
+                <div className="flex items-center justify-between text-sm mb-1.5">
+                  <span className="text-ink-600">{row.label}</span>
+                  <span className="font-semibold text-ink-950">{formatCount(row.value)}</span>
+                </div>
+                <div className="h-1.5 bg-paper-200">
+                  <div
+                    className="h-1.5 bg-courtyard-700"
+                    style={{ width: `${Math.max(2, (row.value / funnelMax) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-paper-50 border border-paper-200 mb-6 sm:mb-8">
+          <div className="p-4 sm:p-6 border-b border-paper-200">
+            <h2 className="font-display text-lg font-semibold text-ink-950">Your listings</h2>
+          </div>
+
+          {properties.length === 0 ? (
+            <div className="text-center px-4 py-12">
+              <IconHome size={40} stroke={1.25} className="mx-auto text-paper-300 mb-4" />
+              <h3 className="font-display text-lg font-semibold text-ink-950 mb-2">No listings yet</h3>
+              <p className="text-ink-600 mb-5 max-w-sm mx-auto">
+                Add a property to start tracking views and enquiries.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/owner/properties/new')}
+                className="btn-courtyard inline-flex"
+              >
+                <IconPlus size={18} stroke={1.5} />
+                Add property
+              </button>
+            </div>
+          ) : (
+            <div className="divide-y divide-paper-200">
+              {rankedProperties.map((property) => {
+                const stats = analytics.find((item) => item.propertyId === property.id);
+                return (
+                  <button
+                    key={property.id}
+                    type="button"
+                    onClick={() => navigate('/owner/properties')}
+                    className="w-full text-left p-4 sm:p-5 hover:bg-paper-100 transition-colors"
+                  >
+                    <div className="flex gap-3 sm:gap-4 min-w-0">
+                      <img
+                        src={property.media.images[0]?.url || '/hero-courtyard-day.png'}
+                        alt=""
+                        className="w-16 h-16 sm:w-20 sm:h-20 object-cover shrink-0 bg-paper-200"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <p className="font-medium text-ink-950 truncate">{property.basicInfo.title || 'Untitled listing'}</p>
+                          <span className="text-[11px] uppercase tracking-wide text-courtyard-700 font-semibold shrink-0">
+                            {statusLabel[property.status] || property.status}
+                          </span>
+                        </div>
+                        <p className="text-sm text-ink-600 truncate">
+                          {[property.location.lga, property.location.state].filter(Boolean).join(', ') || 'Nigeria'}
+                        </p>
+                        <div className="mt-3 grid grid-cols-3 gap-2 text-xs sm:text-sm">
                           <div>
-                            <p className="font-medium text-gray-900">{property.basicInfo.title}</p>
-                            <p className="text-sm text-gray-500">{property.location.lga}, {property.location.state}</p>
+                            <p className="text-ink-400">Views</p>
+                            <p className="font-semibold text-ink-950">{formatCount(stats?.views || 0)}</p>
+                          </div>
+                          <div>
+                            <p className="text-ink-400">Enquiries</p>
+                            <p className="font-semibold text-ink-950">{formatCount(stats?.enquiries || 0)}</p>
+                          </div>
+                          <div>
+                            <p className="text-ink-400">Rate</p>
+                            <p className="font-semibold text-ink-950">{stats?.conversionRate || 0}%</p>
                           </div>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-semibold text-gray-900">{propertyAnalytics?.views || 0}</span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-semibold text-gray-900">{propertyAnalytics?.enquiries || 0}</span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-semibold text-gray-900">{propertyAnalytics?.viewings || 0}</span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-semibold text-gray-900">{propertyAnalytics?.applications || 0}</span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          (propertyAnalytics?.conversionRate || 0) >= 10
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {propertyAnalytics?.conversionRate || 0}%
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center">
-                          <IconStar size={16} className="text-yellow-500 mr-1" />
-                          <span className="font-semibold">{propertyAnalytics?.tenantSatisfaction || '-'}</span>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Insights */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Top Performing */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center mb-4">
-              <IconChartBar size={24} className="text-green-500 mr-2" />
-              <h3 className="font-semibold text-gray-900">Top Performing Properties</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="bg-paper-50 border border-paper-200 p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <IconHeart size={18} stroke={1.5} className="text-brass-500" />
+              <h3 className="font-display text-lg font-semibold text-ink-950">Strongest interest</h3>
             </div>
-            <div className="space-y-4">
-              {properties
-                .sort((a, b) => {
-                  const aViews = getPropertyAnalytics(a.id!)?.views || 0;
-                  const bViews = getPropertyAnalytics(b.id!)?.views || 0;
-                  return bViews - aViews;
-                })
-                .slice(0, 3)
-                .map((property, index) => {
-                  const propertyAnalytics = getPropertyAnalytics(property.id!);
+            {rankedProperties.length === 0 ? (
+              <p className="text-sm text-ink-600">List a property to see which one draws the most views.</p>
+            ) : (
+              <div className="space-y-3">
+                {rankedProperties.slice(0, 3).map((property, index) => {
+                  const stats = analytics.find((item) => item.propertyId === property.id);
                   return (
-                    <div key={property.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center">
-                        <span className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold mr-3 ${
-                          index === 0 ? 'bg-yellow-500' :
-                          index === 1 ? 'bg-gray-400' :
-                          'bg-orange-400'
-                        }`}>
-                          {index + 1}
-                        </span>
-                        <div>
-                          <p className="font-medium text-gray-900">{property.basicInfo.title}</p>
-                          <p className="text-sm text-gray-500">{propertyAnalytics?.views || 0} views</p>
-                        </div>
+                    <div key={property.id} className="flex items-center gap-3 border border-paper-200 p-3 min-w-0">
+                      <span className="w-7 h-7 shrink-0 bg-courtyard-700 text-paper-50 text-xs font-semibold flex items-center justify-center">
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-ink-950 truncate">{property.basicInfo.title}</p>
+                        <p className="text-sm text-ink-600">{formatCount(stats?.views || 0)} views</p>
                       </div>
-                      <span className="text-green-600 font-semibold">
-                        {propertyAnalytics?.conversionRate || 0}%
+                      <span className="text-sm font-semibold text-courtyard-700 shrink-0">
+                        {stats?.conversionRate || 0}%
                       </span>
                     </div>
                   );
                 })}
-            </div>
+              </div>
+            )}
           </div>
 
-          {/* Quick Tips */}
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white">
-            <h3 className="font-semibold text-xl mb-4">Tips to Improve Performance</h3>
-            <ul className="space-y-3">
-              <li className="flex items-start">
-                <span className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-sm mr-3 mt-0.5">1</span>
-                <span>Add more high-quality photos to increase views by up to 40%</span>
-              </li>
-              <li className="flex items-start">
-                <span className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-sm mr-3 mt-0.5">2</span>
-                <span>Respond to enquiries within 1 hour for better conversion</span>
-              </li>
-              <li className="flex items-start">
-                <span className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-sm mr-3 mt-0.5">3</span>
-                <span>Add a video walkthrough to stand out from competitors</span>
-              </li>
-              <li className="flex items-start">
-                <span className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-sm mr-3 mt-0.5">4</span>
-                <span>Keep your pricing competitive with similar properties</span>
-              </li>
+          <div className="bg-courtyard-800 text-paper-50 p-4 sm:p-6">
+            <h3 className="font-display text-lg font-semibold mb-4">How to get more interest</h3>
+            <ul className="space-y-3 text-sm text-paper-200">
+              <li>Use at least five clear daylight photos of rooms, compound, and street.</li>
+              <li>Put the estate or nearest landmark in the title — seekers search that way.</li>
+              <li>Reply to enquiries the same day. Speed is the conversion edge in Lagos and Abuja.</li>
+              <li>Keep asking rent in range for the LGA; overpricing stalls views into enquiries.</li>
             </ul>
           </div>
         </div>

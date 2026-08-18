@@ -57,8 +57,8 @@ const WhyChooseSection: React.FC<WhyChooseSectionProps> = ({ className = '' }) =
     },
     {
       id: '3',
-      title: 'Smart Rent Calculator',
-      description: 'Make informed rental decisions with our advanced calculator tools. Analyze affordability, compare properties, and get market insights to find the perfect rental within your budget.',
+      title: 'Construction Cost Estimator',
+      description: 'Plan a Nigerian build with materials, labour, fees, and VAT before you pour a foundation.',
       icon: <IconScale size={40} />,
       statistic: {
         value: 92,

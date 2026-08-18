@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   IconHome,
   IconHammer,
-  IconCalculator,
   IconBuildingSkyscraper,
   IconUser,
   IconDashboard,
@@ -65,7 +64,6 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
   const navigationItems = [
     { label: 'Home', path: '/', icon: IconHome, show: true },
     { label: 'Construction Estimator', path: '/construction-estimator', icon: IconHammer, show: true },
-    { label: 'Rent Calculator', path: '/calculator', icon: IconCalculator, show: true },
     { label: 'Listings (Soon)', path: '/search', icon: IconBuildingSkyscraper, show: true },
     { label: 'Dashboard', path: '/dashboard', icon: IconDashboard, show: isAuthenticated },
     { label: 'Profile', path: '/profile', icon: IconUser, show: isAuthenticated },

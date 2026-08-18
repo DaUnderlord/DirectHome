@@ -165,40 +165,39 @@ const HomeSeekerDashboard: React.FC<HomeSeekerDashboardProps> = ({
       </div>
 
       {/* Quick Actions */}
-      <div className="glass-card rounded-2xl p-6 border border-white/20 shadow-lg backdrop-blur-xl">
-        <h3 className="text-xl font-semibold text-gray-900 mb-6">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="border border-paper-200 bg-paper-50 p-5 sm:p-6">
+        <h3 className="font-display text-xl font-semibold text-ink-950 mb-6">Quick Actions</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <Link
             to="/search"
-            className="group relative overflow-hidden bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="btn-courtyard justify-center"
           >
-            <IconSearch className="h-5 w-5 mr-2" />
-            <span className="font-semibold">Find Properties</span>
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 to-white/20 transform translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
+            <IconSearch className="h-5 w-5" stroke={1.5} />
+            <span>Find Properties</span>
           </Link>
 
           <Link
             to="/favorites"
-            className="group relative overflow-hidden glass-card hover:shadow-lg text-gray-700 hover:text-gray-900 py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center border border-white/30"
+            className="btn-outline-ink justify-center"
           >
-            <IconHeart className="h-5 w-5 mr-2" />
-            <span className="font-semibold">Saved Properties</span>
+            <IconHeart className="h-5 w-5" stroke={1.5} />
+            <span>Saved Properties</span>
           </Link>
 
           <Link
             to="/dashboard/homeseeker"
-            className="group relative overflow-hidden glass-card hover:shadow-lg text-gray-700 hover:text-gray-900 py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center border border-white/30"
+            className="btn-outline-ink justify-center"
           >
-            <IconCalendar className="h-5 w-5 mr-2" />
-            <span className="font-semibold">My Appointments</span>
+            <IconCalendar className="h-5 w-5" stroke={1.5} />
+            <span>My Appointments</span>
           </Link>
 
           <Link
-            to="/rent-calculator?tab=market-map"
-            className="group relative overflow-hidden glass-card hover:shadow-lg text-gray-700 hover:text-gray-900 py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center border border-white/30"
+            to="/construction-estimator"
+            className="btn-outline-ink justify-center"
           >
-            <IconMapPin className="h-5 w-5 mr-2" />
-            <span className="font-semibold">Market Map</span>
+            <IconMapPin className="h-5 w-5" stroke={1.5} />
+            <span>Build Cost Estimator</span>
           </Link>
         </div>
       </div>

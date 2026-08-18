@@ -18,7 +18,7 @@ const faqCategories = [
         id: 'gs-2',
         question: 'Do I need an account to use the calculators?',
         answer:
-          'No. You can fill in the Construction Cost Estimator and Rent Calculator without signing in. Unlocking a full report is ₦399 per tool, per session.',
+          'No. You can fill in the Construction Cost Estimator without signing in. Unlocking the full report is ₦399 per session.',
       },
       {
         id: 'gs-3',
@@ -35,7 +35,7 @@ const faqCategories = [
         id: 'tools-1',
         question: 'What do the flagship tools cover?',
         answer:
-          'The Construction Cost Estimator prices materials, labour, professional fees, permits, add-ons, contingency, and VAT for Nigerian cities. The Rent Calculator covers affordability, move-in costs, and property comparison.',
+          'The Construction Cost Estimator prices materials, labour, professional fees, permits, add-ons, contingency, and VAT for Nigerian cities.',
       },
       {
         id: 'tools-2',
@@ -53,7 +53,7 @@ const faqCategories = [
         id: 'list-1',
         question: 'Can I search for properties now?',
         answer:
-          'The marketplace is launching soon. Use the calculators today to plan a build or a rent budget.',
+          'The marketplace is launching soon. Use the Construction Cost Estimator today to plan a build. Owners can already submit a property for review.',
       },
       {
         id: 'list-2',
@@ -87,7 +87,7 @@ const HelpPage: React.FC = () => {
     <ContentPage
       meta={{
         title: 'Help Center — DirectHome',
-        description: 'Help with DirectHome construction and rent calculators, accounts, and the upcoming property marketplace.',
+        description: 'Help with DirectHome construction estimates, accounts, and the upcoming property marketplace.',
         path: '/help',
       }}
       eyebrow="Help"

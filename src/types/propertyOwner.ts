@@ -150,6 +150,7 @@ export interface PropertyMedia {
   caption?: string;
   isPrimary: boolean;
   uploadedAt: Date;
+  file?: File;
 }
 
 // Viewing Management
