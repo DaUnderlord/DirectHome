@@ -230,7 +230,7 @@ const AnalyticsDashboard: React.FC = () => {
                   >
                     <div className="flex gap-3 sm:gap-4 min-w-0">
                       <img
-                        src={property.media.images[0]?.url || '/hero-courtyard-day.png'}
+                        src={property.media.images[0]?.url || '/hero-courtyard-day.webp'}
                         alt=""
                         className="w-16 h-16 sm:w-20 sm:h-20 object-cover shrink-0 bg-paper-200"
                       />

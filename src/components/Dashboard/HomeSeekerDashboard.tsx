@@ -1,115 +1,105 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Link } from 'react-router-dom';
-import { usePropertyStore } from '../../store/propertyStore';
-import { useAppointmentStore } from '../../store/appointmentStore';
-import { useMessagingStore } from '../../store/messagingStore';
-import { AppointmentStatus } from '../../types/appointment';
-import { IconCalendar, IconHeart, IconMessage, IconSearch, IconStar, IconMapPin } from '@tabler/icons-react';
-import { format } from 'date-fns';
+import {
+  IconCalendar,
+  IconHeart,
+  IconMessage,
+  IconSearch,
+  IconMapPin,
+  IconHammer,
+} from '@tabler/icons-react';
 import ModernDashboardLayout from './ModernDashboardLayout';
 import InteractiveStatsCard from './InteractiveStatsCard';
 import MarketMapQuickAccess from './MarketMapQuickAccess';
 import MapInsightsWidget from './MapInsightsWidget';
 import { UserRole } from '../../types/auth';
+import { Property } from '../../types/property';
+import { usePropertyFavorites } from '../../hooks/usePropertyFavorites';
+import {
+  AreaInsight,
+  SeekerSearch,
+  buildAreaInsights,
+  fetchLiveListings,
+  fetchSeekerFavorites,
+  fetchSeekerSearches,
+  recordSeekerSearch,
+} from '../../services/seekerService';
 
 interface HomeSeekerDashboardProps {
   activeRole?: UserRole;
   onRoleChange?: (role: UserRole) => void;
 }
 
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+    maximumFractionDigits: 0,
+  }).format(amount);
+
 const HomeSeekerDashboard: React.FC<HomeSeekerDashboardProps> = ({
   activeRole = UserRole.HOME_SEEKER,
-  onRoleChange = () => {}
+  onRoleChange = () => {},
 }) => {
   const { user } = useAuth();
-  const { fetchProperties } = usePropertyStore();
-  const { fetchAppointments, appointments } = useAppointmentStore();
-  const { fetchConversations, conversations } = useMessagingStore();
+  const navigate = useNavigate();
+  const { favorites: localFavorites } = usePropertyFavorites();
 
-  const [favoriteProperties, setFavoriteProperties] = useState<any[]>([]);
-  const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
-  const [unreadMessages, setUnreadMessages] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [recentSearches] = useState<number>(3);
+  const [liveListings, setLiveListings] = useState<Property[]>([]);
+  const [dbSavedProperties, setSavedProperties] = useState<Property[]>([]);
+  const [recentSearches, setRecentSearches] = useState<SeekerSearch[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      setIsLoading(true);
+  const loadDashboard = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [listings, dbFavorites, searches] = await Promise.all([
+        fetchLiveListings(24),
+        user?.id ? fetchSeekerFavorites(user.id) : Promise.resolve([] as Property[]),
+        user?.id ? fetchSeekerSearches(user.id) : Promise.resolve([] as SeekerSearch[]),
+      ]);
 
-      // Fetch favorite properties
-      await fetchProperties({ featured: true, limit: 3 });
-
-      // Fetch upcoming appointments
-      await fetchAppointments({
-        attendeeId: user?.id,
-        status: [AppointmentStatus.CONFIRMED, AppointmentStatus.PENDING]
-      });
-
-      // Fetch conversations
-      await fetchConversations({ participantId: user?.id });
-
+      setLiveListings(listings);
+      setSavedProperties(dbFavorites);
+      setRecentSearches(searches);
+    } finally {
       setIsLoading(false);
-    };
-
-    loadDashboardData();
-  }, [fetchProperties, fetchAppointments, fetchConversations, user?.id]);
-
-  // Process appointments data
-  useEffect(() => {
-    if (appointments) {
-      // Filter for upcoming appointments and sort by date
-      const upcoming = appointments
-        .filter(apt =>
-          (apt.status === AppointmentStatus.CONFIRMED || apt.status === AppointmentStatus.PENDING) &&
-          new Date(apt.startTime) > new Date()
-        )
-        .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-        .slice(0, 3); // Get only the next 3 appointments
-
-      setUpcomingAppointments(upcoming);
     }
-  }, [appointments]);
+  }, [user?.id]);
 
-  // Process conversations data
   useEffect(() => {
-    if (conversations && user) {
-      // Calculate total unread messages
-      const unread = conversations.reduce((total, conv) => {
-        return total + (conv.unreadCount[user.id] || 0);
-      }, 0);
+    void loadDashboard();
+  }, [loadDashboard]);
 
-      setUnreadMessages(unread);
+  const savedProperties = useMemo(() => {
+    const merged = [...dbSavedProperties];
+    localFavorites.forEach((property) => {
+      if (!merged.some((item) => item.id === property.id)) {
+        merged.push(property);
+      }
+    });
+    return merged;
+  }, [dbSavedProperties, localFavorites]);
+
+  const insights: AreaInsight[] = useMemo(() => buildAreaInsights(liveListings), [liveListings]);
+  const listingsLive = liveListings.length > 0;
+
+  const handleSearch = async (rawQuery: string) => {
+    const query = rawQuery.trim();
+    if (query && user?.id) {
+      const recorded = await recordSeekerSearch(user.id, query);
+      if (recorded) {
+        setRecentSearches((current) => [recorded, ...current.filter((item) => item.query !== query)].slice(0, 8));
+      }
     }
-  }, [conversations, user]);
+    navigate(query ? `/search?q=${encodeURIComponent(query)}` : '/search');
+  };
 
-  // Get favorite properties from the store
-  useEffect(() => {
-    const favorites = usePropertyStore.getState().properties.filter(p => p.featured);
-    setFavoriteProperties(favorites.slice(0, 3));
-  }, []);
-
-  // Prepare stats for the layout
   const stats = [
-    {
-      label: 'Saved Properties',
-      value: favoriteProperties.length,
-      color: 'blue' as const,
-      change: 12,
-      trend: 'up' as const
-    },
-    {
-      label: 'Upcoming Viewings',
-      value: upcomingAppointments.length,
-      color: 'green' as const,
-      change: 5,
-      trend: 'up' as const
-    },
-    {
-      label: 'Unread Messages',
-      value: unreadMessages,
-      color: 'purple' as const
-    }
+    { label: 'Saved Properties', value: savedProperties.length, color: 'blue' as const },
+    { label: 'Upcoming Viewings', value: 0, color: 'green' as const },
+    { label: 'Unread Messages', value: 0, color: 'purple' as const },
   ];
 
   return (
@@ -117,283 +107,189 @@ const HomeSeekerDashboard: React.FC<HomeSeekerDashboardProps> = ({
       user={user!}
       activeRole={activeRole}
       onRoleChange={onRoleChange}
-      title="Find Your Perfect Home"
-      subtitle="Discover amazing properties, schedule viewings, and connect with property owners in your area."
+      title="Find your next home"
+      subtitle="Search published DirectHome listings, save homes you like, and book viewings when the marketplace opens."
       stats={stats}
     >
-      {/* Interactive Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <InteractiveStatsCard
           title="Saved Properties"
-          value={favoriteProperties.length}
+          value={savedProperties.length}
           icon={IconHeart}
           color="blue"
-          onClick={() => window.location.href = '/favorites'}
-          change={12}
-          trend="up"
-          subtitle="This month"
+          onClick={() => navigate('/favorites')}
+          subtitle="From your account"
         />
-        
         <InteractiveStatsCard
           title="Upcoming Viewings"
-          value={upcomingAppointments.length}
+          value={0}
           icon={IconCalendar}
           color="green"
-          onClick={() => window.location.href = '/dashboard/homeseeker'}
-          change={5}
-          trend="up"
-          subtitle="Next 7 days"
+          onClick={() => navigate('/search')}
+          subtitle="Marketplace opening"
         />
-        
         <InteractiveStatsCard
           title="Unread Messages"
-          value={unreadMessages}
+          value={0}
           icon={IconMessage}
           color="purple"
-          onClick={() => window.location.href = '/search'}
-          subtitle="From owners"
+          onClick={() => navigate('/search')}
+          subtitle="Owner replies"
         />
-        
         <InteractiveStatsCard
           title="Recent Searches"
-          value={recentSearches}
+          value={recentSearches.length}
           icon={IconSearch}
           color="indigo"
-          onClick={() => window.location.href = '/search'}
-          subtitle="Last 24 hours"
+          onClick={() => navigate('/search')}
+          subtitle="Saved to your account"
         />
       </div>
 
-      {/* Quick Actions */}
       <div className="border border-paper-200 bg-paper-50 p-5 sm:p-6">
-        <h3 className="font-display text-xl font-semibold text-ink-950 mb-6">Quick Actions</h3>
+        <h3 className="font-display text-xl font-semibold text-ink-950 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <Link
-            to="/search"
-            className="btn-courtyard justify-center"
-          >
+          <Link to="/search" className="btn-courtyard justify-center">
             <IconSearch className="h-5 w-5" stroke={1.5} />
             <span>Find Properties</span>
           </Link>
-
-          <Link
-            to="/favorites"
-            className="btn-outline-ink justify-center"
-          >
+          <Link to="/favorites" className="btn-outline-ink justify-center">
             <IconHeart className="h-5 w-5" stroke={1.5} />
             <span>Saved Properties</span>
           </Link>
-
-          <Link
-            to="/dashboard/homeseeker"
-            className="btn-outline-ink justify-center"
-          >
-            <IconCalendar className="h-5 w-5" stroke={1.5} />
-            <span>My Appointments</span>
-          </Link>
-
-          <Link
-            to="/construction-estimator"
-            className="btn-outline-ink justify-center"
-          >
+          <Link to="/search" className="btn-outline-ink justify-center">
             <IconMapPin className="h-5 w-5" stroke={1.5} />
+            <span>Browse areas</span>
+          </Link>
+          <Link to="/construction-estimator" className="btn-outline-ink justify-center">
+            <IconHammer className="h-5 w-5" stroke={1.5} />
             <span>Build Cost Estimator</span>
           </Link>
         </div>
       </div>
 
-      {/* Map Widgets Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Market Map Quick Access */}
-        <MarketMapQuickAccess 
-          recentSearches={[
-            { query: 'Victoria Island apartments', timestamp: new Date(Date.now() - 3600000), resultCount: 45 },
-            { query: 'Lekki Phase 1 houses', timestamp: new Date(Date.now() - 7200000), resultCount: 32 },
-            { query: 'Ikeja GRA properties', timestamp: new Date(Date.now() - 86400000), resultCount: 28 }
-          ]}
-          favoriteAreas={[
-            { name: 'Victoria Island', coordinates: [3.4219, 6.4281], propertyCount: 156, avgPrice: 2500000, trending: true },
-            { name: 'Lekki Phase 1', coordinates: [3.4700, 6.4474], propertyCount: 203, avgPrice: 1800000, trending: false },
-            { name: 'Ikeja GRA', coordinates: [3.3515, 6.5966], propertyCount: 89, avgPrice: 1200000, trending: true }
-          ]}
+        <MarketMapQuickAccess
+          recentSearches={recentSearches}
+          savedProperties={savedProperties}
+          trendingAreas={insights}
+          listingsLive={listingsLive}
+          onSearch={handleSearch}
         />
-
-        {/* Map Insights Widget */}
-        <MapInsightsWidget 
-          userLocation={user?.profile?.city || 'Lagos'}
-          favoriteAreas={['Victoria Island', 'Lekki', 'Ikeja', 'Ikoyi']}
+        <MapInsightsWidget
+          insights={insights}
+          loading={isLoading}
+          onRefresh={() => void loadDashboard()}
+          onSelectArea={(area) => void handleSearch(area)}
         />
       </div>
 
-      {/* Saved Properties Section */}
-      <div className="glass-card rounded-2xl p-6 border border-white/20 shadow-lg backdrop-blur-xl">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-gray-900">Saved Properties</h3>
-          <Link to="/favorites" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-            View All
+      <section className="bg-paper-50 border border-paper-200 p-5 sm:p-6">
+        <div className="flex justify-between items-center mb-4 gap-3">
+          <h3 className="font-display text-xl font-semibold text-ink-950">Saved Properties</h3>
+          <Link to="/favorites" className="text-courtyard-700 hover:text-courtyard-600 text-sm font-medium">
+            View all
           </Link>
         </div>
-
         {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="flex justify-center py-10">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-courtyard-700" />
           </div>
-        ) : favoriteProperties.length > 0 ? (
+        ) : savedProperties.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {favoriteProperties.map(property => (
+            {savedProperties.slice(0, 3).map((property) => (
               <Link
                 key={property.id}
                 to={`/property/${property.id}`}
-                className="block border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+                className="block border border-paper-200 hover:border-courtyard-500 overflow-hidden"
               >
-                <div className="relative h-40 bg-gray-200">
-                  {property.images && property.images[0] && (
-                    <img
-                      src={property.images[0].url}
-                      alt={property.title}
-                      className="w-full h-full object-cover"
-                    />
+                <div className="relative h-40 bg-paper-200">
+                  {property.images?.[0] && (
+                    <img src={property.images[0].url} alt={property.title} className="w-full h-full object-cover" />
                   )}
-                  <div className="absolute top-2 right-2">
-                    <IconHeart className="h-6 w-6 text-red-500 fill-current" />
-                  </div>
+                  <IconHeart className="absolute top-2 right-2 h-5 w-5 text-laterite-500 fill-current" />
                 </div>
                 <div className="p-4">
-                  <h4 className="font-medium text-gray-900 mb-1 truncate">{property.title}</h4>
-                  <p className="text-gray-600 text-sm mb-2">{property.location.city}, {property.location.state}</p>
-                  <p className="text-blue-600 font-semibold">
-                    ₦{property.pricing.price.toLocaleString()}
-                    {property.listingType === 'rent' && '/month'}
+                  <h4 className="font-medium text-ink-950 mb-1 truncate">{property.title}</h4>
+                  <p className="text-ink-500 text-sm mb-2">
+                    {property.location.city || property.location.state}
                   </p>
+                  <p className="text-courtyard-700 font-semibold">{formatCurrency(property.pricing.price)}</p>
                 </div>
               </Link>
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 bg-gray-50 rounded-lg">
-            <IconHeart className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-500">You haven't saved any properties yet</p>
-            <Link
-              to="/search"
-              className="mt-3 inline-block text-blue-600 hover:text-blue-800 font-medium"
-            >
-              Start browsing properties
+          <div className="text-center py-10 bg-paper-100">
+            <IconHeart className="h-10 w-10 text-paper-300 mx-auto mb-3" stroke={1.25} />
+            <p className="text-ink-600">You haven’t saved any properties yet</p>
+            <Link to="/search" className="mt-3 inline-block text-courtyard-700 font-medium">
+              Browse listings
             </Link>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Upcoming Appointments Section */}
-      <div className="glass-card rounded-2xl p-6 border border-white/20 shadow-lg backdrop-blur-xl">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-gray-900">Upcoming Appointments</h3>
-          <Link to="/dashboard/homeseeker" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-            View All
+      <section className="bg-paper-50 border border-paper-200 p-5 sm:p-6">
+        <div className="flex justify-between items-center mb-4 gap-3">
+          <h3 className="font-display text-xl font-semibold text-ink-950">Upcoming viewings</h3>
+        </div>
+        <div className="text-center py-10 bg-paper-100">
+          <IconCalendar className="h-10 w-10 text-paper-300 mx-auto mb-3" stroke={1.25} />
+          <p className="text-ink-600">No viewing requests yet</p>
+          <p className="text-ink-400 text-sm mt-1 max-w-md mx-auto">
+            When a listing goes live, you can request a tour from the property page. Confirmed times will show here.
+          </p>
+        </div>
+      </section>
+
+      <section className="bg-paper-50 border border-paper-200 p-5 sm:p-6">
+        <div className="flex justify-between items-center mb-4 gap-3">
+          <h3 className="font-display text-xl font-semibold text-ink-950">Recommended for you</h3>
+          <Link to="/search" className="text-courtyard-700 hover:text-courtyard-600 text-sm font-medium">
+            View more
           </Link>
         </div>
-
         {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="flex justify-center py-10">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-courtyard-700" />
           </div>
-        ) : upcomingAppointments.length > 0 ? (
-          <div className="space-y-4">
-            {upcomingAppointments.map(appointment => (
-              <div
-                key={appointment.id}
-                className="border border-gray-200 rounded-lg p-4 flex items-center"
-              >
-                <div className="bg-green-100 p-3 rounded-full mr-4">
-                  <IconCalendar className="h-6 w-6 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900">Property Viewing</p>
-                  <p className="text-sm text-gray-600">
-                    {format(new Date(appointment.startTime), 'EEEE, MMMM d, yyyy')}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {format(new Date(appointment.startTime), 'h:mm a')} -
-                    {format(new Date(appointment.endTime), 'h:mm a')}
-                  </p>
-                </div>
-                <div>
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${appointment.status === AppointmentStatus.CONFIRMED
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                      }`}
-                  >
-                    {appointment.status === AppointmentStatus.CONFIRMED ? 'Confirmed' : 'Pending'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 bg-gray-50 rounded-lg">
-            <IconCalendar className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-500">You don't have any upcoming appointments</p>
-            <Link
-              to="/search"
-              className="mt-3 inline-block text-blue-600 hover:text-blue-800 font-medium"
-            >
-              Find properties to view
-            </Link>
-          </div>
-        )}
-      </div>
-
-      {/* Recommended Properties Section */}
-      <div className="glass-card rounded-2xl p-6 border border-white/20 shadow-lg backdrop-blur-xl">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-gray-900">Recommended For You</h3>
-          <Link to="/search" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-            View More
-          </Link>
-        </div>
-
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : (
+        ) : liveListings.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {usePropertyStore.getState().properties.slice(0, 3).map(property => (
+            {liveListings.slice(0, 3).map((property) => (
               <Link
                 key={property.id}
                 to={`/property/${property.id}`}
-                className="block border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+                className="block border border-paper-200 hover:border-courtyard-500 overflow-hidden"
               >
-                <div className="relative h-40 bg-gray-200">
-                  {property.images && property.images[0] && (
-                    <img
-                      src={property.images[0].url}
-                      alt={property.title}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                  {property.featured && (
-                    <div className="absolute top-2 left-2">
-                      <span className="bg-yellow-400 text-yellow-900 text-xs px-2 py-1 rounded-md font-medium flex items-center">
-                        <IconStar className="h-3 w-3 mr-1" />
-                        Featured
-                      </span>
-                    </div>
+                <div className="relative h-40 bg-paper-200">
+                  {property.images?.[0] && (
+                    <img src={property.images[0].url} alt={property.title} className="w-full h-full object-cover" />
                   )}
                 </div>
                 <div className="p-4">
-                  <h4 className="font-medium text-gray-900 mb-1 truncate">{property.title}</h4>
-                  <p className="text-gray-600 text-sm mb-2">{property.location.city}, {property.location.state}</p>
-                  <p className="text-blue-600 font-semibold">
-                    ₦{property.pricing.price.toLocaleString()}
-                    {property.listingType === 'rent' && '/month'}
+                  <h4 className="font-medium text-ink-950 mb-1 truncate">{property.title}</h4>
+                  <p className="text-ink-500 text-sm mb-2">
+                    {property.location.city || property.location.state}
                   </p>
+                  <p className="text-courtyard-700 font-semibold">{formatCurrency(property.pricing.price)}</p>
                 </div>
               </Link>
             ))}
           </div>
+        ) : (
+          <div className="text-center py-10 bg-paper-100">
+            <IconSearch className="h-10 w-10 text-paper-300 mx-auto mb-3" stroke={1.25} />
+            <p className="text-ink-600">No published listings yet</p>
+            <p className="text-ink-400 text-sm mt-1 max-w-md mx-auto">
+              DirectHome is reviewing owner submissions. Recommendations will appear here as homes go live.
+            </p>
+            <Link to="/construction-estimator" className="mt-3 inline-block text-courtyard-700 font-medium">
+              Plan a build while you wait
+            </Link>
+          </div>
         )}
-      </div>
+      </section>
     </ModernDashboardLayout>
   );
 };

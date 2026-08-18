@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { supabase } from '../../../lib/supabase';
+import { getPostLoginPath } from '../../../utils/authRedirect';
 import { 
   RegistrationStep1Values, 
   RegistrationStep2Values, 
@@ -84,11 +86,14 @@ const RegisterForm: React.FC = () => {
         role: completeData.role as UserRole,
       };
       
-      // Submit registration
       await register(registrationData);
-      
-      // Redirect to verification page
-      navigate('/auth/verify');
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session) {
+        navigate(getPostLoginPath(registrationData.role), { replace: true });
+      } else {
+        navigate('/auth/login', { replace: true });
+      }
     } catch (err) {
       console.error('Registration error:', err);
       const message =

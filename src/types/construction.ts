@@ -45,6 +45,12 @@ export enum LocationTier {
   RURAL = 'rural'
 }
 
+export enum RoofingChoice {
+  AUTO = 'auto',
+  LONGSPAN = 'longspan',
+  STONE_COATED = 'stone_coated',
+}
+
 export interface ConstructionSpecs {
   buildingType: BuildingType;
   numberOfBedrooms: number;
@@ -52,6 +58,8 @@ export interface ConstructionSpecs {
   numberOfFloors: number;
   totalSquareMeters: number;
   finishingQuality: FinishingQuality;
+  roofing: RoofingChoice;
+  plotSquareMeters: number;
   location: {
     state: string;
     city: string;
@@ -131,6 +139,30 @@ export interface ConstructionEstimate {
     addons: number;
     contingency: number;
   };
+  stages: BuildStage[];
+  cashPlan: CashPhase[];
+}
+
+export interface BuildStage {
+  id: 'substructure' | 'carcass' | 'finishing' | 'extras';
+  label: string;
+  materials: number;
+  labor: number;
+  total: number;
+}
+
+export interface CashPhase {
+  label: string;
+  window: string;
+  amount: number;
+  share: number;
+}
+
+export interface QualityComparison {
+  quality: FinishingQuality;
+  grandTotal: number;
+  costPerSquareMeter: number;
+  months: number;
 }
 
 export interface MaterialPriceDatabase {

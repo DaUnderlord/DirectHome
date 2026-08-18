@@ -1,7 +1,6 @@
 import React from 'react';
 import PageHero from './PageHero';
 import { usePageMeta } from '../../hooks/usePageMeta';
-import courtyard from '../../assets/hero-courtyard-day.png';
 
 interface ContentPageProps {
   meta: { title: string; description: string; path: string };
@@ -30,7 +29,7 @@ const ContentPage: React.FC<ContentPageProps> = ({
         eyebrow={eyebrow}
         title={title}
         subtitle={subtitle}
-        image={image || courtyard}
+        image={image}
         compact
       />
       <div

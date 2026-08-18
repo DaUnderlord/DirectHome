@@ -2,10 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { IconHammer, IconBuildingSkyscraper } from '@tabler/icons-react';
 import SplashScreen from './SplashScreen';
-import heroCourtyard from '../../assets/hero-courtyard-day.png';
-import heroVeranda from '../../assets/hero-veranda-day.png';
-import heroInterior from '../../assets/hero-interior-court.png';
 import { useIntro } from '../../context/IntroContext';
+
+const heroCourtyard = '/hero-courtyard-day.webp';
 
 const slides = [
   {
@@ -13,11 +12,11 @@ const slides = [
     alt: 'Tropical-modern courtyard house in afternoon light',
   },
   {
-    src: heroVeranda,
+    src: '/hero-veranda-day.webp',
     alt: 'Covered bungalow veranda opening to a planted compound',
   },
   {
-    src: heroInterior,
+    src: '/hero-interior-court.webp',
     alt: 'Living room looking out to a Nigerian courtyard',
   },
 ];
@@ -30,6 +29,11 @@ const CinematicHero: React.FC = () => {
   const heroRef = useRef<HTMLElement>(null);
   const [slide, setSlide] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [photoReady, setPhotoReady] = useState(false);
+
+  const playStartedAt = useRef(
+    typeof performance !== 'undefined' ? performance.now() : 0
+  );
 
   useEffect(() => {
     const lock = phase !== 'done';
@@ -41,9 +45,17 @@ const CinematicHero: React.FC = () => {
 
   useEffect(() => {
     if (phase !== 'playing') return;
-    const t = window.setTimeout(beginReveal, 2400);
+    const failSafe = window.setTimeout(() => setPhotoReady(true), 3500);
+    return () => window.clearTimeout(failSafe);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== 'playing' || !photoReady) return;
+    const elapsed = performance.now() - playStartedAt.current;
+    const remaining = Math.max(220, 1100 - elapsed);
+    const t = window.setTimeout(beginReveal, remaining);
     return () => window.clearTimeout(t);
-  }, [phase, beginReveal]);
+  }, [phase, beginReveal, photoReady]);
 
   useEffect(() => {
     if (phase !== 'revealing') return;
@@ -77,7 +89,7 @@ const CinematicHero: React.FC = () => {
       });
     }
 
-    const t = window.setTimeout(complete, 1380);
+    const t = window.setTimeout(complete, 820);
     return () => window.clearTimeout(t);
   }, [phase, complete]);
 
@@ -129,14 +141,20 @@ const CinematicHero: React.FC = () => {
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
-        {slides.map((item, index) => (
-          <img
-            key={item.src}
-            src={item.src}
-            alt={item.alt}
-            className={index === slide ? 'is-active' : ''}
-          />
-        ))}
+        {slides.map((item, index) => {
+          if (index > 0 && phase !== 'done') return null;
+          return (
+            <img
+              key={item.src}
+              src={item.src}
+              alt={item.alt}
+              className={index === slide ? 'is-active' : ''}
+              fetchPriority={index === 0 ? 'high' : 'low'}
+              loading={index === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+            />
+          );
+        })}
         <div className={`plate-index ${phase === 'done' ? 'is-ready' : ''}`} role="tablist" aria-label="Hero photographs">
           {slides.map((item, index) => (
             <button
@@ -159,6 +177,7 @@ const CinematicHero: React.FC = () => {
           pinRef={pinRef}
           bleedRef={bleedRef}
           onSkip={skip}
+          onPhotoReady={() => setPhotoReady(true)}
         />
       )}
     </section>

@@ -11,7 +11,6 @@ import {
 } from '@tabler/icons-react';
 import PageHero from '../UI/PageHero';
 import { usePageMeta } from '../../hooks/usePageMeta';
-import courtyard from '../../assets/hero-courtyard-day.png';
 import plateRent from '../../assets/plate-rent.png';
 
 const teamMembers = [
@@ -77,7 +76,6 @@ const AboutPage: React.FC = () => {
           </>
         }
         subtitle="We connect seekers directly with homeowners and give you the numbers to plan a build or a lease — without the agent markup."
-        image={courtyard}
       >
         <Link to="/construction-estimator" className="btn-courtyard">
           <IconHammer size={18} />

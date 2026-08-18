@@ -2,7 +2,6 @@ import React from 'react';
 import PageHero from './PageHero';
 import AdSlot from './AdSlot';
 import { usePageMeta } from '../../hooks/usePageMeta';
-import courtyard from '../../assets/hero-courtyard-day.png';
 
 interface ToolShellProps {
   meta: { title: string; description: string; path: string };
@@ -31,7 +30,7 @@ const ToolShell: React.FC<ToolShellProps> = ({
         eyebrow={eyebrow}
         title={heroTitle}
         subtitle={heroSubtitle}
-        image={heroImage || courtyard}
+        image={heroImage}
         compact
       />
 

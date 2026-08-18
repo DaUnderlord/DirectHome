@@ -1,109 +1,180 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   IconBuilding,
   IconRuler,
   IconMapPin,
   IconSparkles,
   IconCalculator,
-  IconDownload,
   IconChevronRight,
-  IconCheck
+  IconCheck,
 } from '@tabler/icons-react';
 import {
   ConstructionSpecs,
   ConstructionEstimate,
   BuildingType,
   FinishingQuality,
-  LocationTier
+  LocationTier,
+  RoofingChoice,
 } from '../../types/construction';
 import constructionCostService from '../../services/constructionCostService';
+import {
+  archiveAndClear,
+  loadDraft,
+  loadHistory,
+  loadResult,
+  saveDraft,
+  saveResult,
+  type SavedEstimateResult,
+} from '../../services/estimateStorage';
 import ToolShell from '../UI/ToolShell';
 import ResultPaywall, { useToolUnlock } from '../UI/ResultPaywall';
 import NumberField, { toolSelectClass } from '../UI/NumberField';
 import plateBuild from '../../assets/plate-build.png';
-
-const BREAKDOWN_BAR_COLORS: Record<string, string> = {
-  Materials: 'bg-blue-500',
-  Labor: 'bg-green-500',
-  'Professional Fees': 'bg-purple-500',
-  'Permits & Approvals': 'bg-yellow-500',
-  'Add-ons': 'bg-teal-500',
-  Contingency: 'bg-orange-500',
-  'VAT (7.5%)': 'bg-red-500',
-};
+import EstimatorReport from './EstimatorReport';
+import { BUILDING_LABELS, QUALITY_LABELS } from './estimatorCopy';
+import { formatNaira } from '../../utils/naira';
+import { isToolUnlocked } from '../../constants/toolPricing';
 
 const ESTIMATOR_FAQ = [
   {
     question: 'How accurate is this estimate?',
     answer:
-      'Estimates use 2024+ Nigerian market prices for materials, labor, and fees. Actual costs vary by site conditions, contractor rates, and material availability — always get multiple quotes.',
+      'The total is driven mainly by floor area, city, and finishing. Unit rates are DirectHome’s client-reviewed Nigerian market rates as of August 2026. Site conditions and contractor quotes will differ — always get more than one quote.',
   },
   {
     question: 'Which locations are supported?',
     answer:
-      'Pricing tiers cover Lagos, Abuja, Port Harcourt, and other states with location multipliers applied automatically.',
+      'Lagos and Abuja use major-city rates. Port Harcourt, Ibadan, and Kano use urban rates. Other listed cities and a rural/peri-urban option use lower multipliers.',
+  },
+  {
+    question: 'What do I get for ₦399?',
+    answer:
+      'You can fill every step for free. Unlocking the estimate is ₦399 per session and reveals the total, finishing comparison, bill of quantities, labour, staged cash calendar, and a print-ready PDF.',
   },
   {
     question: 'Does it include professional fees and permits?',
     answer:
-      'Yes. The breakdown includes architect and engineering fees (by building type), permits, contingency, and VAT at 7.5%.',
-  },
-  {
-    question: 'How much does it cost?',
-    answer:
-      'You can fill in every step for free. Unlocking the full estimate and download is ₦399 per session.',
+      'Yes. Architect and engineering fees (by building type), permits, contingency, and VAT at 7.5% are in the unlocked report.',
   },
 ];
 
+const DEFAULT_SPECS: ConstructionSpecs = {
+  buildingType: BuildingType.BUNGALOW,
+  numberOfBedrooms: 3,
+  numberOfBathrooms: 2,
+  numberOfFloors: 1,
+  totalSquareMeters: 150,
+  finishingQuality: FinishingQuality.STANDARD,
+  roofing: RoofingChoice.AUTO,
+  plotSquareMeters: 0,
+  location: {
+    state: 'Lagos',
+    city: 'Lagos',
+    tier: LocationTier.TIER_1,
+  },
+  features: {
+    hasSwimmingPool: false,
+    hasBQ: false,
+    hasGarage: false,
+    numberOfParkingSpaces: 2,
+    hasFence: true,
+    hasGate: false,
+    hasGenerator: false,
+    hasSolarPanels: false,
+    hasWaterTreatment: false,
+    hasElevator: false,
+  },
+  utilities: {
+    plumbingComplexity: 'standard',
+    electricalComplexity: 'standard',
+    hvacSystem: false,
+    smartHomeFeatures: false,
+  },
+};
+
+function floorsForType(type: BuildingType, current: number): number {
+  switch (type) {
+    case BuildingType.BUNGALOW:
+      return 1;
+    case BuildingType.DUPLEX:
+      return 2;
+    case BuildingType.STOREY_BUILDING:
+    case BuildingType.APARTMENT_BLOCK:
+      return Math.max(current, 3);
+    case BuildingType.COMMERCIAL:
+      return current < 2 ? 2 : current;
+    default:
+      return current;
+  }
+}
+
+function normalizeSpecs(input?: Partial<ConstructionSpecs> | null): ConstructionSpecs {
+  const specs = input || {};
+  const floors = specs.numberOfFloors ?? DEFAULT_SPECS.numberOfFloors;
+  return {
+    ...DEFAULT_SPECS,
+    ...specs,
+    roofing: specs.roofing ?? RoofingChoice.AUTO,
+    plotSquareMeters: specs.plotSquareMeters ?? 0,
+    location: { ...DEFAULT_SPECS.location, ...specs.location },
+    features: { ...DEFAULT_SPECS.features, ...specs.features },
+    utilities: { ...DEFAULT_SPECS.utilities, ...specs.utilities },
+    numberOfFloors: floors,
+  };
+}
+
+function suggestedSqm(beds: number, type: BuildingType): number {
+  const base = beds <= 2 ? 90 : beds === 3 ? 150 : beds === 4 ? 220 : 280;
+  if (type === BuildingType.DUPLEX) return Math.round(base * 1.35);
+  if (type === BuildingType.APARTMENT_BLOCK) return Math.round(base * 1.6);
+  if (type === BuildingType.COMMERCIAL) return Math.round(base * 1.4);
+  return base;
+}
+
 const ConstructionCostEstimator: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [estimate, setEstimate] = useState<ConstructionEstimate | null>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const { unlocked, unlock } = useToolUnlock('construction-estimator');
-  
-  const [specs, setSpecs] = useState<ConstructionSpecs>({
-    buildingType: BuildingType.BUNGALOW,
-    numberOfBedrooms: 3,
-    numberOfBathrooms: 2,
-    numberOfFloors: 1,
-    totalSquareMeters: 150,
-    finishingQuality: FinishingQuality.STANDARD,
-    location: {
-      state: 'Lagos',
-      city: 'Lagos',
-      tier: LocationTier.TIER_1
-    },
-    features: {
-      hasSwimmingPool: false,
-      hasBQ: false,
-      hasGarage: true,
-      numberOfParkingSpaces: 2,
-      hasFence: true,
-      hasGate: true,
-      hasGenerator: false,
-      hasSolarPanels: false,
-      hasWaterTreatment: false,
-      hasElevator: false
-    },
-    utilities: {
-      plumbingComplexity: 'standard',
-      electricalComplexity: 'standard',
-      hvacSystem: false,
-      smartHomeFeatures: false
+  const restoredDraft = loadDraft();
+  const restoredResult = loadResult();
+  const [currentStep, setCurrentStep] = useState(() => {
+    if (restoredResult && isToolUnlocked('construction-estimator')) return 5;
+    return restoredDraft?.step && restoredDraft.step < 5 ? restoredDraft.step : 1;
+  });
+  const [estimate, setEstimate] = useState<ConstructionEstimate | null>(() => {
+    if (!restoredResult) return null;
+    try {
+      return constructionCostService.calculateEstimate(normalizeSpecs(restoredResult.specs));
+    } catch {
+      return restoredResult.estimate;
     }
   });
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [history, setHistory] = useState<SavedEstimateResult[]>(() => loadHistory());
+  const { unlocked, unlock } = useToolUnlock('construction-estimator');
+
+  const [specs, setSpecs] = useState<ConstructionSpecs>(() =>
+    normalizeSpecs(restoredResult?.specs ?? restoredDraft?.specs)
+  );
+
+  useEffect(() => {
+    if (currentStep < 5) saveDraft(specs, currentStep);
+  }, [specs, currentStep]);
+
+  const comparisons = useMemo(
+    () => (estimate ? constructionCostService.compareQualityLevels(estimate.specs) : []),
+    [estimate]
+  );
 
   const nigerianStates = [
-    { name: 'Lagos', tier: LocationTier.TIER_1 },
-    { name: 'Abuja', tier: LocationTier.TIER_1 },
-    { name: 'Port Harcourt', tier: LocationTier.TIER_2 },
-    { name: 'Ibadan', tier: LocationTier.TIER_2 },
-    { name: 'Kano', tier: LocationTier.TIER_2 },
-    { name: 'Enugu', tier: LocationTier.TIER_3 },
-    { name: 'Kaduna', tier: LocationTier.TIER_3 },
-    { name: 'Benin City', tier: LocationTier.TIER_3 },
-    { name: 'Calabar', tier: LocationTier.TIER_3 },
-    { name: 'Owerri', tier: LocationTier.TIER_3 }
+    { name: 'Lagos', tier: LocationTier.TIER_1, label: 'Major city' },
+    { name: 'Abuja', tier: LocationTier.TIER_1, label: 'Major city' },
+    { name: 'Port Harcourt', tier: LocationTier.TIER_2, label: 'Urban' },
+    { name: 'Ibadan', tier: LocationTier.TIER_2, label: 'Urban' },
+    { name: 'Kano', tier: LocationTier.TIER_2, label: 'Urban' },
+    { name: 'Enugu', tier: LocationTier.TIER_3, label: 'Other' },
+    { name: 'Kaduna', tier: LocationTier.TIER_3, label: 'Other' },
+    { name: 'Benin City', tier: LocationTier.TIER_3, label: 'Other' },
+    { name: 'Calabar', tier: LocationTier.TIER_3, label: 'Other' },
+    { name: 'Owerri', tier: LocationTier.TIER_3, label: 'Other' },
+    { name: 'Rural / peri-urban', tier: LocationTier.RURAL, label: 'Rural' },
   ];
 
   const handleCalculate = () => {
@@ -122,92 +193,31 @@ const ConstructionCostEstimator: React.FC = () => {
     }
 
     setValidationError(null);
-    const result = constructionCostService.calculateEstimate(specs);
+    const result = constructionCostService.calculateEstimate(normalizeSpecs(specs));
+    setEstimate(result);
+    saveResult(specs, result);
+    setHistory(loadHistory());
+    setCurrentStep(5);
+  };
+
+  const startNew = () => {
+    archiveAndClear();
+    setHistory(loadHistory());
+    setSpecs(DEFAULT_SPECS);
+    setEstimate(null);
+    setCurrentStep(1);
+    setValidationError(null);
+  };
+
+  const restoreSaved = (saved: SavedEstimateResult) => {
+    const next = normalizeSpecs(saved.specs);
+    const result = constructionCostService.calculateEstimate(next);
+    setSpecs(next);
     setEstimate(result);
     setCurrentStep(5);
   };
 
-  const formatCurrency = (amount: number) => {
-    return `₦${amount.toLocaleString('en-NG', { maximumFractionDigits: 0 })}`;
-  };
-
-  const downloadReport = () => {
-    if (!estimate) return;
-
-    const reportContent = `
-CONSTRUCTION COST ESTIMATE REPORT
-Generated: ${new Date().toLocaleDateString()}
-
-PROJECT DETAILS
-===============
-Building Type: ${estimate.specs.buildingType}
-Location: ${estimate.specs.location.city}, ${estimate.specs.location.state}
-Total Area: ${estimate.specs.totalSquareMeters} sqm
-Bedrooms: ${estimate.specs.numberOfBedrooms}
-Bathrooms: ${estimate.specs.numberOfBathrooms}
-Floors: ${estimate.specs.numberOfFloors}
-Finishing Quality: ${estimate.specs.finishingQuality}
-
-COST SUMMARY
-============
-Materials: ${formatCurrency(estimate.breakdown.materials)}
-Labor: ${formatCurrency(estimate.breakdown.labor)}
-Professional Fees: ${formatCurrency(estimate.breakdown.professional)}
-Permits & Approvals: ${formatCurrency(estimate.breakdown.permits)}
-Add-ons: ${formatCurrency(estimate.breakdown.addons)}
-Contingency (10-15%): ${formatCurrency(estimate.breakdown.contingency)}
-VAT (7.5%): ${formatCurrency(estimate.vat)}
-
-GRAND TOTAL: ${formatCurrency(estimate.grandTotal)}
-Cost per Square Meter: ${formatCurrency(estimate.costPerSquareMeter)}
-
-Estimated Duration: ${estimate.estimatedDuration.months} months
-
-MATERIAL BREAKDOWN
-==================
-${estimate.materialCosts.map(item => 
-  `${item.description}: ${item.quantity} ${item.unit} @ ${formatCurrency(item.unitCost)} = ${formatCurrency(item.totalCost)}`
-).join('\n')}
-
-ADD-ONS
-=======
-${estimate.addonCosts.length
-  ? estimate.addonCosts.map(item =>
-      `${item.description}: ${item.quantity} ${item.unit} @ ${formatCurrency(item.unitCost)} = ${formatCurrency(item.totalCost)}`
-    ).join('\n')
-  : 'None selected'}
-
-LABOR BREAKDOWN
-===============
-${estimate.laborCosts.map(item =>
-  `${item.category}: ${item.estimatedDays} days @ ${formatCurrency(item.costPerDay)}/day = ${formatCurrency(item.totalCost)}`
-).join('\n')}
-
-PROFESSIONAL FEES
-=================
-Architect: ${formatCurrency(estimate.professionalFees.architect)}
-${estimate.professionalFees.structuralEngineer > 0 ? `Structural Engineer: ${formatCurrency(estimate.professionalFees.structuralEngineer)}\n` : ''}Electrical Engineer: ${formatCurrency(estimate.professionalFees.electricalEngineer)}
-${estimate.professionalFees.mechanicalEngineer > 0 ? `Mechanical Engineer: ${formatCurrency(estimate.professionalFees.mechanicalEngineer)}\n` : ''}Project Manager: ${formatCurrency(estimate.professionalFees.projectManager)}
-
-PERMITS & APPROVALS
-===================
-Building Permit: ${formatCurrency(estimate.permits.buildingPermit)}
-Environmental Approval: ${formatCurrency(estimate.permits.environmentalApproval)}
-Utility Connections: ${formatCurrency(estimate.permits.utilityConnections)}
-
----
-This is an estimate only. Actual costs may vary based on market conditions, 
-specific site requirements, and material availability.
-    `;
-
-    const blob = new Blob([reportContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `construction-estimate-${Date.now()}.txt`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
+  const typicalSqm = suggestedSqm(specs.numberOfBedrooms, specs.buildingType);
 
   const renderStep1 = () => (
     <div className="space-y-5">
@@ -217,14 +227,23 @@ specific site requirements, and material availability.
         <span className="block text-sm font-medium text-ink-800 mb-2">Building Type</span>
         <select
           value={specs.buildingType}
-          onChange={(e) => setSpecs({ ...specs, buildingType: e.target.value as BuildingType })}
+          onChange={(e) => {
+            const buildingType = e.target.value as BuildingType;
+            const floors = floorsForType(buildingType, specs.numberOfFloors);
+            setSpecs({
+              ...specs,
+              buildingType,
+              numberOfFloors: floors,
+              features: floors < 3 ? { ...specs.features, hasElevator: false } : specs.features,
+            });
+          }}
           className={toolSelectClass}
         >
-          <option value={BuildingType.BUNGALOW}>Bungalow</option>
-          <option value={BuildingType.DUPLEX}>Duplex</option>
-          <option value={BuildingType.STOREY_BUILDING}>Storey Building</option>
-          <option value={BuildingType.APARTMENT_BLOCK}>Apartment Block</option>
-          <option value={BuildingType.COMMERCIAL}>Commercial Building</option>
+          {Object.values(BuildingType).map((type) => (
+            <option key={type} value={type}>
+              {BUILDING_LABELS[type]}
+            </option>
+          ))}
         </select>
       </label>
 
@@ -256,88 +275,119 @@ specific site requirements, and material availability.
             })
           }
         />
-        <NumberField
-          label="Total Area"
-          value={specs.totalSquareMeters}
-          min={50}
-          max={5000}
-          suffix="sqm"
-          hint="You can type freely — the value is checked when you leave the field."
-          onChange={(totalSquareMeters) => setSpecs({ ...specs, totalSquareMeters })}
-        />
+        <div>
+          <NumberField
+            label="Total Area"
+            value={specs.totalSquareMeters}
+            min={50}
+            max={5000}
+            suffix="sqm"
+            onChange={(totalSquareMeters) => setSpecs({ ...specs, totalSquareMeters })}
+          />
+          <button
+            type="button"
+            onClick={() => setSpecs({ ...specs, totalSquareMeters: typicalSqm })}
+            className="mt-2 text-sm text-courtyard-700 hover:text-courtyard-600"
+          >
+            Typical {specs.numberOfBedrooms}-bed {BUILDING_LABELS[specs.buildingType].toLowerCase()}:{' '}
+            {typicalSqm} sqm
+          </button>
+        </div>
       </div>
     </div>
   );
 
   const renderStep2 = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-stone-100">Location</h3>
-      
-      <div>
-        <label className="block text-sm font-medium text-stone-300 mb-2">
-          State/City
-        </label>
+      <h3 className="font-display text-xl font-semibold text-ink-950">Location & plot</h3>
+
+      <label className="block">
+        <span className="block text-sm font-medium text-ink-800 mb-2">City</span>
         <select
           value={specs.location.state}
           onChange={(e) => {
-            const selected = nigerianStates.find(s => s.name === e.target.value);
+            const selected = nigerianStates.find((s) => s.name === e.target.value);
             setSpecs({
               ...specs,
               location: {
                 state: e.target.value,
                 city: e.target.value,
-                tier: selected?.tier || LocationTier.TIER_3
-              }
+                tier: selected?.tier || LocationTier.TIER_3,
+              },
             });
           }}
           className={toolSelectClass}
         >
-          {nigerianStates.map(state => (
+          {nigerianStates.map((state) => (
             <option key={state.name} value={state.name}>
-              {state.name} ({state.tier === LocationTier.TIER_1 ? 'Major City' : 
-                           state.tier === LocationTier.TIER_2 ? 'Urban' : 'Other'})
+              {state.name} ({state.label})
             </option>
           ))}
         </select>
-        <p className="mt-2 text-sm text-stone-500">
-          Location affects material and labor costs. Major cities (Lagos, Abuja) have higher costs.
+        <p className="mt-2 text-sm text-ink-600">
+          Major cities cost more for materials, labour, and permits. Floor area, city, and finishing
+          drive most of the total.
         </p>
-      </div>
+      </label>
+
+      <NumberField
+        label="Plot size (optional)"
+        value={specs.plotSquareMeters}
+        min={0}
+        max={20000}
+        suffix="sqm"
+        hint="Used for fence length. Leave 0 to estimate from the building footprint."
+        onChange={(plotSquareMeters) => setSpecs({ ...specs, plotSquareMeters })}
+      />
     </div>
   );
 
   const renderStep3 = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-stone-100">Finishing Quality</h3>
-      
-      <div className="grid grid-cols-1 gap-4">
+      <h3 className="font-display text-xl font-semibold text-ink-950">Finishing & roof</h3>
+
+      <div className="grid grid-cols-1 gap-3">
         {[
-          { value: FinishingQuality.ECONOMY, label: 'Economy', desc: 'Budget materials, simple finishes' },
-          { value: FinishingQuality.STANDARD, label: 'Standard', desc: 'Good quality materials, decent finishes' },
-          { value: FinishingQuality.PREMIUM, label: 'Premium', desc: 'High-quality materials, excellent finishes' },
-          { value: FinishingQuality.LUXURY, label: 'Luxury', desc: 'Top-tier materials, luxury finishes' }
-        ].map(quality => (
+          { value: FinishingQuality.ECONOMY, desc: 'Budget materials, simple finishes' },
+          { value: FinishingQuality.STANDARD, desc: 'Good quality materials, decent finishes' },
+          { value: FinishingQuality.PREMIUM, desc: 'High-quality materials, excellent finishes' },
+          { value: FinishingQuality.LUXURY, desc: 'Top-tier materials, luxury finishes' },
+        ].map((quality) => (
           <button
             key={quality.value}
+            type="button"
             onClick={() => setSpecs({ ...specs, finishingQuality: quality.value })}
-            className={`p-4 min-h-[4.5rem] border-2 rounded-sm text-left transition-all ${
+            className={`p-4 min-h-[4.5rem] border text-left transition-all ${
               specs.finishingQuality === quality.value
-                ? 'border-gold-500 bg-gold-500/10'
-                : 'border-charcoal-600 hover:border-charcoal-500'
+                ? 'border-courtyard-700 bg-courtyard-50'
+                : 'border-paper-300 hover:border-courtyard-500'
             }`}
           >
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-semibold text-stone-100">{quality.label}</div>
-                <div className="text-sm text-stone-400">{quality.desc}</div>
+                <div className="font-semibold text-ink-950">{QUALITY_LABELS[quality.value]}</div>
+                <div className="text-sm text-ink-600">{quality.desc}</div>
               </div>
               {specs.finishingQuality === quality.value && (
-                <IconCheck size={24} className="text-gold-400" />
+                <IconCheck size={22} className="text-courtyard-700" />
               )}
             </div>
           </button>
         ))}
       </div>
+
+      <label className="block">
+        <span className="block text-sm font-medium text-ink-800 mb-2">Roof type</span>
+        <select
+          value={specs.roofing}
+          onChange={(e) => setSpecs({ ...specs, roofing: e.target.value as RoofingChoice })}
+          className={toolSelectClass}
+        >
+          <option value={RoofingChoice.AUTO}>Match finishing quality</option>
+          <option value={RoofingChoice.LONGSPAN}>Long-span aluminium</option>
+          <option value={RoofingChoice.STONE_COATED}>Stone-coated sheets</option>
+        </select>
+      </label>
     </div>
   );
 
@@ -345,40 +395,47 @@ specific site requirements, and material availability.
     const optionalFeatures = [
       { key: 'hasSwimmingPool', label: 'Swimming Pool' },
       { key: 'hasBQ', label: 'Boys Quarters (BQ)' },
-      { key: 'hasGarage', label: 'Garage' },
-      { key: 'hasFence', label: 'Fence/Perimeter Wall' },
-      { key: 'hasGate', label: 'Gate' },
+      { key: 'hasGarage', label: 'Covered garage' },
+      { key: 'hasFence', label: 'Fence / perimeter wall' },
+      { key: 'hasGate', label: 'Entrance gate' },
       { key: 'hasGenerator', label: 'Generator' },
       { key: 'hasSolarPanels', label: 'Solar Panels' },
-      { key: 'hasWaterTreatment', label: 'Water Treatment' },
-      ...(specs.numberOfFloors >= 3 ? [{ key: 'hasElevator', label: 'Elevator' }] : [])
+      { key: 'hasWaterTreatment', label: 'Water treatment' },
+      ...(specs.numberOfFloors >= 3 ? [{ key: 'hasElevator', label: 'Elevator' }] : []),
     ];
 
     return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-stone-100">Additional Features</h3>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {optionalFeatures.map(feature => (
-          <label key={feature.key} className="flex items-center space-x-3 p-3 min-h-12 border border-paper-300 rounded-sm hover:bg-paper-100 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={specs.features[feature.key as keyof typeof specs.features] as boolean}
-              onChange={(e) => setSpecs({
-                ...specs,
-                features: { ...specs.features, [feature.key]: e.target.checked }
-              })}
-              className="w-5 h-5 text-gold-500 rounded focus:ring-2 focus:ring-gold-500 bg-charcoal-800 border-charcoal-600"
-            />
-            <span className="text-sm font-medium text-stone-300">{feature.label}</span>
-          </label>
-        ))}
-      </div>
+      <div className="space-y-6">
+        <h3 className="font-display text-xl font-semibold text-ink-950">Additional features</h3>
+        <p className="text-sm text-ink-600">
+          Each option is costed in the report. Untick anything you will not build in this phase.
+        </p>
 
-      {specs.features.hasGarage && (
-        <div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {optionalFeatures.map((feature) => (
+            <label
+              key={feature.key}
+              className="flex items-center space-x-3 p-3 min-h-12 border border-paper-300 hover:bg-paper-100 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                checked={specs.features[feature.key as keyof typeof specs.features] as boolean}
+                onChange={(e) =>
+                  setSpecs({
+                    ...specs,
+                    features: { ...specs.features, [feature.key]: e.target.checked },
+                  })
+                }
+                className="w-5 h-5 accent-courtyard-700"
+              />
+              <span className="text-sm font-medium text-ink-800">{feature.label}</span>
+            </label>
+          ))}
+        </div>
+
+        {specs.features.hasGarage && (
           <NumberField
-            label="Number of Parking Spaces"
+            label="Number of parking bays"
             value={specs.features.numberOfParkingSpaces}
             min={1}
             max={10}
@@ -389,180 +446,7 @@ specific site requirements, and material availability.
               })
             }
           />
-        </div>
-      )}
-    </div>
-    );
-  };
-
-  const renderEstimate = () => {
-    if (!estimate) return null;
-
-    return (
-      <div className="space-y-6">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gradient-to-br from-gold-600 to-gold-500 text-charcoal-950 p-6 rounded-lg">
-            <div className="text-sm opacity-80 mb-1">Total Estimated Cost</div>
-            <div className="text-3xl font-bold">{formatCurrency(estimate.grandTotal)}</div>
-            <div className="text-sm opacity-70 mt-2">
-              {formatCurrency(estimate.costPerSquareMeter)}/sqm
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-emerald-700 to-emerald-600 text-white p-6 rounded-lg">
-            <div className="text-sm opacity-90 mb-1">Estimated Duration</div>
-            <div className="text-3xl font-bold">{estimate.estimatedDuration.months} months</div>
-            <div className="text-sm opacity-75 mt-2">
-              Including all phases
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-charcoal-700 to-charcoal-800 text-stone-100 p-6 rounded-lg border border-charcoal-600">
-            <div className="text-sm opacity-90 mb-1">Building Size</div>
-            <div className="text-3xl font-bold">{estimate.specs.totalSquareMeters} sqm</div>
-            <div className="text-sm opacity-75 mt-2">
-              {estimate.specs.numberOfBedrooms} bed, {estimate.specs.numberOfBathrooms} bath
-            </div>
-          </div>
-        </div>
-
-        {/* Cost Breakdown */}
-        <div className="bg-charcoal-800/50 p-6 rounded-lg border border-charcoal-700">
-          <h4 className="text-lg font-semibold text-stone-100 mb-4">Cost Breakdown</h4>
-          <div className="space-y-3">
-            {[
-              { label: 'Materials', amount: estimate.breakdown.materials },
-              { label: 'Labor', amount: estimate.breakdown.labor },
-              { label: 'Professional Fees', amount: estimate.breakdown.professional },
-              { label: 'Permits & Approvals', amount: estimate.breakdown.permits },
-              ...(estimate.breakdown.addons > 0
-                ? [{ label: 'Add-ons', amount: estimate.breakdown.addons }]
-                : []),
-              { label: 'Contingency', amount: estimate.breakdown.contingency },
-              { label: 'VAT (7.5%)', amount: estimate.vat }
-            ].map(item => {
-              const percentage = (item.amount / estimate.grandTotal) * 100;
-              return (
-                <div key={item.label}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-stone-400">{item.label}</span>
-                    <span className="font-semibold text-stone-100">
-                      {formatCurrency(item.amount)} ({percentage.toFixed(1)}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-charcoal-700 rounded-full h-2">
-                    <div
-                      className={`${BREAKDOWN_BAR_COLORS[item.label] || 'bg-blue-500'} h-2 rounded-full`}
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Material Costs Table */}
-        <div className="bg-charcoal-800/50 p-6 rounded-lg border border-charcoal-700">
-          <h4 className="text-lg font-semibold text-stone-100 mb-4">Material Costs</h4>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-charcoal-700">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-stone-500 uppercase">Item</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-stone-500 uppercase">Quantity</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-stone-500 uppercase">Unit Cost</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-stone-500 uppercase">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-charcoal-700">
-                {estimate.materialCosts.slice(0, 10).map((item, index) => (
-                  <tr key={index}>
-                    <td className="px-4 py-2 text-sm text-stone-200">{item.description}</td>
-                    <td className="px-4 py-2 text-sm text-stone-400 text-right">
-                      {item.quantity} {item.unit}
-                    </td>
-                    <td className="px-4 py-2 text-sm text-stone-400 text-right">
-                      {formatCurrency(item.unitCost)}
-                    </td>
-                    <td className="px-4 py-2 text-sm font-medium text-stone-100 text-right">
-                      {formatCurrency(item.totalCost)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {estimate.materialCosts.length > 10 && (
-            <p className="text-sm text-stone-500 mt-3">
-              Showing 10 of {estimate.materialCosts.length} items. Download full report for complete details.
-            </p>
-          )}
-        </div>
-
-        {estimate.addonCosts.length > 0 && (
-          <div className="bg-charcoal-800/50 p-6 rounded-lg border border-charcoal-700">
-            <h4 className="text-lg font-semibold text-stone-100 mb-4">Add-ons</h4>
-            <div className="space-y-2">
-              {estimate.addonCosts.map((item) => (
-                <div key={item.description} className="flex justify-between">
-                  <span className="text-stone-400">{item.description}</span>
-                  <span className="font-semibold text-stone-100">{formatCurrency(item.totalCost)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         )}
-
-        {/* Professional Fees */}
-        <div className="bg-charcoal-800/50 p-6 rounded-lg border border-charcoal-700">
-          <h4 className="text-lg font-semibold text-stone-100 mb-4">Professional Fees</h4>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-stone-400">Architect</span>
-              <span className="font-semibold text-stone-100">{formatCurrency(estimate.professionalFees.architect)}</span>
-            </div>
-            {estimate.professionalFees.structuralEngineer > 0 && (
-              <div className="flex justify-between">
-                <span className="text-stone-400">Structural Engineer</span>
-                <span className="font-semibold text-stone-100">{formatCurrency(estimate.professionalFees.structuralEngineer)}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-stone-400">Electrical Engineer</span>
-              <span className="font-semibold text-stone-100">{formatCurrency(estimate.professionalFees.electricalEngineer)}</span>
-            </div>
-            {estimate.professionalFees.mechanicalEngineer > 0 && (
-              <div className="flex justify-between">
-                <span className="text-stone-400">Mechanical Engineer</span>
-                <span className="font-semibold text-stone-100">{formatCurrency(estimate.professionalFees.mechanicalEngineer)}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-stone-400">Project Manager</span>
-              <span className="font-semibold text-stone-100">{formatCurrency(estimate.professionalFees.projectManager)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Download Button */}
-        <button
-          onClick={downloadReport}
-          className="w-full flex items-center justify-center px-6 py-3 bg-gold-500 text-charcoal-950 font-semibold rounded-lg hover:bg-gold-400 transition-colors"
-        >
-          <IconDownload size={20} className="mr-2" />
-          Download Full Report
-        </button>
-
-        {/* Disclaimer */}
-        <div className="bg-gold-500/10 border border-gold-500/30 rounded-lg p-4">
-          <p className="text-sm text-gold-200/90">
-            <strong>Disclaimer:</strong> This is an estimate based on average market prices in Nigeria as of 2024. 
-            Actual costs may vary based on specific site conditions, material availability, contractor rates, 
-            and market fluctuations. Always get multiple quotes from licensed contractors.
-          </p>
-        </div>
       </div>
     );
   };
@@ -572,7 +456,7 @@ specific site requirements, and material availability.
     { number: 2, title: 'Location', icon: IconMapPin },
     { number: 3, title: 'Finishing', icon: IconSparkles },
     { number: 4, title: 'Features', icon: IconRuler },
-    { number: 5, title: 'Estimate', icon: IconCalculator }
+    { number: 5, title: 'Estimate', icon: IconCalculator },
   ];
 
   return (
@@ -580,10 +464,10 @@ specific site requirements, and material availability.
       meta={{
         title: 'Construction Cost Estimator Nigeria — Build Budget Tool',
         description:
-          'Construction cost estimator for Nigeria. Get detailed build estimates for bungalows, duplexes, and apartments with materials, labor, fees, and VAT. Unlock results for ₦399.',
+          'Construction cost estimator for Nigeria. Get a staged build budget for bungalows, duplexes, and apartments with materials, labour, fees, and VAT. Unlock the full report for ₦399.',
         path: '/construction-estimator',
       }}
-      eyebrow="₦399 to unlock results"
+      eyebrow="₦399 to unlock the full report"
       heroTitle={
         <>
           Build cost estimator
@@ -591,129 +475,180 @@ specific site requirements, and material availability.
           <span className="italic text-courtyard-700">for Nigeria.</span>
         </>
       }
-      heroSubtitle="Step-by-step estimate for materials, labor, professional fees, permits, add-ons, and VAT — based on current Nigerian market prices."
+      heroSubtitle="Step-by-step estimate for materials, labour, professional fees, permits, extras, and VAT — with a cash calendar you can fund in phases."
       heroImage={plateBuild}
       faq={ESTIMATOR_FAQ}
     >
-        {/* Progress Steps */}
-        <div className="mb-6 md:mb-8">
-          <div className="md:hidden">
-            <p className="text-[11px] tracking-[0.28em] uppercase text-courtyard-700 font-semibold">
-              Step {Math.min(currentStep, 4)} of 4
+      <div className="mb-6 md:mb-8">
+        <div className="md:hidden">
+          <p className="text-[11px] tracking-[0.28em] uppercase text-courtyard-700 font-semibold">
+            {currentStep === 5 ? 'Estimate' : `Step ${Math.min(currentStep, 4)} of 4`}
+          </p>
+          <p className="font-display text-xl font-semibold text-ink-950 mt-1">
+            {steps[currentStep - 1]?.title}
+          </p>
+          <div className="flex gap-1.5 mt-3">
+            {steps.slice(0, 4).map((step) => (
+              <span
+                key={step.number}
+                className={`h-1 flex-1 ${
+                  currentStep >= step.number ? 'bg-courtyard-700' : 'bg-paper-300'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+        <div className="hidden md:flex items-center justify-between">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            const isActive = currentStep === step.number;
+            const isCompleted = currentStep > step.number;
+
+            return (
+              <React.Fragment key={step.number}>
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`w-12 h-12 flex items-center justify-center transition-all ${
+                      isActive
+                        ? 'bg-courtyard-700 text-paper-50'
+                        : isCompleted
+                          ? 'bg-courtyard-500 text-paper-50'
+                          : 'bg-paper-200 text-ink-400'
+                    }`}
+                  >
+                    {isCompleted ? <IconCheck size={22} /> : <Icon size={22} />}
+                  </div>
+                  <span className="text-xs mt-2 text-ink-600">{step.title}</span>
+                </div>
+                {index < steps.length - 1 && (
+                  <div
+                    className={`flex-1 h-px mx-2 ${isCompleted ? 'bg-courtyard-500' : 'bg-paper-300'}`}
+                  />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        {currentStep === 1 && renderStep1()}
+        {currentStep === 2 && renderStep2()}
+        {currentStep === 3 && renderStep3()}
+        {currentStep === 4 && renderStep4()}
+        {currentStep === 5 && estimate && (
+          unlocked ? (
+            <EstimatorReport estimate={estimate} comparisons={comparisons} />
+          ) : (
+            <ResultPaywall
+              toolId="construction-estimator"
+              title="Unlock your construction estimate"
+              description={
+                <>
+                  Your {BUILDING_LABELS[estimate.specs.buildingType].toLowerCase()} in{' '}
+                  {estimate.specs.location.city} ({estimate.specs.totalSquareMeters} sqm) is ready.
+                  Pay <span className="text-courtyard-700 font-semibold">₦399</span> to see the
+                  total, finishing comparison, bill of quantities, and a print-ready PDF. One
+                  payment unlocks this tool for the rest of your session.
+                </>
+              }
+              onUnlocked={unlock}
+            />
+          )
+        )}
+
+        {currentStep === 1 && (history.length > 0 || restoredResult) && (
+          <div className="mt-8 border border-paper-200 bg-paper-100 p-4">
+            <p className="text-[11px] tracking-[0.2em] uppercase text-courtyard-700 font-semibold mb-2">
+              Saved on this device
             </p>
-            <p className="font-display text-xl font-semibold text-ink-950 mt-1">
-              {steps[currentStep - 1]?.title}
-            </p>
-            <div className="flex gap-1.5 mt-3">
-              {steps.slice(0, 4).map((step) => (
-                <span
-                  key={step.number}
-                  className={`h-1 flex-1 rounded-full ${
-                    currentStep >= step.number ? 'bg-courtyard-700' : 'bg-paper-300'
-                  }`}
-                />
+            <div className="space-y-2">
+              {restoredResult && (
+                <button
+                  type="button"
+                  onClick={() => restoreSaved(restoredResult)}
+                  className="w-full text-left text-sm text-ink-800 hover:text-courtyard-700"
+                >
+                  Last estimate · {BUILDING_LABELS[restoredResult.specs.buildingType]} ·{' '}
+                  {restoredResult.specs.totalSquareMeters} sqm
+                  {unlocked ? ` · ${formatNaira(restoredResult.estimate.grandTotal)}` : ''}
+                </button>
+              )}
+              {history.slice(0, 3).map((item) => (
+                <button
+                  key={item.savedAt}
+                  type="button"
+                  onClick={() => restoreSaved(item)}
+                  className="w-full text-left text-sm text-ink-600 hover:text-courtyard-700"
+                >
+                  {new Date(item.savedAt).toLocaleDateString()} ·{' '}
+                  {BUILDING_LABELS[item.specs.buildingType]} · {item.specs.totalSquareMeters} sqm
+                  {unlocked ? ` · ${formatNaira(item.estimate.grandTotal)}` : ''}
+                </button>
               ))}
             </div>
           </div>
-          <div className="hidden md:flex items-center justify-between">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              const isActive = currentStep === step.number;
-              const isCompleted = currentStep > step.number;
+        )}
 
-              return (
-                <React.Fragment key={step.number}>
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-                        isActive
-                          ? 'bg-gold-500 text-charcoal-950'
-                          : isCompleted
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-charcoal-700 text-stone-500'
-                      }`}
-                    >
-                      {isCompleted ? <IconCheck size={24} /> : <Icon size={24} />}
-                    </div>
-                    <span className="text-xs mt-2 text-stone-400">{step.title}</span>
-                  </div>
-                  {index < steps.length - 1 && (
-                    <div className={`flex-1 h-1 mx-2 ${isCompleted ? 'bg-emerald-600' : 'bg-charcoal-700'}`} />
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div>
-          {currentStep === 1 && renderStep1()}
-          {currentStep === 2 && renderStep2()}
-          {currentStep === 3 && renderStep3()}
-          {currentStep === 4 && renderStep4()}
-          {currentStep === 5 && (
-            unlocked ? renderEstimate() : (
-              <ResultPaywall
-                toolId="construction-estimator"
-                title="Unlock your construction estimate"
-                onUnlocked={unlock}
-              />
-            )
-          )}
-
-          {/* Navigation Buttons */}
-          {currentStep < 5 && (
-            <div className="mt-8 sticky bottom-0 -mx-4 px-4 py-4 bg-paper-50/95 backdrop-blur-sm border-t border-paper-200 sm:static sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:border-0 sm:backdrop-blur-none">
-              {validationError && (
-                <div className="mb-4 rounded-sm border border-laterite-500/30 bg-laterite-500/10 px-4 py-3 text-sm text-laterite-600">
-                  {validationError}
-                </div>
-              )}
+        {currentStep < 5 && (
+          <div className="mt-8 sticky bottom-0 -mx-4 px-4 py-4 bg-paper-50/95 backdrop-blur-sm border-t border-paper-200 sm:static sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:border-0 sm:backdrop-blur-none">
+            {validationError && (
+              <div className="mb-4 border border-laterite-500/30 bg-laterite-500/10 px-4 py-3 text-sm text-laterite-600">
+                {validationError}
+              </div>
+            )}
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
                 disabled={currentStep === 1}
-                className="flex-1 sm:flex-none min-h-12 px-6 py-3 border border-paper-300 rounded-sm text-ink-800 hover:bg-paper-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 sm:flex-none min-h-12 px-6 py-3 border border-paper-300 text-ink-800 hover:bg-paper-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
-              
+
               {currentStep < 4 ? (
                 <button
+                  type="button"
                   onClick={() => setCurrentStep(currentStep + 1)}
-                  className="flex-1 sm:flex-none min-h-12 flex items-center justify-center px-6 py-3 bg-gold-500 text-charcoal-950 font-semibold rounded-sm hover:bg-gold-400"
+                  className="flex-1 sm:flex-none min-h-12 flex items-center justify-center px-6 py-3 bg-courtyard-700 text-paper-50 font-semibold hover:bg-courtyard-600"
                 >
                   Next
                   <IconChevronRight size={20} className="ml-1" />
                 </button>
               ) : (
                 <button
+                  type="button"
                   onClick={handleCalculate}
-                  className="flex-1 sm:flex-none min-h-12 flex items-center justify-center px-6 py-3 bg-emerald-600 text-white font-semibold rounded-sm hover:bg-emerald-500"
+                  className="flex-1 sm:flex-none min-h-12 flex items-center justify-center px-6 py-3 bg-courtyard-700 text-paper-50 font-semibold hover:bg-courtyard-600"
                 >
                   <IconCalculator size={20} className="mr-2" />
                   Calculate
                 </button>
               )}
             </div>
-            </div>
-          )}
+          </div>
+        )}
 
-          {currentStep === 5 && (
-            <div className="flex justify-center mt-8">
-              <button
-                onClick={() => {
-                  setCurrentStep(1);
-                  setEstimate(null);
-                }}
-                className="px-6 py-2 border border-charcoal-600 rounded-lg text-stone-300 hover:bg-charcoal-800"
-              >
-                Start New Estimate
-              </button>
-            </div>
-          )}
-        </div>
+        {currentStep === 5 && (
+          <div className="flex flex-col sm:flex-row justify-center gap-3 mt-8">
+            <button
+              type="button"
+              onClick={() => setCurrentStep(1)}
+              className="px-6 py-2.5 min-h-11 border border-paper-300 text-ink-800 hover:bg-paper-100"
+            >
+              Edit details
+            </button>
+            <button
+              type="button"
+              onClick={startNew}
+              className="px-6 py-2.5 min-h-11 border border-paper-300 text-ink-800 hover:bg-paper-100"
+            >
+              Start new estimate
+            </button>
+          </div>
+        )}
+      </div>
     </ToolShell>
   );
 };

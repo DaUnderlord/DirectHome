@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { IconBuildingSkyscraper, IconCalculator, IconHammer, IconBell } from '@tabler/icons-react';
 import PageHero from '../UI/PageHero';
 import { usePageMeta } from '../../hooks/usePageMeta';
-import courtyard from '../../assets/hero-courtyard-day.png';
 
 const ListingsComingSoon: React.FC = () => {
   usePageMeta({
@@ -24,7 +23,6 @@ const ListingsComingSoon: React.FC = () => {
           </>
         }
         subtitle="We're building a direct marketplace for Nigerian property — no agents, no middlemen. In the meantime, plan a build with the estimator. Owners can already submit a listing for review."
-        image={courtyard}
       />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20 pb-20">

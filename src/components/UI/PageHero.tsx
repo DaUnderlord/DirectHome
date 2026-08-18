@@ -16,7 +16,7 @@ const PageHero: React.FC<PageHeroProps> = ({
   title,
   subtitle,
   children,
-  image = '/hero-courtyard-day.png',
+  image = '/hero-courtyard-day.webp',
   compact = false,
   cinematic = false,
 }) => {

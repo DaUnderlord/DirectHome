@@ -7,7 +7,11 @@ import {
   FinishingQuality,
   LocationTier,
   BuildingType,
-  MaterialPriceDatabase
+  MaterialPriceDatabase,
+  RoofingChoice,
+  BuildStage,
+  CashPhase,
+  QualityComparison,
 } from '../types/construction';
 
 /**
@@ -230,7 +234,16 @@ class ConstructionCostService {
     
     // Estimate duration
     const estimatedDuration = this.estimateConstructionDuration(specs);
-    
+    const stages = this.buildStages(materialCosts, laborCosts, addonCosts);
+    const cashPlan = this.buildCashPlan(
+      stages,
+      professionalFees.total,
+      permits.total,
+      contingency,
+      vat,
+      estimatedDuration.months
+    );
+
     return {
       specs,
       materialCosts,
@@ -251,8 +264,27 @@ class ConstructionCostService {
         permits: permits.total,
         addons: addonsTotal,
         contingency
-      }
+      },
+      stages,
+      cashPlan,
     };
+  }
+
+  compareQualityLevels(specs: ConstructionSpecs): QualityComparison[] {
+    return [
+      FinishingQuality.ECONOMY,
+      FinishingQuality.STANDARD,
+      FinishingQuality.PREMIUM,
+      FinishingQuality.LUXURY,
+    ].map((quality) => {
+      const estimate = this.calculateEstimate({ ...specs, finishingQuality: quality });
+      return {
+        quality,
+        grandTotal: estimate.grandTotal,
+        costPerSquareMeter: estimate.costPerSquareMeter,
+        months: estimate.estimatedDuration.months,
+      };
+    });
   }
 
   private calculateMaterialCosts(specs: ConstructionSpecs): CostBreakdown[] {
@@ -320,11 +352,15 @@ class ConstructionCostService {
       MaterialCategory.WALLS
     ));
     
-    // Roofing materials
+    // Roofing materials — explicit choice, or match finishing quality
     const roofingType =
-      FINISHING_QUALITY_RANK[specs.finishingQuality] >= FINISHING_QUALITY_RANK[FinishingQuality.PREMIUM]
+      specs.roofing === RoofingChoice.LONGSPAN
+        ? 'roofing_sheets_longspan'
+        : specs.roofing === RoofingChoice.STONE_COATED
         ? 'roofing_sheets_stone_coated'
-        : 'roofing_sheets_longspan';
+        : FINISHING_QUALITY_RANK[specs.finishingQuality] >= FINISHING_QUALITY_RANK[FinishingQuality.PREMIUM]
+          ? 'roofing_sheets_stone_coated'
+          : 'roofing_sheets_longspan';
     
     costs.push(this.createCostItem(
       MATERIAL_PRICES[roofingType].name,
@@ -458,13 +494,45 @@ class ConstructionCostService {
     }
     
     if (specs.features.hasFence) {
-      const perimeterEstimate = Math.sqrt(footprintSqm) * 4 * 1.5;
+      const plot = specs.plotSquareMeters > 0 ? specs.plotSquareMeters : footprintSqm * 2.25;
+      const perimeterEstimate = Math.sqrt(plot) * 4 * (specs.plotSquareMeters > 0 ? 1.05 : 1.5);
       costs.push(this.createCostItem(
         'Fence/Wall (per meter)',
         perimeterEstimate,
         'meters',
         isTier1 ? 15000 : 12000,
         MaterialCategory.STRUCTURE
+      ));
+    }
+
+    if (specs.features.hasGate) {
+      costs.push(this.createCostItem(
+        'Entrance gate',
+        1,
+        'set',
+        isTier1 ? 450000 : 350000,
+        MaterialCategory.DOORS_WINDOWS
+      ));
+    }
+
+    if (specs.features.hasGarage) {
+      const bays = Math.max(1, specs.features.numberOfParkingSpaces || 1);
+      costs.push(this.createCostItem(
+        `Covered garage (${bays} bay${bays === 1 ? '' : 's'})`,
+        bays,
+        'bay',
+        isTier1 ? 1200000 : 1000000,
+        MaterialCategory.STRUCTURE
+      ));
+    }
+
+    if (specs.features.hasWaterTreatment) {
+      costs.push(this.createCostItem(
+        'Water treatment plant',
+        1,
+        'system',
+        isTier1 ? 2500000 : 2000000,
+        MaterialCategory.PLUMBING
       ));
     }
     
@@ -686,6 +754,121 @@ class ConstructionCostService {
     const description = `Estimated ${months} months including foundation, structure, roofing, finishing, and inspections`;
     
     return { months, description };
+  }
+
+  private buildStages(
+    materialCosts: CostBreakdown[],
+    laborCosts: LaborCost[],
+    addonCosts: CostBreakdown[]
+  ): BuildStage[] {
+    const materialBucket = (item: CostBreakdown): BuildStage['id'] => {
+      switch (item.category) {
+        case MaterialCategory.FOUNDATION:
+          return 'substructure';
+        case MaterialCategory.STRUCTURE:
+        case MaterialCategory.WALLS:
+        case MaterialCategory.ROOFING:
+          return 'carcass';
+        default:
+          return 'finishing';
+      }
+    };
+
+    const materials = {
+      substructure: 0,
+      carcass: 0,
+      finishing: 0,
+      extras: addonCosts.reduce((sum, item) => sum + item.totalCost, 0),
+    };
+
+    materialCosts.forEach((item) => {
+      materials[materialBucket(item)] += item.totalCost;
+    });
+
+    const labor = { substructure: 0, carcass: 0, finishing: 0, extras: 0 };
+    laborCosts.forEach((item) => {
+      const key = item.category.toLowerCase();
+      if (key.includes('mason')) {
+        labor.substructure += item.totalCost * 0.55;
+        labor.carcass += item.totalCost * 0.45;
+      } else if (key.includes('carpent') || key.includes('general')) {
+        if (key.includes('general')) {
+          labor.substructure += item.totalCost * 0.2;
+          labor.carcass += item.totalCost * 0.4;
+          labor.finishing += item.totalCost * 0.4;
+        } else {
+          labor.carcass += item.totalCost;
+        }
+      } else {
+        labor.finishing += item.totalCost;
+      }
+    });
+
+    const make = (
+      id: BuildStage['id'],
+      label: string
+    ): BuildStage => ({
+      id,
+      label,
+      materials: materials[id],
+      labor: labor[id],
+      total: materials[id] + labor[id],
+    });
+
+    return [
+      make('substructure', 'Substructure'),
+      make('carcass', 'Carcass'),
+      make('finishing', 'Finishing'),
+      make('extras', 'Site extras'),
+    ];
+  }
+
+  private buildCashPlan(
+    stages: BuildStage[],
+    professional: number,
+    permits: number,
+    contingency: number,
+    vat: number,
+    months: number
+  ): CashPhase[] {
+    const span = Math.max(3, months);
+    const foundationMonths = Math.max(1, Math.round(span * 0.25));
+    const carcassMonths = Math.max(1, Math.round(span * 0.4));
+    const finishingMonths = Math.max(1, span - foundationMonths - carcassMonths);
+
+    const sub = stages.find((s) => s.id === 'substructure')?.total || 0;
+    const car = stages.find((s) => s.id === 'carcass')?.total || 0;
+    const fin =
+      (stages.find((s) => s.id === 'finishing')?.total || 0) +
+      (stages.find((s) => s.id === 'extras')?.total || 0);
+
+    const phase1 = sub + permits + professional * 0.5;
+    const phase2 = car + professional * 0.5;
+    const phase3 = fin + contingency + vat;
+    const total = phase1 + phase2 + phase3;
+
+    const share = (amount: number) => (total > 0 ? (amount / total) * 100 : 0);
+
+    return [
+      {
+        label: 'Foundation',
+        window: `Months 1–${foundationMonths}`,
+        amount: phase1,
+        share: share(phase1),
+      },
+      {
+        label: 'Carcass',
+        window: `Months ${foundationMonths + 1}–${foundationMonths + carcassMonths}`,
+        amount: phase2,
+        share: share(phase2),
+      },
+      {
+        label: 'Finishing',
+        window: `Months ${foundationMonths + carcassMonths + 1}–${foundationMonths + carcassMonths + finishingMonths}`,
+        amount: phase3,
+        share: share(phase3),
+      },
+    ];
   }
 
   private createCostItem(

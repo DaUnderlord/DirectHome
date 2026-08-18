@@ -340,9 +340,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error('Profile creation error:', profileError);
       }
 
-      sessionStorage.setItem('pending_verification_email', data.email);
-
-      if (!authData.session) {
+      if (authData.session) {
+        applySession(authData.session);
+        hydrateProfile(authData.session);
+      } else {
         setStatus(AuthStatus.UNAUTHENTICATED);
       }
     } catch (error: any) {

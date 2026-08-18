@@ -7,7 +7,6 @@ import LoginPage from '../components/Auth/LoginPage';
 import RegisterPage from '../components/Auth/RegisterPage';
 import ForgotPasswordPage from '../components/Auth/ForgotPasswordPage';
 import ResetPasswordPage from '../components/Auth/ResetPasswordPage';
-import VerificationPage from '../components/Auth/VerificationPage';
 import UnauthorizedPage from '../components/Auth/UnauthorizedPage';
 import PublicRoute from '../components/Auth/PublicRoute';
 import ProtectedRoute from '../components/Auth/ProtectedRoute';
@@ -146,14 +145,7 @@ const AppRoutes: React.FC = () => {
               </PublicRoute>
             }
           />
-          <Route
-            path="verify"
-            element={
-              <PublicRoute restricted={false}>
-                <VerificationPage />
-              </PublicRoute>
-            }
-          />
+          <Route path="verify" element={<Navigate to="/auth/login" replace />} />
         </Route>
 
         <Route path="/dashboard" element={<Layout />}>

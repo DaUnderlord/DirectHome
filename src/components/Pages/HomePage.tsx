@@ -113,7 +113,7 @@ const HomePage: React.FC = () => {
       <section className="relative bg-courtyard-800 text-paper-50 overflow-hidden">
         <div
           className="absolute inset-0 opacity-[0.08]"
-          style={{ backgroundImage: 'url(/compound-plan.png)', backgroundSize: '640px' }}
+          style={{ backgroundImage: 'url(/compound-plan.webp)', backgroundSize: '640px' }}
         />
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 text-center">
           <p className="text-paper-300 text-[11px] font-semibold tracking-[0.28em] uppercase mb-4">Marketplace</p>

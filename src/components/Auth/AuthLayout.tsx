@@ -1,6 +1,5 @@
 import React from 'react';
 import Logo from '../UI/Logo';
-import courtyard from '../../assets/hero-courtyard-day.png';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -37,7 +36,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
 
       <div className="relative hidden md:block min-h-[40vh] lg:min-h-screen overflow-hidden">
         <img
-          src={heroImage || courtyard}
+          src={heroImage || '/hero-courtyard-day.webp'}
           alt=""
           className="absolute inset-0 w-full h-full object-cover"
         />

@@ -61,8 +61,8 @@ const DashboardRouter: React.FC = () => {
             onRoleChange={handleRoleChange}
             showBadges={true}
             pendingCounts={{
-              [UserRole.HOME_OWNER]: 3,
-              [UserRole.HOME_SEEKER]: 1
+              [UserRole.HOME_OWNER]: 0,
+              [UserRole.HOME_SEEKER]: 0
             }}
           />
         </div>

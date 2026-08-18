@@ -17,6 +17,7 @@ interface ResultPaywallProps {
   toolId: PaidToolId;
   title?: string;
   description?: ReactNode;
+  preview?: ReactNode;
   onUnlocked: () => void;
 }
 
@@ -24,6 +25,7 @@ const ResultPaywall: React.FC<ResultPaywallProps> = ({
   toolId,
   title = 'Unlock your results',
   description,
+  preview,
   onUnlocked,
 }) => {
   const { user } = useAuth();
@@ -95,7 +97,9 @@ const ResultPaywall: React.FC<ResultPaywallProps> = ({
   };
 
   return (
-    <div className="mt-8 border border-brass-500/30 bg-paper-100 p-6 md:p-8 text-center">
+    <div className="mt-2">
+      {preview}
+      <div className="mt-8 border border-paper-200 bg-paper-100 p-6 md:p-8 text-center">
       <p className="text-courtyard-700 text-[11px] tracking-[0.28em] uppercase mb-3">Unlock report</p>
       <h3 className="font-display text-2xl font-semibold text-ink-950 mb-2">{title}</h3>
       <p className="text-ink-600 max-w-md mx-auto mb-6">
@@ -135,9 +139,10 @@ const ResultPaywall: React.FC<ResultPaywallProps> = ({
           disabled={busy}
           className="w-full mt-2 py-3 rounded-sm bg-courtyard-700 text-paper-50 font-semibold hover:bg-courtyard-600 disabled:opacity-50"
         >
-          {busy ? 'Opening checkout…' : `Pay ₦${TOOL_REPORT_PRICE_NGN}`}
+          {busy ? 'Opening checkout…' : `₦${TOOL_REPORT_PRICE_NGN}`}
         </button>
       </form>
+    </div>
     </div>
   );
 };
