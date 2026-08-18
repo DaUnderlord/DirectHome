@@ -2,6 +2,18 @@ const FLUTTERWAVE_PUBLIC_KEY = String(
   import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY || ''
 ).trim();
 
+export type FlutterwaveKeyMode = 'live' | 'test' | 'missing';
+
+export function flutterwaveKeyMode(): FlutterwaveKeyMode {
+  if (!FLUTTERWAVE_PUBLIC_KEY) return 'missing';
+  return /_TEST-/i.test(FLUTTERWAVE_PUBLIC_KEY) ? 'test' : 'live';
+}
+
+if (import.meta.env.DEV && flutterwaveKeyMode() === 'test') {
+  console.warn(
+    'DirectHome: VITE_FLUTTERWAVE_PUBLIC_KEY is a TEST key. Flutterwave checkout will show test mode on localhost until you set live keys in .env and restart the dev server.'
+  );
+}
 export interface FlutterwaveCheckoutOptions {
   amount: number;
   currency?: string;

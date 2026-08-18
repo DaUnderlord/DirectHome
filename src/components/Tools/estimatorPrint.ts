@@ -14,12 +14,11 @@ function esc(value: string): string {
     .replace(/>/g, '&gt;');
 }
 
-export function printEstimateReport(
+function buildEstimateHtml(
   estimate: ConstructionEstimate,
   comparisons: QualityComparison[]
-): void {
+): string {
   const { specs } = estimate;
-  const rows = (items: string) => items;
 
   const materialRows = estimate.materialCosts
     .map(
@@ -37,7 +36,10 @@ export function printEstimateReport(
 
   const addonRows = estimate.addonCosts.length
     ? estimate.addonCosts
-        .map((item) => `<tr><td>${esc(item.description)}</td><td>${formatNaira(item.totalCost)}</td></tr>`)
+        .map(
+          (item) =>
+            `<tr><td>${esc(item.description)}</td><td>${formatNaira(item.totalCost)}</td></tr>`
+        )
         .join('')
     : '<tr><td colspan="2">None selected</td></tr>';
 
@@ -62,7 +64,7 @@ export function printEstimateReport(
     )
     .join('');
 
-  const html = `<!doctype html>
+  return `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -92,37 +94,37 @@ export function printEstimateReport(
   <h2>Build in stages</h2>
   <table>
     <thead><tr><th>Stage</th><th>Materials</th><th>Labour</th><th>Total</th></tr></thead>
-    <tbody>${rows(stageRows)}</tbody>
+    <tbody>${stageRows}</tbody>
   </table>
 
   <h2>Cash calendar</h2>
   <table>
     <thead><tr><th>Phase</th><th>Window</th><th>Amount</th></tr></thead>
-    <tbody>${rows(cashRows)}</tbody>
+    <tbody>${cashRows}</tbody>
   </table>
 
   <h2>Finishing comparison</h2>
   <table>
     <thead><tr><th>Quality</th><th>Total</th><th>Rate</th><th>Duration</th></tr></thead>
-    <tbody>${rows(compareRows)}</tbody>
+    <tbody>${compareRows}</tbody>
   </table>
 
   <h2>Bill of quantities</h2>
   <table>
     <thead><tr><th>Item</th><th>Qty</th><th>Unit cost</th><th>Total</th></tr></thead>
-    <tbody>${rows(materialRows)}</tbody>
+    <tbody>${materialRows}</tbody>
   </table>
 
   <h2>Site extras</h2>
   <table>
     <thead><tr><th>Item</th><th>Total</th></tr></thead>
-    <tbody>${rows(addonRows)}</tbody>
+    <tbody>${addonRows}</tbody>
   </table>
 
   <h2>Labour</h2>
   <table>
     <thead><tr><th>Trade</th><th>Scope</th><th>Days</th><th>Total</th></tr></thead>
-    <tbody>${rows(laborRows)}</tbody>
+    <tbody>${laborRows}</tbody>
   </table>
 
   <h2>Fees and approvals</h2>
@@ -141,17 +143,87 @@ export function printEstimateReport(
     </tbody>
   </table>
 
-  <p class="note">DirectHome estimate for planning only. Unit rates are DirectHome’s client-reviewed Nigerian market rates as of August 2026. Actual costs vary by site, contractor, and availability. Get multiple quotes from licensed contractors before you commit. This is not a tender or a construction contract. Categories: ${Object.values(CATEGORY_LABELS).join(', ')}.</p>
+  <p class="note">DirectHome estimate for planning only. Unit rates are DirectHome’s client-reviewed Nigerian market rates as of August 2026. Actual costs vary by site, contractor, and availability. Get multiple quotes from licensed contractors before you commit. This is not a tender or a construction contract.</p>
 </body>
 </html>`;
+}
 
-  const popup = window.open('', '_blank', 'noopener,noreferrer,width=920,height=1200');
-  if (!popup) {
-    window.alert('Allow pop-ups to save or print the PDF.');
-    return;
+function downloadEstimateHtml(html: string, specs: ConstructionEstimate['specs']): void {
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `directhome-estimate-${specs.location.city.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.html`;
+  anchor.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function printHtmlInFrame(html: string): boolean {
+  const frame = document.createElement('iframe');
+  frame.setAttribute('aria-hidden', 'true');
+  frame.style.position = 'fixed';
+  frame.style.right = '0';
+  frame.style.bottom = '0';
+  frame.style.width = '0';
+  frame.style.height = '0';
+  frame.style.border = '0';
+  document.body.appendChild(frame);
+
+  const doc = frame.contentDocument;
+  const win = frame.contentWindow;
+  if (!doc || !win) {
+    frame.remove();
+    return false;
   }
-  popup.document.write(html);
-  popup.document.close();
-  popup.focus();
-  window.setTimeout(() => popup.print(), 250);
+
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  const cleanup = () => {
+    window.setTimeout(() => frame.remove(), 500);
+  };
+
+  win.onafterprint = cleanup;
+  window.setTimeout(() => {
+    win.focus();
+    win.print();
+    window.setTimeout(cleanup, 15000);
+  }, 300);
+
+  return true;
+}
+
+function printHtmlInTab(html: string): boolean {
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const tab = window.open(url, '_blank');
+  if (!tab) {
+    URL.revokeObjectURL(url);
+    return false;
+  }
+
+  tab.onload = () => {
+    tab.focus();
+    tab.print();
+    window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+  };
+
+  return true;
+}
+
+export function printEstimateReport(
+  estimate: ConstructionEstimate,
+  comparisons: QualityComparison[]
+): void {
+  const html = buildEstimateHtml(estimate, comparisons);
+
+  if (printHtmlInFrame(html)) return;
+
+  if (printHtmlInTab(html)) return;
+
+  downloadEstimateHtml(html, estimate.specs);
+  window.alert(
+    'Your browser blocked the print window. We downloaded an HTML report instead — open it and choose Print → Save as PDF.'
+  );
 }

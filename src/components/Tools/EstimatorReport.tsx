@@ -313,7 +313,7 @@ const EstimatorReport: React.FC<EstimatorReportProps> = ({
             className="w-full min-h-12 flex items-center justify-center px-6 py-3 bg-courtyard-700 text-paper-50 font-semibold hover:bg-courtyard-600"
           >
             <IconDownload size={18} className="mr-2" />
-            Print or save PDF
+            Download PDF report
           </button>
 
           <p className="text-sm text-ink-600 border border-paper-200 bg-paper-100 px-4 py-3">
