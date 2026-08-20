@@ -35,7 +35,7 @@ const ListingsComingSoon: React.FC = () => {
           </h2>
           <p className="text-ink-600 max-w-lg mx-auto mb-10 leading-relaxed">
             Owners and seekers will connect here soon. Use the Construction Cost Estimator today.
-            Results are ₦399 to unlock.
+            Results are ₦399 per build project to unlock.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-12">

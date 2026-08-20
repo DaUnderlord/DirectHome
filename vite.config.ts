@@ -2,6 +2,12 @@ import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { listToolPayments, verifyFlutterwavePayment } from './server/flutterwavePayments.js'
+import {
+  claimGuestConstructionProjects,
+  createConstructionProject,
+  getConstructionProject,
+  listConstructionProjects,
+} from './server/constructionProjects.js'
 
 function readJsonBody(req: import('http').IncomingMessage) {
   return new Promise<string>((resolve, reject) => {
@@ -24,6 +30,7 @@ function flutterwaveApiPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const url = req.url?.split('?')[0]
+        const query = req.url?.includes('?') ? new URLSearchParams(req.url.split('?')[1]) : new URLSearchParams()
 
         if (url === '/api/tool-payments') {
           if (req.method !== 'GET') {
@@ -35,6 +42,61 @@ function flutterwaveApiPlugin(): Plugin {
             sendJson(res, result.status || (result.ok ? 200 : 400), result)
           } catch {
             sendJson(res, 500, { ok: false, error: 'Could not load payments.' })
+          }
+          return
+        }
+
+        if (url === '/api/construction-projects/create' && req.method === 'POST') {
+          try {
+            const raw = await readJsonBody(req)
+            const body = raw ? JSON.parse(raw) : {}
+            const result = await createConstructionProject({
+              title: body.title,
+              specs: body.specs,
+              authToken: req.headers.authorization,
+            })
+            sendJson(res, result.status || (result.ok ? 200 : 400), result)
+          } catch {
+            sendJson(res, 500, { ok: false, error: 'Could not create project.' })
+          }
+          return
+        }
+
+        if (url === '/api/construction-projects/list' && req.method === 'GET') {
+          try {
+            const result = await listConstructionProjects({
+              authToken: req.headers.authorization,
+            })
+            sendJson(res, result.status || (result.ok ? 200 : 400), result)
+          } catch {
+            sendJson(res, 500, { ok: false, error: 'Could not load projects.' })
+          }
+          return
+        }
+
+        if (url === '/api/construction-projects/get' && req.method === 'GET') {
+          try {
+            const accessHeader = req.headers['x-project-access']
+            const result = await getConstructionProject({
+              projectId: query.get('id') || query.get('projectId') || undefined,
+              authToken: req.headers.authorization,
+              accessToken: Array.isArray(accessHeader) ? accessHeader[0] : accessHeader,
+            })
+            sendJson(res, result.status || (result.ok ? 200 : 400), result)
+          } catch {
+            sendJson(res, 500, { ok: false, error: 'Could not load project.' })
+          }
+          return
+        }
+
+        if (url === '/api/construction-projects/claim' && req.method === 'POST') {
+          try {
+            const result = await claimGuestConstructionProjects({
+              authToken: req.headers.authorization,
+            })
+            sendJson(res, result.status || (result.ok ? 200 : 400), result)
+          } catch {
+            sendJson(res, 500, { ok: false, error: 'Could not claim projects.' })
           }
           return
         }

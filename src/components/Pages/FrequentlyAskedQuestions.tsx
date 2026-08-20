@@ -9,7 +9,7 @@ const faqs = [
   },
   {
     q: 'Do I need an account?',
-    a: 'No for filling in the estimator. Unlocking a full report is ₦399 per browser session. Accounts are free.',
+    a: 'No for filling in the estimator. Unlocking a full report is ₦399 per build project. Accounts are free.',
   },
   {
     q: 'Are the calculators accurate?',

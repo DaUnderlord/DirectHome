@@ -1,6 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import {
+  listMyConstructionProjects,
+  projectRoute,
+  type ConstructionProjectSummary,
+} from '../../services/constructionProjectService';
+import { formatNaira } from '../../utils/naira';
 import { 
   IconUser, 
   IconSettings, 
@@ -50,12 +56,13 @@ const ProfilePage: React.FC = () => {
   // Modal states
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [buildProjects, setBuildProjects] = useState<ConstructionProjectSummary[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
   
   // Toast messages
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   
-  // Show toast message
   const showToast = (message: string, type: 'success' | 'error') => {
     if (type === 'success') {
       setSuccessMessage(message);
@@ -65,6 +72,16 @@ const ProfilePage: React.FC = () => {
       setTimeout(() => setErrorMessage(''), 3000);
     }
   };
+
+  useEffect(() => {
+    if (activeTab !== 'billing') return;
+    setLoadingProjects(true);
+    void listMyConstructionProjects()
+      .then((result) => {
+        if (result.ok && result.projects) setBuildProjects(result.projects);
+      })
+      .finally(() => setLoadingProjects(false));
+  }, [activeTab, user?.id]);
   
   // Profile editing handlers
   const handleInputChange = (field: string, value: string) => {
@@ -274,7 +291,7 @@ const ProfilePage: React.FC = () => {
                 }`}
               >
                 <IconCreditCard size={20} className="mr-3" />
-                <span>Billing</span>
+                <span>Build estimates</span>
               </button>
               
               <button
@@ -700,17 +717,52 @@ const ProfilePage: React.FC = () => {
             
             {activeTab === 'billing' && (
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Billing & Subscription</h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">My build estimates</h2>
                 <p className="text-gray-600 mb-6">
-                  Manage your subscription and payment methods.
+                  Paid construction projects saved to your account. Each build is ₦399 to unlock.
                 </p>
-                
-                <div className="p-6 border border-gray-200 rounded-lg bg-gray-50 text-center">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Premium Plans Coming Soon</h3>
-                  <p className="text-gray-600 mb-4">
-                    Paid subscription plans are not available yet. All core features are free during launch.
-                  </p>
-                </div>
+
+                {loadingProjects ? (
+                  <p className="text-gray-500">Loading projects…</p>
+                ) : buildProjects.length === 0 ? (
+                  <div className="p-6 border border-gray-200 rounded-lg bg-gray-50 text-center">
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No saved projects yet</h3>
+                    <p className="text-gray-600 mb-4">
+                      Run the construction estimator and pay to unlock a project. Guest purchases
+                      are linked when you sign in with the same email.
+                    </p>
+                    <Link
+                      to="/construction-estimator"
+                      className="inline-block px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+                    >
+                      Start an estimate
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {buildProjects.map((project) => {
+                      return (
+                        <Link
+                          key={project.id}
+                          to={projectRoute(project.id)}
+                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+                        >
+                          <div>
+                            <h3 className="text-sm font-medium text-gray-900">{project.title}</h3>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {new Date(project.created_at).toLocaleDateString()} ·{' '}
+                              {project.status === 'paid' ? 'Paid' : 'Awaiting payment'}
+                              {project.status === 'paid' && project.estimate?.grandTotal
+                                ? ` · ${formatNaira(project.estimate.grandTotal)}`
+                                : ''}
+                            </p>
+                          </div>
+                          <IconChevronRight size={18} className="text-gray-400" />
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
             

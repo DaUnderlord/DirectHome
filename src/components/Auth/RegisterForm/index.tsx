@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { supabase } from '../../../lib/supabase';
 import { getPostLoginPath } from '../../../utils/authRedirect';
@@ -20,6 +20,8 @@ import ProfileInfoStep from './ProfileInfoStep';
 const RegisterForm: React.FC = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect');
   
   // Form state
   const [currentStep, setCurrentStep] = useState(1);
@@ -90,9 +92,11 @@ const RegisterForm: React.FC = () => {
 
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session) {
-        navigate(getPostLoginPath(registrationData.role), { replace: true });
+        navigate(getPostLoginPath(registrationData.role, redirect), { replace: true });
       } else {
-        navigate('/auth/login', { replace: true });
+        navigate(redirect ? `/auth/login?redirect=${encodeURIComponent(redirect)}` : '/auth/login', {
+          replace: true,
+        });
       }
     } catch (err) {
       console.error('Registration error:', err);

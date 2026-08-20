@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { markConstructionProjectPaid } from './constructionProjects.js'
 
 const TOOL_REPORT_PRICE_NGN = 399
 const TOOL_IDS = new Set(['construction-estimator', 'rent-calculator'])
@@ -32,6 +33,7 @@ function isUuid(value) {
 function mapFlutterwaveRecord(data, fallback = {}) {
   const toolId = data?.meta?.toolId || fallback.toolId || ''
   const customer = data?.customer || {}
+  const projectId = data?.meta?.projectId || fallback.projectId || ''
   return {
     customer_name: String(customer.name || fallback.customerName || '').trim() || null,
     customer_email: String(customer.email || fallback.customerEmail || '').trim().toLowerCase(),
@@ -44,6 +46,7 @@ function mapFlutterwaveRecord(data, fallback = {}) {
     flutterwave_transaction_id: String(data?.id || fallback.transactionId || ''),
     payment_type: data?.payment_type || null,
     user_id: isUuid(data?.meta?.userId || fallback.userId) ? String(data.meta?.userId || fallback.userId) : null,
+    project_id: isUuid(projectId) ? String(projectId) : null,
     created_at: data?.created_at || new Date().toISOString(),
   }
 }
@@ -73,6 +76,7 @@ async function persistToolPayment(record) {
       flutterwave_transaction_id: record.flutterwave_transaction_id,
       payment_type: record.payment_type,
       user_id: record.user_id,
+      project_id: record.project_id,
     },
     { onConflict: 'flutterwave_transaction_id' }
   )
@@ -91,6 +95,7 @@ export async function verifyFlutterwavePayment({
   customerEmail,
   customerName,
   userId,
+  projectId,
 }) {
   const secret = env('FLUTTERWAVE_SECRET_KEY')
   if (!secret) {
@@ -125,6 +130,21 @@ export async function verifyFlutterwavePayment({
     return { ok: false, error: 'Payment was for a different tool.' }
   }
 
+  const metaProjectId = data.meta?.projectId || data.meta?.project_id
+  const txRefProjectId = String(data.tx_ref || '').match(
+    /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i
+  )?.[0]
+  const paidProjectId = isUuid(metaProjectId) ? metaProjectId : txRefProjectId
+
+  if (toolId === 'construction-estimator') {
+    if (!isUuid(projectId) || !isUuid(paidProjectId) || String(paidProjectId) !== String(projectId)) {
+      return { ok: false, error: 'Payment was not bound to this project.' }
+    }
+    if (txRef && !String(txRef).includes(projectId)) {
+      return { ok: false, error: 'Payment reference did not match this project.' }
+    }
+  }
+
   const record = mapFlutterwaveRecord(data, {
     toolId,
     txRef,
@@ -132,10 +152,24 @@ export async function verifyFlutterwavePayment({
     customerEmail,
     customerName,
     userId,
+    projectId: paidProjectId,
   })
   await persistToolPayment(record)
 
-  return { ok: true, toolId }
+  if (toolId === 'construction-estimator' && isUuid(paidProjectId)) {
+    const unlocked = await markConstructionProjectPaid({
+      projectId: paidProjectId,
+      txRef: record.tx_ref,
+      flutterwaveTransactionId: record.flutterwave_transaction_id,
+      userId: record.user_id,
+      guestEmail: record.customer_email,
+    })
+    if (!unlocked.ok) {
+      return { ok: false, error: unlocked.error || 'Could not unlock project.' }
+    }
+  }
+
+  return { ok: true, toolId, projectId: paidProjectId || undefined }
 }
 
 async function requireAdmin(authHeader) {

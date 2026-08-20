@@ -53,6 +53,10 @@ yarn dev
 
 4. Open your browser and navigate to `http://localhost:5173`
 
+### Environment & deployment
+
+Copy [`.env.example`](./.env.example) to `.env` for local development. Production uses **Vercel environment variables** — see **[DEPLOY.md](./DEPLOY.md)** for the full checklist (Supabase, Flutterwave live vs test, redeploy, and smoke tests).
+
 ## Project Structure
 
 ```

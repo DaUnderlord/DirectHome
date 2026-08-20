@@ -15,6 +15,7 @@ import { useAuth } from '../../context/AuthContext';
 
 interface ResultPaywallProps {
   toolId: PaidToolId;
+  projectId?: string;
   title?: string;
   description?: ReactNode;
   preview?: ReactNode;
@@ -23,6 +24,7 @@ interface ResultPaywallProps {
 
 const ResultPaywall: React.FC<ResultPaywallProps> = ({
   toolId,
+  projectId,
   title = 'Unlock your results',
   description,
   preview,
@@ -59,8 +61,12 @@ const ResultPaywall: React.FC<ResultPaywallProps> = ({
         name: name.trim() || 'DirectHome customer',
         title: 'DirectHome',
         description: `${title} — ₦${TOOL_REPORT_PRICE_NGN}`,
-        txRef: createPaymentRef(toolId),
-        meta: { toolId, userId: user?.id || '' },
+        txRef: createPaymentRef(toolId, projectId),
+        meta: {
+          toolId,
+          userId: user?.id || '',
+          ...(projectId ? { projectId } : {}),
+        },
       });
 
       if (result.status === 'cancelled') {
@@ -80,6 +86,7 @@ const ResultPaywall: React.FC<ResultPaywallProps> = ({
         customerEmail: trimmed,
         customerName: name.trim() || undefined,
         userId: user?.id,
+        projectId,
       });
 
       if (!verified.ok) {
@@ -87,7 +94,9 @@ const ResultPaywall: React.FC<ResultPaywallProps> = ({
         return;
       }
 
-      unlockTool(toolId);
+      if (!(toolId === 'construction-estimator' && projectId)) {
+        unlockTool(toolId);
+      }
       onUnlocked();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Payment failed. Try again.');
@@ -105,8 +114,10 @@ const ResultPaywall: React.FC<ResultPaywallProps> = ({
       <p className="text-ink-600 max-w-md mx-auto mb-6">
         {description || (
           <>
-            Your estimate is ready. Pay <span className="text-courtyard-700 font-semibold">₦{TOOL_REPORT_PRICE_NGN}</span> to
-            view the full breakdown. One payment unlocks this tool for the rest of your session.
+            Your estimate is ready. Pay{' '}
+            <span className="text-courtyard-700 font-semibold">₦{TOOL_REPORT_PRICE_NGN}</span> to view
+            the full breakdown
+            {projectId ? ' for this build project' : ' — one payment unlocks this tool for your session'}.
           </>
         )}
       </p>

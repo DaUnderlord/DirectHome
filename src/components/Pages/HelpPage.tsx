@@ -18,7 +18,7 @@ const faqCategories = [
         id: 'gs-2',
         question: 'Do I need an account to use the calculators?',
         answer:
-          'No. You can fill in the Construction Cost Estimator without signing in. Unlocking the full report is ₦399 per session.',
+          'No. You can fill in the Construction Cost Estimator without signing in. Unlocking the full report is ₦399 per build project.',
       },
       {
         id: 'gs-3',

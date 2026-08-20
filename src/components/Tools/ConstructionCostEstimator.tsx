@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   IconBuilding,
   IconRuler,
@@ -8,32 +8,30 @@ import {
   IconChevronRight,
   IconCheck,
 } from '@tabler/icons-react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ConstructionSpecs,
-  ConstructionEstimate,
   BuildingType,
   FinishingQuality,
   LocationTier,
   RoofingChoice,
 } from '../../types/construction';
-import constructionCostService from '../../services/constructionCostService';
 import {
   archiveAndClear,
   loadDraft,
   loadHistory,
-  loadResult,
   saveDraft,
-  saveResult,
   type SavedEstimateResult,
 } from '../../services/estimateStorage';
+import {
+  createConstructionProject,
+  projectRoute,
+} from '../../services/constructionProjectService';
+import { useAuth } from '../../context/AuthContext';
 import ToolShell from '../UI/ToolShell';
-import ResultPaywall, { useToolUnlock } from '../UI/ResultPaywall';
 import NumberField, { toolSelectClass } from '../UI/NumberField';
 import plateBuild from '../../assets/plate-build.png';
-import EstimatorReport from './EstimatorReport';
 import { BUILDING_LABELS, QUALITY_LABELS } from './estimatorCopy';
-import { formatNaira } from '../../utils/naira';
-import { isToolUnlocked } from '../../constants/toolPricing';
 
 const ESTIMATOR_FAQ = [
   {
@@ -49,7 +47,7 @@ const ESTIMATOR_FAQ = [
   {
     question: 'What do I get for ₦399?',
     answer:
-      'You can fill every step for free. Unlocking the estimate is ₦399 per session and reveals the total, finishing comparison, bill of quantities, labour, staged cash calendar, and a print-ready PDF.',
+      'You can fill every step for free. Unlocking is ₦399 per build project and reveals the total, finishing comparison, bill of quantities, labour, staged cash calendar, and a print-ready PDF for that project.',
   },
   {
     question: 'Does it include professional fees and permits?',
@@ -132,36 +130,23 @@ function suggestedSqm(beds: number, type: BuildingType): number {
 }
 
 const ConstructionCostEstimator: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const restoredDraft = loadDraft();
-  const restoredResult = loadResult();
-  const [currentStep, setCurrentStep] = useState(() => {
-    if (restoredResult && isToolUnlocked('construction-estimator')) return 5;
-    return restoredDraft?.step && restoredDraft.step < 5 ? restoredDraft.step : 1;
-  });
-  const [estimate, setEstimate] = useState<ConstructionEstimate | null>(() => {
-    if (!restoredResult) return null;
-    try {
-      return constructionCostService.calculateEstimate(normalizeSpecs(restoredResult.specs));
-    } catch {
-      return restoredResult.estimate;
-    }
-  });
+  const [currentStep, setCurrentStep] = useState(() =>
+    restoredDraft?.step && restoredDraft.step < 5 ? restoredDraft.step : 1
+  );
   const [validationError, setValidationError] = useState<string | null>(null);
   const [history, setHistory] = useState<SavedEstimateResult[]>(() => loadHistory());
-  const { unlocked, unlock } = useToolUnlock('construction-estimator');
+  const [creating, setCreating] = useState(false);
 
   const [specs, setSpecs] = useState<ConstructionSpecs>(() =>
-    normalizeSpecs(restoredResult?.specs ?? restoredDraft?.specs)
+    normalizeSpecs(restoredDraft?.specs)
   );
 
   useEffect(() => {
     if (currentStep < 5) saveDraft(specs, currentStep);
   }, [specs, currentStep]);
-
-  const comparisons = useMemo(
-    () => (estimate ? constructionCostService.compareQualityLevels(estimate.specs) : []),
-    [estimate]
-  );
 
   const nigerianStates = [
     { name: 'Lagos', tier: LocationTier.TIER_1, label: 'Major city' },
@@ -177,7 +162,7 @@ const ConstructionCostEstimator: React.FC = () => {
     { name: 'Rural / peri-urban', tier: LocationTier.RURAL, label: 'Rural' },
   ];
 
-  const handleCalculate = () => {
+  const handleCalculate = async () => {
     if (
       !Number.isFinite(specs.numberOfBedrooms) ||
       specs.numberOfBedrooms < 1 ||
@@ -193,28 +178,24 @@ const ConstructionCostEstimator: React.FC = () => {
     }
 
     setValidationError(null);
-    const result = constructionCostService.calculateEstimate(normalizeSpecs(specs));
-    setEstimate(result);
-    saveResult(specs, result);
-    setHistory(loadHistory());
-    setCurrentStep(5);
-  };
+    setCreating(true);
 
-  const startNew = () => {
-    archiveAndClear();
-    setHistory(loadHistory());
-    setSpecs(DEFAULT_SPECS);
-    setEstimate(null);
-    setCurrentStep(1);
-    setValidationError(null);
-  };
+    try {
+      const normalized = normalizeSpecs(specs);
+      const saved = await createConstructionProject({
+        specs: normalized,
+      });
 
-  const restoreSaved = (saved: SavedEstimateResult) => {
-    const next = normalizeSpecs(saved.specs);
-    const result = constructionCostService.calculateEstimate(next);
-    setSpecs(next);
-    setEstimate(result);
-    setCurrentStep(5);
+      if (!saved.ok || !saved.project?.id) {
+        setValidationError(saved.error || 'Could not save project. Try again.');
+        return;
+      }
+
+      archiveAndClear();
+      navigate(projectRoute(saved.project.id));
+    } finally {
+      setCreating(false);
+    }
   };
 
   const typicalSqm = suggestedSqm(specs.numberOfBedrooms, specs.buildingType);
@@ -456,7 +437,6 @@ const ConstructionCostEstimator: React.FC = () => {
     { number: 2, title: 'Location', icon: IconMapPin },
     { number: 3, title: 'Finishing', icon: IconSparkles },
     { number: 4, title: 'Features', icon: IconRuler },
-    { number: 5, title: 'Estimate', icon: IconCalculator },
   ];
 
   return (
@@ -467,7 +447,7 @@ const ConstructionCostEstimator: React.FC = () => {
           'Construction cost estimator for Nigeria. Get a staged build budget for bungalows, duplexes, and apartments with materials, labour, fees, and VAT. Unlock the full report for ₦399.',
         path: '/construction-estimator',
       }}
-      eyebrow="₦399 to unlock the full report"
+      eyebrow="₦399 per build project"
       heroTitle={
         <>
           Build cost estimator
@@ -482,7 +462,7 @@ const ConstructionCostEstimator: React.FC = () => {
       <div className="mb-6 md:mb-8">
         <div className="md:hidden">
           <p className="text-[11px] tracking-[0.28em] uppercase text-courtyard-700 font-semibold">
-            {currentStep === 5 ? 'Estimate' : `Step ${Math.min(currentStep, 4)} of 4`}
+            Step {currentStep} of 4
           </p>
           <p className="font-display text-xl font-semibold text-ink-950 mt-1">
             {steps[currentStep - 1]?.title}
@@ -536,61 +516,40 @@ const ConstructionCostEstimator: React.FC = () => {
         {currentStep === 2 && renderStep2()}
         {currentStep === 3 && renderStep3()}
         {currentStep === 4 && renderStep4()}
-        {currentStep === 5 && estimate && (
-          unlocked ? (
-            <EstimatorReport estimate={estimate} comparisons={comparisons} />
-          ) : (
-            <ResultPaywall
-              toolId="construction-estimator"
-              title="Unlock your construction estimate"
-              description={
-                <>
-                  Your {BUILDING_LABELS[estimate.specs.buildingType].toLowerCase()} in{' '}
-                  {estimate.specs.location.city} ({estimate.specs.totalSquareMeters} sqm) is ready.
-                  Pay <span className="text-courtyard-700 font-semibold">₦399</span> to see the
-                  total, finishing comparison, bill of quantities, and a print-ready PDF. One
-                  payment unlocks this tool for the rest of your session.
-                </>
-              }
-              onUnlocked={unlock}
-            />
-          )
-        )}
 
-        {currentStep === 1 && (history.length > 0 || restoredResult) && (
+        {currentStep === 1 && history.length > 0 && (
           <div className="mt-8 border border-paper-200 bg-paper-100 p-4">
             <p className="text-[11px] tracking-[0.2em] uppercase text-courtyard-700 font-semibold mb-2">
-              Saved on this device
+              Recent on this device
             </p>
             <div className="space-y-2">
-              {restoredResult && (
-                <button
-                  type="button"
-                  onClick={() => restoreSaved(restoredResult)}
-                  className="w-full text-left text-sm text-ink-800 hover:text-courtyard-700"
-                >
-                  Last estimate · {BUILDING_LABELS[restoredResult.specs.buildingType]} ·{' '}
-                  {restoredResult.specs.totalSquareMeters} sqm
-                  {unlocked ? ` · ${formatNaira(restoredResult.estimate.grandTotal)}` : ''}
-                </button>
-              )}
               {history.slice(0, 3).map((item) => (
                 <button
                   key={item.savedAt}
                   type="button"
-                  onClick={() => restoreSaved(item)}
+                  onClick={() => {
+                    setSpecs(normalizeSpecs(item.specs));
+                    setCurrentStep(1);
+                  }}
                   className="w-full text-left text-sm text-ink-600 hover:text-courtyard-700"
                 >
                   {new Date(item.savedAt).toLocaleDateString()} ·{' '}
                   {BUILDING_LABELS[item.specs.buildingType]} · {item.specs.totalSquareMeters} sqm
-                  {unlocked ? ` · ${formatNaira(item.estimate.grandTotal)}` : ''}
                 </button>
               ))}
             </div>
+            {user && (
+              <Link
+                to="/profile"
+                className="inline-block mt-3 text-sm text-courtyard-700 hover:text-courtyard-600"
+              >
+                View paid projects in your profile →
+              </Link>
+            )}
           </div>
         )}
 
-        {currentStep < 5 && (
+        {currentStep <= 4 && (
           <div className="mt-8 sticky bottom-0 -mx-4 px-4 py-4 bg-paper-50/95 backdrop-blur-sm border-t border-paper-200 sm:static sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:border-0 sm:backdrop-blur-none">
             {validationError && (
               <div className="mb-4 border border-laterite-500/30 bg-laterite-500/10 px-4 py-3 text-sm text-laterite-600">
@@ -619,33 +578,15 @@ const ConstructionCostEstimator: React.FC = () => {
               ) : (
                 <button
                   type="button"
-                  onClick={handleCalculate}
-                  className="flex-1 sm:flex-none min-h-12 flex items-center justify-center px-6 py-3 bg-courtyard-700 text-paper-50 font-semibold hover:bg-courtyard-600"
+                  onClick={() => void handleCalculate()}
+                  disabled={creating}
+                  className="flex-1 sm:flex-none min-h-12 flex items-center justify-center px-6 py-3 bg-courtyard-700 text-paper-50 font-semibold hover:bg-courtyard-600 disabled:opacity-50"
                 >
                   <IconCalculator size={20} className="mr-2" />
-                  Calculate
+                  {creating ? 'Saving project…' : 'Calculate'}
                 </button>
               )}
             </div>
-          </div>
-        )}
-
-        {currentStep === 5 && (
-          <div className="flex flex-col sm:flex-row justify-center gap-3 mt-8">
-            <button
-              type="button"
-              onClick={() => setCurrentStep(1)}
-              className="px-6 py-2.5 min-h-11 border border-paper-300 text-ink-800 hover:bg-paper-100"
-            >
-              Edit details
-            </button>
-            <button
-              type="button"
-              onClick={startNew}
-              className="px-6 py-2.5 min-h-11 border border-paper-300 text-ink-800 hover:bg-paper-100"
-            >
-              Start new estimate
-            </button>
           </div>
         )}
       </div>

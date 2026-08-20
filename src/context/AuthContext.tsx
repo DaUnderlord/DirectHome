@@ -21,6 +21,7 @@ import type {
   SocialLoginData
 } from '../types/auth';
 import type { Session } from '@supabase/supabase-js';
+import { claimGuestConstructionProjects } from '../services/constructionProjectService';
 
 // Map database role to UserRole enum
 const mapDbRoleToUserRole = (dbRole: string): UserRole => {
@@ -147,6 +148,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   applySessionRef.current = applySession;
 
+  const linkGuestConstructionProjects = (session: Session) => {
+    window.setTimeout(() => {
+      void claimGuestConstructionProjects(session.access_token).catch(() => {});
+    }, 0);
+  };
+
   const hydrateProfile = (session: Session) => {
     window.setTimeout(() => {
       void (async () => {
@@ -188,6 +195,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (data.session) {
           applySessionRef.current(data.session);
           hydrateProfile(data.session);
+          linkGuestConstructionProjects(data.session);
         } else {
           setStatus(AuthStatus.UNAUTHENTICATED);
         }
@@ -221,6 +229,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       applySessionRef.current(session);
       hydrateProfile(session);
+      linkGuestConstructionProjects(session);
     });
 
     return () => {
@@ -274,6 +283,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const sessionUser = applySession(data.session);
       hydrateProfile(data.session);
+      linkGuestConstructionProjects(data.session);
 
       return {
         user: sessionUser.user,

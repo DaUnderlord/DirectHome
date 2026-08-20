@@ -67,8 +67,11 @@ export function isFlutterwaveConfigured(): boolean {
   return FLUTTERWAVE_PUBLIC_KEY.length > 0;
 }
 
-export function createPaymentRef(toolId: string) {
+export function createPaymentRef(toolId: string, projectId?: string) {
   const nonce = crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  if (projectId) {
+    return `DH-${toolId}-${projectId}-${nonce}`;
+  }
   return `DH-${toolId}-${nonce}`;
 }
 
@@ -79,17 +82,22 @@ export async function verifyPaidReport(params: {
   customerEmail?: string;
   customerName?: string;
   userId?: string;
-}): Promise<{ ok: boolean; error?: string }> {
+  projectId?: string;
+}): Promise<{ ok: boolean; error?: string; projectId?: string }> {
   const response = await fetch('/api/verify-flutterwave', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
   });
-  const payload = (await response.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+  const payload = (await response.json().catch(() => null)) as {
+    ok?: boolean;
+    error?: string;
+    projectId?: string;
+  } | null;
   if (!response.ok || !payload?.ok) {
     return { ok: false, error: payload?.error || 'Payment could not be verified.' };
   }
-  return { ok: true };
+  return { ok: true, projectId: payload.projectId };
 }
 
 export async function openFlutterwaveCheckout(

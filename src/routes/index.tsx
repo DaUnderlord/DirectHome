@@ -20,6 +20,11 @@ const ConstructionCostEstimator = React.lazy(() =>
     default: m.default,
   }))
 );
+const ConstructionProjectPage = React.lazy(() =>
+  import('../components/Tools/ConstructionProjectPage').then((m) => ({
+    default: m.default,
+  }))
+);
 const AboutPage = React.lazy(() => import('../components/Pages/AboutPage'));
 const ContactPage = React.lazy(() => import('../components/Pages/ContactPage'));
 const CareersPage = React.lazy(() => import('../components/Pages/CareersPage'));
@@ -94,6 +99,10 @@ const AppRoutes: React.FC = () => {
           <Route path="calculator" element={<Navigate to="/construction-estimator" replace />} />
           <Route path="rent-calculator" element={<Navigate to="/construction-estimator" replace />} />
           <Route path="construction-estimator" element={withSuspense(<ConstructionCostEstimator />)} />
+          <Route
+            path="construction-estimator/projects/:projectId"
+            element={withSuspense(<ConstructionProjectPage />)}
+          />
           <Route
             path="favorites"
             element={

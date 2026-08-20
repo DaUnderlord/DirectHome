@@ -58,7 +58,7 @@ const HomePage: React.FC = () => {
             </li>
             <li className="flex items-start gap-2">
               <IconChartBar size={16} className="text-brass-500 mt-0.5 shrink-0" />
-              Full breakdown with a downloadable session report
+              Full breakdown with a downloadable project report
             </li>
           </ul>
           <Link
@@ -141,7 +141,7 @@ const HomePage: React.FC = () => {
           <div className="grid sm:grid-cols-3 gap-10 md:gap-6">
             {[
               { label: 'Nigeria-first pricing', desc: 'Rates tuned for local markets' },
-              { label: '₦399 per report', desc: 'Pay once to unlock results this session' },
+              { label: '₦399 per project', desc: 'Pay once to unlock that build’s report' },
               { label: 'No middlemen', desc: 'Direct connections when listings launch' },
             ].map((item) => (
               <div key={item.label} className="text-center px-4">
