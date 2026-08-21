@@ -17,19 +17,19 @@ const teamMembers = [
   {
     name: 'Segun Owele',
     role: 'CEO & Founder',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
+    image: '/Segun%20Owele.jpeg',
     bio: 'Licensed architect with 10+ years helping families and Nigerians in the diaspora find and build homes.',
   },
   {
     name: 'Abiodun Owele',
     role: 'Business Analyst & Co-founder',
-    image: 'https://images.unsplash.com/photo-1494790108755-2616b9c5e8e1?auto=format&fit=crop&w=600&q=80',
+    image: '/Abiodun%20Owele.jpeg',
     bio: 'Focused on data and strategy to scale Nigeria’s most trusted direct-to-owner housing platform.',
   },
   {
     name: 'Dennis Ogi',
     role: 'CTO / Head of IT',
-    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=600&q=80',
+    image: '/Dennis%20ogi.png',
     bio: 'Building the product that connects renters and owners without agents in the middle.',
   },
 ];
