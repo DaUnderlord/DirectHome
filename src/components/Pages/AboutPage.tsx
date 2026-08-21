@@ -18,18 +18,21 @@ const teamMembers = [
     name: 'Segun Owele',
     role: 'CEO & Founder',
     image: '/Segun%20Owele.jpeg',
+    imagePosition: 'object-[50%_10%]',
     bio: 'Licensed architect with 10+ years helping families and Nigerians in the diaspora find and build homes.',
   },
   {
     name: 'Abiodun Owele',
     role: 'Business Analyst & Co-founder',
     image: '/Abiodun%20Owele.jpeg',
+    imagePosition: 'object-[86%_5%] scale-110 origin-top-right',
     bio: 'Focused on data and strategy to scale Nigeria’s most trusted direct-to-owner housing platform.',
   },
   {
     name: 'Dennis Ogi',
     role: 'CTO / Head of IT',
     image: '/Dennis%20ogi.png',
+    imagePosition: 'object-[50%_6%]',
     bio: 'Building the product that connects renters and owners without agents in the middle.',
   },
 ];
@@ -155,8 +158,12 @@ const AboutPage: React.FC = () => {
                 key={member.name}
                 className="border border-paper-200 bg-paper-50 overflow-hidden"
               >
-                <div className="aspect-[4/3] overflow-hidden">
-                  <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
+                <div className="aspect-[3/4] overflow-hidden bg-paper-200">
+                  <img
+                    src={member.image}
+                    alt={member.name}
+                    className={`w-full h-full object-cover ${member.imagePosition}`}
+                  />
                 </div>
                 <div className="p-6">
                   <h3 className="font-semibold text-ink-950">{member.name}</h3>
