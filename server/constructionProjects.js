@@ -89,6 +89,7 @@ function toClientProject(row, { includeEstimate }) {
     status: row.status,
     created_at: row.created_at,
     paid_at: row.paid_at || null,
+    preview_granted: Boolean(row.preview_granted),
     specs: includeEstimate ? row.specs : publicSpecs(row.specs),
   }
   if (includeEstimate && hasEstimateTotals(row.estimate)) {
@@ -105,7 +106,22 @@ async function sessionUser(authHeader) {
   return data.user
 }
 
-export async function createConstructionProject({ title, specs, authToken }) {
+async function userHasAccountPreview(supabase, userId) {
+  const { count, error } = await supabase
+    .from('construction_projects')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('preview_granted', true)
+
+  if (error) {
+    console.warn('DirectHome: could not check account free preview', error.message)
+    return false
+  }
+
+  return (count || 0) > 0
+}
+
+export async function createConstructionProject({ title, specs, authToken, claimFreePreview }) {
   const supabase = serviceClient()
   if (!supabase) {
     return { ok: false, status: 503, error: 'Database is not configured.' }
@@ -115,6 +131,14 @@ export async function createConstructionProject({ title, specs, authToken }) {
   }
 
   const user = await sessionUser(authToken)
+  let previewGranted = false
+
+  if (user?.id) {
+    previewGranted = !(await userHasAccountPreview(supabase, user.id))
+  } else if (claimFreePreview) {
+    previewGranted = true
+  }
+
   const accessToken = randomUUID()
   const row = {
     title: String(title || buildProjectTitle(specs)).slice(0, 200),
@@ -124,15 +148,34 @@ export async function createConstructionProject({ title, specs, authToken }) {
     user_id: user?.id || null,
     guest_email: normalizeEmail(user?.email) || null,
     access_token: accessToken,
+    preview_granted: previewGranted,
   }
 
   const { data, error } = await supabase
     .from('construction_projects')
     .insert(row)
-    .select('id, title, status, created_at')
+    .select('id, title, status, created_at, preview_granted')
     .single()
 
   if (error) {
+    if (/preview_granted/i.test(error.message || '')) {
+      delete row.preview_granted
+      const retry = await supabase
+        .from('construction_projects')
+        .insert(row)
+        .select('id, title, status, created_at')
+        .single()
+      if (!retry.error && retry.data) {
+        return {
+          ok: true,
+          project: {
+            ...retry.data,
+            preview_granted: previewGranted,
+            accessToken,
+          },
+        }
+      }
+    }
     console.warn('DirectHome: could not create construction project', error.message)
     return { ok: false, status: 500, error: 'Could not save project.' }
   }
@@ -141,6 +184,7 @@ export async function createConstructionProject({ title, specs, authToken }) {
     ok: true,
     project: {
       ...data,
+      preview_granted: Boolean(data.preview_granted),
       accessToken,
     },
   }
@@ -156,39 +200,68 @@ export async function getConstructionProject({ projectId, authToken, accessToken
     return { ok: false, status: 503, error: 'Database is not configured.' }
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('construction_projects')
     .select(
-      'id, title, status, created_at, paid_at, specs, estimate, user_id, access_token'
+      'id, title, status, created_at, paid_at, specs, estimate, user_id, access_token, preview_granted'
     )
     .eq('id', projectId)
     .maybeSingle()
+
+  if (error && /preview_granted/i.test(error.message || '')) {
+    const retry = await supabase
+      .from('construction_projects')
+      .select('id, title, status, created_at, paid_at, specs, estimate, user_id, access_token')
+      .eq('id', projectId)
+      .maybeSingle()
+    data = retry.data
+    error = retry.error
+  }
 
   if (error || !data) {
     return { ok: false, status: 404, error: 'Project not found.' }
   }
 
   let allowed = false
+  const owner = await sessionUser(authToken)
 
   if (isUuid(accessToken) && data.access_token === accessToken) {
     allowed = true
   }
 
-  if (!allowed) {
-    const user = await sessionUser(authToken)
-    if (user?.id && data.user_id === user.id) {
-      allowed = true
-    }
+  if (!allowed && owner?.id && data.user_id === owner.id) {
+    allowed = true
   }
 
   if (!allowed) {
     return { ok: false, status: 403, error: 'You do not have access to this project.' }
   }
 
+  if (
+    owner?.id &&
+    data.user_id === owner.id &&
+    data.status !== 'paid' &&
+    !data.preview_granted
+  ) {
+    const alreadyGranted = await userHasAccountPreview(supabase, owner.id)
+    if (!alreadyGranted) {
+      const { error: grantError } = await supabase
+        .from('construction_projects')
+        .update({ preview_granted: true, updated_at: new Date().toISOString() })
+        .eq('id', data.id)
+        .eq('user_id', owner.id)
+
+      if (!grantError) {
+        data.preview_granted = true
+      }
+    }
+  }
+
   const paid = data.status === 'paid'
+  const previewGranted = Boolean(data.preview_granted)
   return {
     ok: true,
-    project: toClientProject(data, { includeEstimate: paid }),
+    project: toClientProject(data, { includeEstimate: paid || previewGranted }),
   }
 }
 
@@ -262,7 +335,7 @@ export async function listConstructionProjects({ authToken }) {
 
   const { data, error } = await supabase
     .from('construction_projects')
-    .select('id, title, status, created_at, paid_at, specs, estimate')
+    .select('id, title, status, created_at, paid_at, specs, estimate, preview_granted')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
@@ -274,7 +347,7 @@ export async function listConstructionProjects({ authToken }) {
   return {
     ok: true,
     projects: (data || []).map((row) =>
-      toClientProject(row, { includeEstimate: row.status === 'paid' })
+      toClientProject(row, { includeEstimate: row.status === 'paid' || row.preview_granted })
     ),
   }
 }

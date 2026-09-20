@@ -25,7 +25,10 @@ import {
 } from '../../services/estimateStorage';
 import {
   createConstructionProject,
+  hasUsedFreePreview,
+  markFreePreviewUsed,
   projectRoute,
+  savePreviewCache,
 } from '../../services/constructionProjectService';
 import { useAuth } from '../../context/AuthContext';
 import ToolShell from '../UI/ToolShell';
@@ -47,7 +50,7 @@ const ESTIMATOR_FAQ = [
   {
     question: 'What do I get for ₦399?',
     answer:
-      'You can fill every step for free. Unlocking is ₦399 per build project and reveals the total, finishing comparison, bill of quantities, labour, staged cash calendar, and a print-ready PDF for that project.',
+      'Your first estimate on this device is free to view. Downloading the PDF, and every extra build after that, is ₦399 per project. The paid report includes the total, finishing comparison, bill of quantities, labour, staged cash calendar, and a print-ready PDF.',
   },
   {
     question: 'Does it include professional fees and permits?',
@@ -182,13 +185,20 @@ const ConstructionCostEstimator: React.FC = () => {
 
     try {
       const normalized = normalizeSpecs(specs);
+      const claimFreePreview = Boolean(user) || !hasUsedFreePreview();
       const saved = await createConstructionProject({
         specs: normalized,
+        claimFreePreview,
       });
 
       if (!saved.ok || !saved.project?.id) {
         setValidationError(saved.error || 'Could not save project. Try again.');
         return;
+      }
+
+      if (saved.project.preview_granted) {
+        markFreePreviewUsed();
+        savePreviewCache(saved.project.id, normalized);
       }
 
       archiveAndClear();
@@ -447,7 +457,7 @@ const ConstructionCostEstimator: React.FC = () => {
           'Construction cost estimator for Nigeria. Get a staged build budget for bungalows, duplexes, and apartments with materials, labour, fees, and VAT. Unlock the full report for ₦399.',
         path: '/construction-estimator',
       }}
-      eyebrow="₦399 per build project"
+      eyebrow="First estimate free to view"
       heroTitle={
         <>
           Build cost estimator
@@ -455,7 +465,7 @@ const ConstructionCostEstimator: React.FC = () => {
           <span className="italic text-courtyard-700">for Nigeria.</span>
         </>
       }
-      heroSubtitle="Step-by-step estimate for materials, labour, professional fees, permits, extras, and VAT — with a cash calendar you can fund in phases."
+      heroSubtitle="Step-by-step estimate for materials, labour, professional fees, permits, extras, and VAT. Your first generation is free to view; pay ₦399 to download the PDF or run another project."
       heroImage={plateBuild}
       faq={ESTIMATOR_FAQ}
     >

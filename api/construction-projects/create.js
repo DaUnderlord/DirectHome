@@ -11,6 +11,7 @@ export default async function handler(req, res) {
     const result = await createConstructionProject({
       title: body.title,
       specs: body.specs,
+      claimFreePreview: Boolean(body.claimFreePreview),
       authToken: req.headers.authorization,
     })
     res.status(result.status || (result.ok ? 200 : 400)).json(result)

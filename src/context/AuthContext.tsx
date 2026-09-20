@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, abandonUnreachableAuthSession, isAuthNetworkFailure, ensureSupabaseReachable } from '../lib/supabase';
 import { 
   AuthStatus, 
   UserRole, 
@@ -184,10 +184,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const initializeAuth = async () => {
       try {
+        const reachable = await ensureSupabaseReachable();
+        if (!reachable) {
+          setStatus(AuthStatus.UNAUTHENTICATED);
+          return;
+        }
+
         const { data, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError) {
           console.error('Session error:', sessionError);
+          if (isAuthNetworkFailure(sessionError)) {
+            await abandonUnreachableAuthSession(sessionError);
+          }
           setStatus(AuthStatus.UNAUTHENTICATED);
           return;
         }
@@ -201,6 +210,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } catch (error) {
         console.error('Authentication check failed:', error);
+        if (isAuthNetworkFailure(error)) {
+          await abandonUnreachableAuthSession(error);
+        }
         setStatus(AuthStatus.UNAUTHENTICATED);
       } finally {
         if (isMounted) setIsInitializing(false);

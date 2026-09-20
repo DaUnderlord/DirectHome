@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   fetchConstructionProject,
+  loadPreviewCache,
   projectRoute,
   type ConstructionProjectSummary,
 } from '../../services/constructionProjectService';
@@ -18,7 +19,7 @@ const PROJECT_FAQ = [
   {
     question: 'What do I get for ₦399?',
     answer:
-      'Each build project is ₦399. You get the full total, finishing comparison, bill of quantities, labour breakdown, staged cash calendar, and a print-ready PDF for that project.',
+      'Your first estimate on this device is free to view. Downloading the PDF, and every extra build after that, is ₦399 per project.',
   },
   {
     question: 'Can I access this later?',
@@ -27,15 +28,26 @@ const PROJECT_FAQ = [
   },
 ];
 
-function paidEstimate(project: ConstructionProjectSummary): ConstructionEstimate | null {
-  if (project.status !== 'paid') return null;
+function hasFullSpecs(specs?: ConstructionProjectSummary['specs'] | ConstructionSpecs | null) {
+  return Boolean(specs && 'buildingType' in specs && specs.buildingType && specs.totalSquareMeters);
+}
+
+function visibleEstimate(
+  project: ConstructionProjectSummary,
+  localSpecs: ConstructionSpecs | null
+): ConstructionEstimate | null {
+  const paid = project.status === 'paid';
+  const preview = Boolean(project.preview_granted) || Boolean(localSpecs);
+  if (!paid && !preview) return null;
+
   if (project.estimate && Number(project.estimate.grandTotal) > 0) {
     return project.estimate;
   }
-  const specs = project.specs as ConstructionSpecs;
-  if (!specs?.buildingType || !specs.totalSquareMeters) return null;
+
+  const specs = (hasFullSpecs(project.specs) ? project.specs : localSpecs) as ConstructionSpecs | null;
+  if (!hasFullSpecs(specs)) return null;
   try {
-    return constructionCostService.calculateEstimate(specs);
+    return constructionCostService.calculateEstimate(specs as ConstructionSpecs);
   } catch {
     return null;
   }
@@ -50,6 +62,9 @@ const ConstructionProjectPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAccountPrompt, setShowAccountPrompt] = useState(false);
+  const [showPdfPaywall, setShowPdfPaywall] = useState(false);
+
+  const localSpecs = projectId ? loadPreviewCache(projectId) : null;
 
   const loadProject = async () => {
     if (!projectId) return;
@@ -70,7 +85,10 @@ const ConstructionProjectPage: React.FC = () => {
   }, [projectId, user?.id]);
 
   const paid = project?.status === 'paid';
-  const estimate = useMemo(() => (project ? paidEstimate(project) : null), [project]);
+  const estimate = useMemo(
+    () => (project ? visibleEstimate(project, localSpecs) : null),
+    [project, localSpecs]
+  );
   const comparisons = useMemo(
     () => (estimate ? constructionCostService.compareQualityLevels(estimate.specs) : []),
     [estimate]
@@ -78,6 +96,7 @@ const ConstructionProjectPage: React.FC = () => {
 
   const handleUnlocked = () => {
     setShowAccountPrompt(!user);
+    setShowPdfPaywall(false);
     void loadProject();
   };
 
@@ -119,6 +138,8 @@ const ConstructionProjectPage: React.FC = () => {
     : 'building';
   const city = project.specs.location?.city || project.specs.location?.state || 'Nigeria';
   const sqm = project.specs.totalSquareMeters;
+  const preview = Boolean(project.preview_granted) || Boolean(localSpecs && estimate);
+  const canView = Boolean(paid || (preview && estimate));
 
   return (
     <ToolShell
@@ -127,12 +148,14 @@ const ConstructionProjectPage: React.FC = () => {
         description: 'Your saved construction cost estimate for Nigeria.',
         path: projectRoute(project.id),
       }}
-      eyebrow={paid ? 'Paid project' : '₦399 to unlock'}
+      eyebrow={paid ? 'Paid project' : preview ? 'Free preview' : '₦399 to unlock'}
       heroTitle={project.title}
       heroSubtitle={
         paid
           ? 'Full bill of quantities, labour, staged cash plan, and PDF export.'
-          : 'Your estimate is ready. Pay once to unlock the totals, BOQ, and PDF for this build.'
+          : preview
+            ? 'Your first estimate is free to view. Pay ₦399 to download the PDF for this build.'
+            : 'Your estimate is ready. Pay once to unlock the totals, BOQ, and PDF for this build.'
       }
       heroImage={plateBuild}
       faq={PROJECT_FAQ}
@@ -161,8 +184,13 @@ const ConstructionProjectPage: React.FC = () => {
         </div>
       )}
 
-      {paid && estimate ? (
-        <EstimatorReport estimate={estimate} comparisons={comparisons} />
+      {canView && estimate ? (
+        <EstimatorReport
+          estimate={estimate}
+          comparisons={comparisons}
+          pdfLocked={!paid}
+          onRequestPdf={() => setShowPdfPaywall(true)}
+        />
       ) : (
         <ResultPaywall
           toolId="construction-estimator"
@@ -173,8 +201,24 @@ const ConstructionProjectPage: React.FC = () => {
               Your {buildingLabel.toLowerCase()} in {city}
               {sqm ? ` (${sqm} sqm)` : ''} is saved. Pay{' '}
               <span className="text-courtyard-700 font-semibold">₦399</span> to unlock the total,
-              bill of quantities, labour, cash calendar, and PDF. Totals are not shown until this
-              project is paid. Each new build is a separate project.
+              bill of quantities, labour, cash calendar, and PDF. Each new build after your first
+              free preview is a separate project.
+            </>
+          }
+          onUnlocked={handleUnlocked}
+        />
+      )}
+
+      {canView && !paid && showPdfPaywall && (
+        <ResultPaywall
+          toolId="construction-estimator"
+          projectId={project.id}
+          title="Download the PDF report"
+          description={
+            <>
+              The on-screen estimate is free this first time. Pay{' '}
+              <span className="text-courtyard-700 font-semibold">₦399</span> to download the
+              print-ready PDF for this build.
             </>
           }
           onUnlocked={handleUnlocked}

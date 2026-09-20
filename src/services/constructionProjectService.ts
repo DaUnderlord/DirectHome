@@ -1,5 +1,5 @@
 import type { ConstructionEstimate, ConstructionSpecs } from '../types/construction';
-import { supabase } from '../lib/supabase';
+import { abandonUnreachableAuthSession, isAuthNetworkFailure, supabase } from '../lib/supabase';
 
 export type ConstructionProjectStatus = 'awaiting_payment' | 'paid';
 
@@ -9,6 +9,7 @@ export interface ConstructionProjectSummary {
   status: ConstructionProjectStatus;
   created_at: string;
   paid_at?: string | null;
+  preview_granted?: boolean;
   specs: Partial<ConstructionSpecs> & {
     location?: { city?: string | null; state?: string | null };
   };
@@ -17,6 +18,8 @@ export interface ConstructionProjectSummary {
 }
 
 const ACCESS_KEY = 'dh-construction-access-tokens';
+const FREE_PREVIEW_KEY = 'dh-estimator-free-preview-used';
+const PREVIEW_CACHE_KEY = 'dh-estimator-preview-cache';
 
 function readAccessMap(): Record<string, string> {
   try {
@@ -41,6 +44,42 @@ export function loadProjectAccess(projectId: string): string {
   return readAccessMap()[projectId] || '';
 }
 
+export function hasUsedFreePreview(): boolean {
+  try {
+    return localStorage.getItem(FREE_PREVIEW_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function markFreePreviewUsed(): void {
+  try {
+    localStorage.setItem(FREE_PREVIEW_KEY, '1');
+  } catch {
+    /* ignore */
+  }
+}
+
+export function savePreviewCache(projectId: string, specs: ConstructionSpecs): void {
+  try {
+    localStorage.setItem(PREVIEW_CACHE_KEY, JSON.stringify({ projectId, specs }));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadPreviewCache(projectId: string): ConstructionSpecs | null {
+  try {
+    const raw = localStorage.getItem(PREVIEW_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { projectId?: string; specs?: ConstructionSpecs };
+    if (parsed.projectId !== projectId || !parsed.specs) return null;
+    return parsed.specs;
+  } catch {
+    return null;
+  }
+}
+
 function buildTitle(specs: ConstructionSpecs): string {
   const beds = specs.numberOfBedrooms;
   const type = specs.buildingType.replace(/_/g, ' ');
@@ -49,17 +88,35 @@ function buildTitle(specs: ConstructionSpecs): string {
 }
 
 async function authHeader(): Promise<Record<string, string>> {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token || localStorage.getItem('auth_token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error && isAuthNetworkFailure(error)) {
+      await abandonUnreachableAuthSession(error);
+      return {};
+    }
+    const token = data.session?.access_token || localStorage.getItem('auth_token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch (error) {
+    if (isAuthNetworkFailure(error)) {
+      await abandonUnreachableAuthSession(error);
+    }
+    const token = localStorage.getItem('auth_token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
 }
 
 export async function createConstructionProject(params: {
   specs: ConstructionSpecs;
   title?: string;
+  claimFreePreview?: boolean;
 }): Promise<{
   ok: boolean;
-  project?: { id: string; status: ConstructionProjectStatus; accessToken?: string };
+  project?: {
+    id: string;
+    status: ConstructionProjectStatus;
+    accessToken?: string;
+    preview_granted?: boolean;
+  };
   error?: string;
 }> {
   const response = await fetch('/api/construction-projects/create', {
@@ -71,11 +128,17 @@ export async function createConstructionProject(params: {
     body: JSON.stringify({
       title: params.title || buildTitle(params.specs),
       specs: params.specs,
+      claimFreePreview: Boolean(params.claimFreePreview),
     }),
   });
   const payload = (await response.json().catch(() => null)) as {
     ok?: boolean;
-    project?: { id: string; status: ConstructionProjectStatus; accessToken?: string };
+    project?: {
+      id: string;
+      status: ConstructionProjectStatus;
+      accessToken?: string;
+      preview_granted?: boolean;
+    };
     error?: string;
   } | null;
   if (!response.ok || !payload?.ok || !payload.project?.id) {

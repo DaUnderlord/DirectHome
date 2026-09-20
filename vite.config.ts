@@ -53,6 +53,7 @@ function flutterwaveApiPlugin(): Plugin {
             const result = await createConstructionProject({
               title: body.title,
               specs: body.specs,
+              claimFreePreview: Boolean(body.claimFreePreview),
               authToken: req.headers.authorization,
             })
             sendJson(res, result.status || (result.ok ? 200 : 400), result)

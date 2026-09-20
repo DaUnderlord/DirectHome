@@ -14,11 +14,15 @@ import {
 interface EstimatorReportProps {
   estimate: ConstructionEstimate;
   comparisons: QualityComparison[];
+  pdfLocked?: boolean;
+  onRequestPdf?: () => void;
 }
 
 const EstimatorReport: React.FC<EstimatorReportProps> = ({
   estimate,
   comparisons,
+  pdfLocked = false,
+  onRequestPdf,
 }) => {
   const { specs } = estimate;
 
@@ -309,12 +313,23 @@ const EstimatorReport: React.FC<EstimatorReportProps> = ({
 
           <button
             type="button"
-            onClick={() => printEstimateReport(estimate, comparisons)}
+            onClick={() => {
+              if (pdfLocked) {
+                onRequestPdf?.();
+                return;
+              }
+              printEstimateReport(estimate, comparisons);
+            }}
             className="w-full min-h-12 flex items-center justify-center px-6 py-3 bg-courtyard-700 text-paper-50 font-semibold hover:bg-courtyard-600"
           >
             <IconDownload size={18} className="mr-2" />
-            Download PDF report
+            {pdfLocked ? 'Download PDF report — ₦399' : 'Download PDF report'}
           </button>
+          {pdfLocked && (
+            <p className="text-sm text-ink-600 text-center">
+              This first estimate is free to view. Pay ₦399 to download the print-ready PDF.
+            </p>
+          )}
 
           <p className="text-sm text-ink-600 border border-paper-200 bg-paper-100 px-4 py-3">
             Planning estimate only. Unit rates are DirectHome’s client-reviewed Nigerian market

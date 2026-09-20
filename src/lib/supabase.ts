@@ -21,4 +21,57 @@ export const supabase = createClient<Database>(safeSupabaseUrl, safeSupabaseAnon
   },
 });
 
+export function isAuthNetworkFailure(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as { name?: string; message?: string };
+  const message = String(err.message || '');
+  return (
+    err.name === 'AuthRetryableFetchError' ||
+    message.includes('Failed to fetch') ||
+    message.includes('NetworkError') ||
+    message.includes('ERR_NAME_NOT_RESOLVED')
+  );
+}
+
+let abandonedUnreachableSession = false;
+
+export async function abandonUnreachableAuthSession(reason: unknown): Promise<void> {
+  if (abandonedUnreachableSession) return;
+  abandonedUnreachableSession = true;
+
+  console.warn('DirectHome: Supabase auth host is unreachable; stopping token refresh.', {
+    url: supabaseUrl || '(missing VITE_SUPABASE_URL)',
+    reason: reason instanceof Error ? reason.message : String(reason),
+  });
+
+  try {
+    supabase.auth.stopAutoRefresh();
+    await supabase.auth.signOut({ scope: 'local' });
+  } catch {
+    /* ignore — local storage is cleared below */
+  }
+
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('auth_refresh_token');
+  localStorage.removeItem('auth_expires_at');
+}
+
+export async function ensureSupabaseReachable(): Promise<boolean> {
+  if (!hasSupabaseConfig) return false;
+  try {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 4000);
+    await fetch(`${safeSupabaseUrl}/auth/v1/health`, {
+      method: 'GET',
+      mode: 'no-cors',
+      signal: controller.signal,
+    });
+    window.clearTimeout(timer);
+    return true;
+  } catch (error) {
+    await abandonUnreachableAuthSession(error);
+    return false;
+  }
+}
+
 export type { Database };

@@ -9,7 +9,7 @@ const faqs = [
   },
   {
     q: 'Do I need an account?',
-    a: 'No for filling in the estimator. Unlocking a full report is ₦399 per build project. Accounts are free.',
+    a: 'No for filling in the estimator. Your first estimate is free to view. Downloading the PDF, and extra builds, are ₦399 per project. Accounts are free.',
   },
   {
     q: 'Are the calculators accurate?',
