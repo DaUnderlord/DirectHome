@@ -98,6 +98,12 @@ function toClientProject(row, { includeEstimate }) {
   return project
 }
 
+function previewCookieUsed(cookieHeader) {
+  return /(?:^|;\s*)dh-estimator-free-preview=1(?:;|$)/.test(String(cookieHeader || ''))
+}
+
+export const PREVIEW_SET_COOKIE = 'dh-estimator-free-preview=1; Path=/; Max-Age=31536000; SameSite=Lax'
+
 async function sessionUser(authHeader) {
   const authed = authedClient(authHeader)
   if (!authed) return null
@@ -106,22 +112,13 @@ async function sessionUser(authHeader) {
   return data.user
 }
 
-async function userHasAccountPreview(supabase, userId) {
-  const { count, error } = await supabase
-    .from('construction_projects')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('preview_granted', true)
-
-  if (error) {
-    console.warn('DirectHome: could not check account free preview', error.message)
-    return false
-  }
-
-  return (count || 0) > 0
-}
-
-export async function createConstructionProject({ title, specs, authToken, claimFreePreview }) {
+export async function createConstructionProject({
+  title,
+  specs,
+  authToken,
+  claimFreePreview,
+  cookies,
+}) {
   const supabase = serviceClient()
   if (!supabase) {
     return { ok: false, status: 503, error: 'Database is not configured.' }
@@ -131,13 +128,17 @@ export async function createConstructionProject({ title, specs, authToken, claim
   }
 
   const user = await sessionUser(authToken)
-  let previewGranted = false
+  const cookieUsed = previewCookieUsed(cookies)
+  // First unpaid preview is per device (cookie), not per account — so a signed-in
+  // user on a fresh phone still sees the on-screen estimate before paying.
+  const previewGranted = !cookieUsed
 
-  if (user?.id) {
-    previewGranted = !(await userHasAccountPreview(supabase, user.id))
-  } else if (claimFreePreview) {
-    previewGranted = true
-  }
+  console.info('DirectHome: create project preview grant', {
+    signedIn: Boolean(user?.id),
+    claimFreePreview: Boolean(claimFreePreview),
+    cookieUsed,
+    previewGranted,
+  })
 
   const accessToken = randomUUID()
   const row = {
@@ -184,13 +185,13 @@ export async function createConstructionProject({ title, specs, authToken, claim
     ok: true,
     project: {
       ...data,
-      preview_granted: Boolean(data.preview_granted),
+      preview_granted: previewGranted || Boolean(data.preview_granted),
       accessToken,
     },
   }
 }
 
-export async function getConstructionProject({ projectId, authToken, accessToken }) {
+export async function getConstructionProject({ projectId, authToken, accessToken, cookies }) {
   if (!isUuid(projectId)) {
     return { ok: false, status: 400, error: 'Invalid project id.' }
   }
@@ -237,23 +238,21 @@ export async function getConstructionProject({ projectId, authToken, accessToken
     return { ok: false, status: 403, error: 'You do not have access to this project.' }
   }
 
-  if (
-    owner?.id &&
-    data.user_id === owner.id &&
+  const hasProjectAccessToken = isUuid(accessToken) && data.access_token === accessToken
+  const canGrantPreview =
     data.status !== 'paid' &&
-    !data.preview_granted
-  ) {
-    const alreadyGranted = await userHasAccountPreview(supabase, owner.id)
-    if (!alreadyGranted) {
-      const { error: grantError } = await supabase
-        .from('construction_projects')
-        .update({ preview_granted: true, updated_at: new Date().toISOString() })
-        .eq('id', data.id)
-        .eq('user_id', owner.id)
+    !data.preview_granted &&
+    !previewCookieUsed(cookies) &&
+    (hasProjectAccessToken || Boolean(owner?.id && data.user_id === owner.id))
 
-      if (!grantError) {
-        data.preview_granted = true
-      }
+  if (canGrantPreview) {
+    const { error: grantError } = await supabase
+      .from('construction_projects')
+      .update({ preview_granted: true, updated_at: new Date().toISOString() })
+      .eq('id', data.id)
+
+    if (!grantError || /preview_granted/i.test(grantError.message || '')) {
+      data.preview_granted = true
     }
   }
 
@@ -261,6 +260,7 @@ export async function getConstructionProject({ projectId, authToken, accessToken
   const previewGranted = Boolean(data.preview_granted)
   return {
     ok: true,
+    setPreviewCookie: previewGranted && !paid,
     project: toClientProject(data, { includeEstimate: paid || previewGranted }),
   }
 }

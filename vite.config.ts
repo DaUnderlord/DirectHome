@@ -7,6 +7,7 @@ import {
   createConstructionProject,
   getConstructionProject,
   listConstructionProjects,
+  PREVIEW_SET_COOKIE,
 } from './server/constructionProjects.js'
 
 function readJsonBody(req: import('http').IncomingMessage) {
@@ -18,9 +19,19 @@ function readJsonBody(req: import('http').IncomingMessage) {
   })
 }
 
-function sendJson(res: import('http').ServerResponse, status: number, body: unknown) {
+function sendJson(
+  res: import('http').ServerResponse,
+  status: number,
+  body: unknown,
+  extraHeaders?: Record<string, string>
+) {
   res.statusCode = status
   res.setHeader('Content-Type', 'application/json')
+  if (extraHeaders) {
+    for (const [key, value] of Object.entries(extraHeaders)) {
+      res.setHeader(key, value)
+    }
+  }
   res.end(JSON.stringify(body))
 }
 
@@ -55,8 +66,14 @@ function flutterwaveApiPlugin(): Plugin {
               specs: body.specs,
               claimFreePreview: Boolean(body.claimFreePreview),
               authToken: req.headers.authorization,
+              cookies: req.headers.cookie,
             })
-            sendJson(res, result.status || (result.ok ? 200 : 400), result)
+            sendJson(
+              res,
+              result.status || (result.ok ? 200 : 400),
+              result,
+              result.setPreviewCookie ? { 'Set-Cookie': PREVIEW_SET_COOKIE } : undefined
+            )
           } catch {
             sendJson(res, 500, { ok: false, error: 'Could not create project.' })
           }
@@ -82,8 +99,14 @@ function flutterwaveApiPlugin(): Plugin {
               projectId: query.get('id') || query.get('projectId') || undefined,
               authToken: req.headers.authorization,
               accessToken: Array.isArray(accessHeader) ? accessHeader[0] : accessHeader,
+              cookies: req.headers.cookie,
             })
-            sendJson(res, result.status || (result.ok ? 200 : 400), result)
+            sendJson(
+              res,
+              result.status || (result.ok ? 200 : 400),
+              result,
+              result.setPreviewCookie ? { 'Set-Cookie': PREVIEW_SET_COOKIE } : undefined
+            )
           } catch {
             sendJson(res, 500, { ok: false, error: 'Could not load project.' })
           }

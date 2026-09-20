@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   fetchConstructionProject,
   loadPreviewCache,
   projectRoute,
+  savePreviewCache,
   type ConstructionProjectSummary,
 } from '../../services/constructionProjectService';
 import constructionCostService from '../../services/constructionCostService';
@@ -29,7 +30,17 @@ const PROJECT_FAQ = [
 ];
 
 function hasFullSpecs(specs?: ConstructionProjectSummary['specs'] | ConstructionSpecs | null) {
-  return Boolean(specs && 'buildingType' in specs && specs.buildingType && specs.totalSquareMeters);
+  return Boolean(
+    specs &&
+      'buildingType' in specs &&
+      specs.buildingType &&
+      specs.totalSquareMeters &&
+      'features' in specs &&
+      specs.features &&
+      'location' in specs &&
+      specs.location &&
+      'tier' in specs.location
+  );
 }
 
 function visibleEstimate(
@@ -44,7 +55,7 @@ function visibleEstimate(
     return project.estimate;
   }
 
-  const specs = (hasFullSpecs(project.specs) ? project.specs : localSpecs) as ConstructionSpecs | null;
+  const specs = (hasFullSpecs(localSpecs) ? localSpecs : project.specs) as ConstructionSpecs | null;
   if (!hasFullSpecs(specs)) return null;
   try {
     return constructionCostService.calculateEstimate(specs as ConstructionSpecs);
@@ -53,29 +64,64 @@ function visibleEstimate(
   }
 }
 
+type ProjectLocationState = {
+  specs?: ConstructionSpecs;
+  freePreview?: boolean;
+};
+
 const ConstructionProjectPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const navState = (location.state || {}) as ProjectLocationState;
 
-  const [project, setProject] = useState<ConstructionProjectSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [localSpecs] = useState<ConstructionSpecs | null>(() => {
+    if (navState.specs && projectId) {
+      savePreviewCache(projectId, navState.specs);
+      return navState.specs;
+    }
+    return projectId ? loadPreviewCache(projectId) : null;
+  });
+  const [freePreview] = useState(() => Boolean(navState.freePreview) || Boolean(localSpecs));
+
+  const [project, setProject] = useState<ConstructionProjectSummary | null>(() => {
+    if (!projectId || !localSpecs || !freePreview) return null;
+    return {
+      id: projectId,
+      title: 'Your construction estimate',
+      status: 'awaiting_payment',
+      created_at: new Date().toISOString(),
+      preview_granted: true,
+      specs: localSpecs,
+    };
+  });
+  const [loading, setLoading] = useState(!project);
   const [error, setError] = useState<string | null>(null);
   const [showAccountPrompt, setShowAccountPrompt] = useState(false);
   const [showPdfPaywall, setShowPdfPaywall] = useState(false);
 
-  const localSpecs = projectId ? loadPreviewCache(projectId) : null;
-
   const loadProject = async () => {
     if (!projectId) return;
-    setLoading(true);
+    if (!freePreview) setLoading(true);
     setError(null);
     const result = await fetchConstructionProject({ projectId });
     if (!result.ok || !result.project) {
-      setError(result.error || 'Project not found.');
-      setProject(null);
+      if (!freePreview) {
+        setError(result.error || 'Project not found.');
+        setProject(null);
+      }
     } else {
-      setProject(result.project);
+      const incoming = result.project;
+      const keepLocalSpecs =
+        Boolean(localSpecs) &&
+        (freePreview || Boolean(incoming.preview_granted)) &&
+        !hasFullSpecs(incoming.specs);
+      setProject({
+        ...incoming,
+        preview_granted: Boolean(incoming.preview_granted) || freePreview,
+        specs: keepLocalSpecs && localSpecs ? localSpecs : incoming.specs,
+      });
     }
     setLoading(false);
   };
@@ -86,8 +132,8 @@ const ConstructionProjectPage: React.FC = () => {
 
   const paid = project?.status === 'paid';
   const estimate = useMemo(
-    () => (project ? visibleEstimate(project, localSpecs) : null),
-    [project, localSpecs]
+    () => (project ? visibleEstimate(project, freePreview ? localSpecs : null) : null),
+    [project, localSpecs, freePreview]
   );
   const comparisons = useMemo(
     () => (estimate ? constructionCostService.compareQualityLevels(estimate.specs) : []),
@@ -138,7 +184,8 @@ const ConstructionProjectPage: React.FC = () => {
     : 'building';
   const city = project.specs.location?.city || project.specs.location?.state || 'Nigeria';
   const sqm = project.specs.totalSquareMeters;
-  const preview = Boolean(project.preview_granted) || Boolean(localSpecs && estimate);
+  const preview =
+    Boolean(project.preview_granted) || Boolean(freePreview && localSpecs && estimate);
   const canView = Boolean(paid || (preview && estimate));
 
   return (

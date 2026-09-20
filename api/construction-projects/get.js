@@ -1,4 +1,4 @@
-import { getConstructionProject } from '../../server/constructionProjects.js'
+import { getConstructionProject, PREVIEW_SET_COOKIE } from '../../server/constructionProjects.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -14,7 +14,11 @@ export default async function handler(req, res) {
       projectId,
       authToken: req.headers.authorization,
       accessToken,
+      cookies: req.headers.cookie,
     })
+    if (result.setPreviewCookie) {
+      res.setHeader('Set-Cookie', PREVIEW_SET_COOKIE)
+    }
     res.status(result.status || (result.ok ? 200 : 400)).json(result)
   } catch {
     res.status(500).json({ ok: false, error: 'Could not load project.' })

@@ -1,4 +1,4 @@
-import { createConstructionProject } from '../../server/constructionProjects.js'
+import { createConstructionProject, PREVIEW_SET_COOKIE } from '../../server/constructionProjects.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -13,7 +13,11 @@ export default async function handler(req, res) {
       specs: body.specs,
       claimFreePreview: Boolean(body.claimFreePreview),
       authToken: req.headers.authorization,
+      cookies: req.headers.cookie,
     })
+    if (result.setPreviewCookie) {
+      res.setHeader('Set-Cookie', PREVIEW_SET_COOKIE)
+    }
     res.status(result.status || (result.ok ? 200 : 400)).json(result)
   } catch {
     res.status(500).json({ ok: false, error: 'Could not create project.' })

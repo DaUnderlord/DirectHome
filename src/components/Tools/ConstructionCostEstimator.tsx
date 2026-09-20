@@ -185,10 +185,10 @@ const ConstructionCostEstimator: React.FC = () => {
 
     try {
       const normalized = normalizeSpecs(specs);
-      const claimFreePreview = Boolean(user) || !hasUsedFreePreview();
+      const deviceFree = !hasUsedFreePreview();
       const saved = await createConstructionProject({
         specs: normalized,
-        claimFreePreview,
+        claimFreePreview: deviceFree,
       });
 
       if (!saved.ok || !saved.project?.id) {
@@ -196,13 +196,16 @@ const ConstructionCostEstimator: React.FC = () => {
         return;
       }
 
-      if (saved.project.preview_granted) {
+      const freePreview = Boolean(saved.project.preview_granted) || deviceFree;
+      if (freePreview) {
         markFreePreviewUsed();
         savePreviewCache(saved.project.id, normalized);
       }
 
       archiveAndClear();
-      navigate(projectRoute(saved.project.id));
+      navigate(projectRoute(saved.project.id), {
+        state: freePreview ? { specs: normalized, freePreview: true } : undefined,
+      });
     } finally {
       setCreating(false);
     }

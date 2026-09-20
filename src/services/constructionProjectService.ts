@@ -121,6 +121,7 @@ export async function createConstructionProject(params: {
 }> {
   const response = await fetch('/api/construction-projects/create', {
     method: 'POST',
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
       ...(await authHeader()),
@@ -158,7 +159,10 @@ export async function fetchConstructionProject(params: {
   const headers: Record<string, string> = { ...(await authHeader()) };
   if (accessToken) headers['X-Project-Access'] = accessToken;
 
-  const response = await fetch(`/api/construction-projects/get?${search}`, { headers });
+  const response = await fetch(`/api/construction-projects/get?${search}`, {
+    credentials: 'same-origin',
+    headers,
+  });
   const payload = (await response.json().catch(() => null)) as {
     ok?: boolean;
     project?: ConstructionProjectSummary;
