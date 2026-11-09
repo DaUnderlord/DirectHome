@@ -56,22 +56,44 @@ export async function abandonUnreachableAuthSession(reason: unknown): Promise<vo
   localStorage.removeItem('auth_expires_at');
 }
 
-export async function ensureSupabaseReachable(): Promise<boolean> {
-  if (!hasSupabaseConfig) return false;
+/**
+ * Undo abandonUnreachableAuthSession() after a successful sign-in. Without this, a slow
+ * network earlier in the page's life left token refresh stopped for good, so the next
+ * session silently expired an hour after logging back in.
+ */
+export function resumeAuthRefresh(): void {
+  abandonedUnreachableSession = false;
   try {
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 4000);
+    void supabase.auth.startAutoRefresh();
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Best-effort reachability probe. It never signs anyone out: a slow mobile connection
+ * (common on Nigerian networks) is not proof that a saved session is dead.
+ */
+export async function ensureSupabaseReachable(timeoutMs = 8000): Promise<boolean> {
+  if (!hasSupabaseConfig) return false;
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
     await fetch(`${safeSupabaseUrl}/auth/v1/health`, {
       method: 'GET',
       mode: 'no-cors',
       signal: controller.signal,
     });
-    window.clearTimeout(timer);
     return true;
-  } catch (error) {
-    await abandonUnreachableAuthSession(error);
+  } catch {
     return false;
+  } finally {
+    window.clearTimeout(timer);
   }
+}
+
+export function hasSupabaseConfiguration(): boolean {
+  return hasSupabaseConfig;
 }
 
 export type { Database };

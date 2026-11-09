@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { IconRefresh, IconSearch } from '@tabler/icons-react';
-import { TOOL_LABELS, TOOL_REPORT_PRICE_NGN, type PaidToolId } from '../../constants/toolPricing';
+import {
+  ESTIMATOR_MIN_PRICE_NGN,
+  ESTIMATOR_PRICE_NGN,
+  TOOL_LABELS,
+  type PaidToolId,
+} from '../../constants/toolPricing';
 import { fetchToolPayments, type ToolPaymentRecord } from '../../services/adminPaymentService';
 
 type TabType = 'all' | PaidToolId;
@@ -108,8 +113,10 @@ const PaymentManagement: React.FC = () => {
           <p className="mt-1 text-2xl font-semibold text-gray-900">{formatNaira(totalAmount)}</p>
         </div>
         <div className="bg-white p-5 rounded-lg border border-gray-200">
-          <p className="text-sm text-gray-500">Report price</p>
-          <p className="mt-1 text-2xl font-semibold text-gray-900">{formatNaira(TOOL_REPORT_PRICE_NGN)}</p>
+          <p className="text-sm text-gray-500">Report prices</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-900">
+            {formatNaira(ESTIMATOR_MIN_PRICE_NGN)}–{formatNaira(Math.max(...Object.values(ESTIMATOR_PRICE_NGN)))}
+          </p>
         </div>
       </div>
 

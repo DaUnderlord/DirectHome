@@ -196,6 +196,35 @@ const LABOR_RATES = {
   laborer: { tier_1: 15000, tier_2: 12000, tier_3: 10000, rural: 8000 }
 };
 
+export const DEFAULT_COMMERCIAL_WALL_HEIGHT_M = 3.5;
+export const DEFAULT_COMMERCIAL_ROOMS = 6;
+
+export function isCommercial(specs: ConstructionSpecs): boolean {
+  return specs.buildingType === BuildingType.COMMERCIAL;
+}
+
+/** Rooms used for doors, wiring and partitions. Commercial: offices/shops; residential: bedrooms. */
+function roomCount(specs: ConstructionSpecs): number {
+  if (isCommercial(specs)) {
+    return Math.max(1, Math.round(specs.commercial?.numberOfRooms || DEFAULT_COMMERCIAL_ROOMS));
+  }
+  return specs.numberOfBedrooms;
+}
+
+/** Wet rooms (toilets / bathrooms). Commercial assumes one toilet per four rooms, minimum one. */
+function wetRoomCount(specs: ConstructionSpecs): number {
+  if (isCommercial(specs)) return Math.max(1, Math.ceil(roomCount(specs) / 4));
+  return specs.numberOfBathrooms;
+}
+
+function wallHeightM(specs: ConstructionSpecs): number {
+  if (isCommercial(specs)) {
+    const h = Number(specs.commercial?.wallHeight);
+    return Number.isFinite(h) && h > 0 ? h : DEFAULT_COMMERCIAL_WALL_HEIGHT_M;
+  }
+  return 3;
+}
+
 class ConstructionCostService {
   /**
    * Calculate comprehensive construction cost estimate
@@ -393,8 +422,8 @@ class ConstructionCostService {
       MaterialCategory.FLOORING
     ));
     
-    // Doors (estimate based on bedrooms + bathrooms + common areas)
-    const totalDoors = specs.numberOfBedrooms + specs.numberOfBathrooms + 3;
+    // Doors (rooms + wet rooms + common areas / circulation)
+    const totalDoors = roomCount(specs) + wetRoomCount(specs) + (isCommercial(specs) ? 2 : 3);
     costs.push(this.createCostItem(
       'Interior Doors',
       totalDoors,
@@ -424,7 +453,7 @@ class ConstructionCostService {
     // Plumbing materials
     costs.push(this.createCostItem(
       'PVC Pipes (4 inch)',
-      specs.numberOfBathrooms * 10, // 10 lengths per bathroom
+      wetRoomCount(specs) * 10, // 10 lengths per bathroom / toilet
       'lengths',
       MATERIAL_PRICES.pvc_pipes_4inch.prices[tier],
       MaterialCategory.PLUMBING
@@ -438,10 +467,11 @@ class ConstructionCostService {
       MaterialCategory.PLUMBING
     ));
     
-    // Electrical materials (estimate 100m of cable per bedroom)
+    // Electrical materials: 100m of cable per bedroom. Commercial rooms vary a lot in size,
+    // so commercial uses floor area at the same density as a typical home (~2m per sqm).
     costs.push(this.createCostItem(
       'Electrical Cables',
-      specs.numberOfBedrooms * 100,
+      isCommercial(specs) ? sqm * 2 : specs.numberOfBedrooms * 100,
       'meters',
       MATERIAL_PRICES.electrical_cables.prices[tier],
       MaterialCategory.ELECTRICAL
@@ -592,14 +622,16 @@ class ConstructionCostService {
       specs.finishingQuality === FinishingQuality.STANDARD ? 1.1 : 1.0;
     
     const totalWorkDays = baseWorkDays * complexityMultiplier;
-    
+    // Taller walls mean more blockwork and plastering (residential baseline is 3m).
+    const masonryDays = totalWorkDays * 0.4 * (wallHeightM(specs) / 3);
+
     // Masons (foundation, blocks, plastering)
     costs.push({
       category: 'Masonry',
       description: 'Foundation, blockwork, plastering',
-      estimatedDays: totalWorkDays * 0.4,
+      estimatedDays: masonryDays,
       costPerDay: LABOR_RATES.mason[tier],
-      totalCost: totalWorkDays * 0.4 * LABOR_RATES.mason[tier]
+      totalCost: masonryDays * LABOR_RATES.mason[tier]
     });
     
     // Carpenters (roofing, doors, windows)
@@ -615,9 +647,9 @@ class ConstructionCostService {
     costs.push({
       category: 'Plumbing',
       description: 'Water supply, drainage, fixtures',
-      estimatedDays: specs.numberOfBathrooms * 15,
+      estimatedDays: wetRoomCount(specs) * 15,
       costPerDay: LABOR_RATES.plumber[tier],
-      totalCost: specs.numberOfBathrooms * 15 * LABOR_RATES.plumber[tier]
+      totalCost: wetRoomCount(specs) * 15 * LABOR_RATES.plumber[tier]
     });
     
     // Electricians
@@ -672,10 +704,14 @@ class ConstructionCostService {
     const isBungalow = specs.buildingType === BuildingType.BUNGALOW;
     const specialistPerSqm = tier === LocationTier.TIER_1 ? 2500 : 1800;
 
+    // Fee rules (client feedback, Nov 2026):
+    // - Bungalow: no structural engineer. Electrical + mechanical engineers stay.
+    // - All other types: structural, electrical and mechanical engineers.
+    // - No land surveyor fee for any building type.
     const architect = sqm * (tier === LocationTier.TIER_1 ? 3500 : 2500);
     const structuralEngineer = isBungalow ? 0 : sqm * specialistPerSqm;
     const electricalEngineer = sqm * specialistPerSqm;
-    const mechanicalEngineer = isBungalow ? 0 : sqm * specialistPerSqm;
+    const mechanicalEngineer = sqm * specialistPerSqm;
     const projectManager = sqm * (tier === LocationTier.TIER_1 ? 2000 : 1500);
 
     return {
@@ -722,10 +758,20 @@ class ConstructionCostService {
   }
 
   private estimateWallArea(specs: ConstructionSpecs): number {
-    // Rough estimate: perimeter * height * floors
     const footprintSqm = specs.totalSquareMeters / specs.numberOfFloors;
     const perimeter = Math.sqrt(footprintSqm) * 4;
-    const wallHeight = 3; // meters per floor
+    const wallHeight = wallHeightM(specs);
+
+    if (isCommercial(specs)) {
+      // Commercial: external walls plus internal partitions between rooms.
+      // Each room shares roughly two sides of an average room square with its neighbours.
+      const rooms = roomCount(specs);
+      const roomSide = Math.sqrt(footprintSqm / rooms);
+      const partitionLength = rooms > 1 ? rooms * roomSide : 0;
+      return (perimeter + partitionLength) * wallHeight * specs.numberOfFloors;
+    }
+
+    // Residential: perimeter * height * floors
     return perimeter * wallHeight * specs.numberOfFloors;
   }
 

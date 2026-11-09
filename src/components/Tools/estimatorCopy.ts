@@ -20,6 +20,21 @@ export const BUILDING_LABELS: Record<BuildingType, string> = {
   [BuildingType.COMMERCIAL]: 'Commercial building',
 };
 
+/** Package tiers shown to users, in display order. Prices come from ESTIMATOR_PRICE_NGN. */
+export const ESTIMATOR_PACKAGE_ORDER: BuildingType[] = [
+  BuildingType.BUNGALOW,
+  BuildingType.DUPLEX,
+  BuildingType.STOREY_BUILDING,
+  BuildingType.APARTMENT_BLOCK,
+  BuildingType.COMMERCIAL,
+];
+
+/** Footnote on the estimate result screen and the BOQ / PDF report. */
+export const PROFESSIONAL_SERVICES_NOTE =
+  'This is a planning estimate, not a tender document. For full construction drawings, a detailed bill of quantities (BOQ) for tender, and engineering drawings, contact DirectHome and our team will prepare them for your project.';
+
+export const PROFESSIONAL_SERVICES_PATH = '/contact';
+
 export const ROOFING_LABELS: Record<RoofingChoice, string> = {
   [RoofingChoice.AUTO]: 'Matches finishing quality',
   [RoofingChoice.LONGSPAN]: 'Long-span aluminium',

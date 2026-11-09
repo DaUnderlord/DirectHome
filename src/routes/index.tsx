@@ -169,7 +169,7 @@ const AppRoutes: React.FC = () => {
           <Route
             path="homeowner"
             element={
-              <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]}>
+              <ProtectedRoute requiredRoles={[UserRole.HOME_OWNER]} redirectToOwnDashboard>
                 {withSuspense(<DashboardRouter />)}
               </ProtectedRoute>
             }
@@ -177,7 +177,7 @@ const AppRoutes: React.FC = () => {
           <Route
             path="homeseeker"
             element={
-              <ProtectedRoute requiredRoles={[UserRole.HOME_SEEKER]}>
+              <ProtectedRoute requiredRoles={[UserRole.HOME_SEEKER]} redirectToOwnDashboard>
                 {withSuspense(<DashboardRouter />)}
               </ProtectedRoute>
             }

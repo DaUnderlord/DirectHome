@@ -1,80 +1,48 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Navigate } from 'react-router-dom';
+import React from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types/auth';
 import { PropertyOwnerDashboard } from '../PropertyOwner';
 import HomeSeekerDashboard from './HomeSeekerDashboard';
-import RoleToggle from './RoleToggle';
+import ProfileSwitcher from './ProfileSwitcher';
+
+const DASHBOARD_PATH: Partial<Record<UserRole, string>> = {
+  [UserRole.HOME_OWNER]: '/dashboard/homeowner',
+  [UserRole.HOME_SEEKER]: '/dashboard/homeseeker',
+};
 
 const DashboardRouter: React.FC = () => {
-  const { user, isAuthenticated } = useAuth();
-  const [activeRole, setActiveRole] = useState<UserRole | null>(null);
-  
-  // Check if user has multiple roles (both homeowner and homeseeker)
-  const hasMultipleRoles = user && 
-    ((user.role === UserRole.HOME_OWNER && user.previousRoles?.includes(UserRole.HOME_SEEKER)) ||
-     (user.role === UserRole.HOME_SEEKER && user.previousRoles?.includes(UserRole.HOME_OWNER)));
-  
-  // Determine available roles - memoized to prevent infinite loop
-  const availableRoles = useMemo(() => {
-    if (!user) return [];
-    return user.previousRoles ? [user.role, ...user.previousRoles] : [user.role];
-  }, [user?.role, user?.previousRoles]);
-  
-  // Set initial active role based on user's primary role or stored preference
-  useEffect(() => {
-    if (!user) return;
-    
-    const storedRole = localStorage.getItem('preferred_dashboard_role');
-    
-    if (storedRole && availableRoles.includes(storedRole as UserRole)) {
-      setActiveRole(storedRole as UserRole);
-    } else {
-      setActiveRole(user.role);
-    }
-  }, [user?.role, availableRoles]);
-  
-  // Handle role change
-  const handleRoleChange = (role: UserRole) => {
-    setActiveRole(role);
-    localStorage.setItem('preferred_dashboard_role', role);
-  };
-  
-  // Redirect if not authenticated
-  if (!isAuthenticated) {
+  const { user, isAuthenticated, switchRole } = useAuth();
+  const navigate = useNavigate();
+
+  if (!isAuthenticated || !user) {
     return <Navigate to="/auth/login?redirect=dashboard" replace />;
   }
-  
-  // Show loading state if role is not determined yet
-  if (!activeRole) {
-    return <div className="flex justify-center items-center h-screen">Loading dashboard...</div>;
-  }
-  
+
+  const activeRole = user.role;
+  const canSwitch = activeRole === UserRole.HOME_OWNER || activeRole === UserRole.HOME_SEEKER;
+
+  // The dashboard follows the account's real role; switching changes it in the database
+  // and moves to that role's dashboard route (those routes are role-protected).
+  const handleSwitch = async (role: UserRole) => {
+    const updated = await switchRole(role);
+    navigate(DASHBOARD_PATH[updated.role] || '/dashboard', { replace: true });
+  };
+
   return (
     <>
-      {/* Role Toggle (only shown if user has multiple roles) */}
-      {hasMultipleRoles && (
-        <div className="container mx-auto px-4 pt-8 pb-0">
-          <RoleToggle 
-            availableRoles={availableRoles as UserRole[]} 
-            activeRole={activeRole} 
-            onRoleChange={handleRoleChange}
-            showBadges={true}
-            pendingCounts={{
-              [UserRole.HOME_OWNER]: 0,
-              [UserRole.HOME_SEEKER]: 0
-            }}
-          />
+      {canSwitch && (
+        <div className="container mx-auto px-4 pt-6 pb-0">
+          <ProfileSwitcher activeRole={activeRole} onSwitch={handleSwitch} />
         </div>
       )}
-      
-      {/* Dashboard Content based on active role */}
+
       {activeRole === UserRole.HOME_OWNER ? (
         <PropertyOwnerDashboard />
       ) : (
-        <HomeSeekerDashboard 
-          activeRole={activeRole} 
-          onRoleChange={handleRoleChange} 
+        <HomeSeekerDashboard
+          activeRole={activeRole}
+          onRoleChange={(role) => void handleSwitch(role).catch(() => {})}
         />
       )}
     </>

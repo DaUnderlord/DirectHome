@@ -1,5 +1,30 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { supabase, abandonUnreachableAuthSession, isAuthNetworkFailure, ensureSupabaseReachable } from '../lib/supabase';
+import {
+  supabase,
+  abandonUnreachableAuthSession,
+  isAuthNetworkFailure,
+  hasSupabaseConfiguration,
+  resumeAuthRefresh,
+} from '../lib/supabase';
+
+const SIGN_IN_TIMEOUT_MS = 20000;
+const PROFILE_FETCH_TIMEOUT_MS = 6000;
+
+function withTimeout<T>(promise: PromiseLike<T>, ms: number, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error(message)), ms);
+    Promise.resolve(promise).then(
+      (value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
 import { 
   AuthStatus, 
   UserRole, 
@@ -184,8 +209,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const initializeAuth = async () => {
       try {
-        const reachable = await ensureSupabaseReachable();
-        if (!reachable) {
+        // No network reachability gate here: getSession() reads the saved session from
+        // storage. The old 4s health-check signed users out on slow connections.
+        if (!hasSupabaseConfiguration()) {
           setStatus(AuthStatus.UNAUTHENTICATED);
           return;
         }
@@ -280,10 +306,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const identifier = credentials.emailOrPhone.trim();
       const email = identifier.includes('@') ? identifier.toLowerCase() : identifier;
 
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password: credentials.password,
-      });
+      const { data, error: signInError } = await withTimeout(
+        supabase.auth.signInWithPassword({
+          email,
+          password: credentials.password,
+        }),
+        SIGN_IN_TIMEOUT_MS,
+        'Signing in is taking too long. Check your connection and try again.'
+      );
 
       if (signInError) {
         throw signInError;
@@ -293,8 +323,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('No session returned');
       }
 
-      const sessionUser = applySession(data.session);
-      hydrateProfile(data.session);
+      // A previous slow/failed request may have stopped token refresh; restart it.
+      resumeAuthRefresh();
+
+      // Load the database profile before routing, so the dashboard role is the real one
+      // (auth metadata can be stale, e.g. after switching between owner and seeker).
+      let dbProfile: Record<string, any> = {};
+      try {
+        const { data: profileRow } = await withTimeout(
+          supabase.from('profiles').select('*').eq('id', data.user.id).maybeSingle(),
+          PROFILE_FETCH_TIMEOUT_MS,
+          'Profile fetch timed out'
+        );
+        if (profileRow) dbProfile = profileRow as Record<string, any>;
+      } catch (profileError) {
+        console.warn('Profile fetch on login failed (using auth metadata):', profileError);
+      }
+
+      const sessionUser = applySession(data.session, dbProfile);
+      if (!dbProfile.id) hydrateProfile(data.session);
       linkGuestConstructionProjects(data.session);
 
       return {
@@ -396,15 +443,55 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
+        // A failed global sign-out (network, expired token) leaves the old session in
+        // storage, where it can fight the next sign-in. Always clear it locally.
         console.error('Logout error:', error);
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
       }
-      clearAuthData();
-      setStatus(AuthStatus.UNAUTHENTICATED);
     } catch (error) {
       console.error('Logout failed:', error);
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+    } finally {
       clearAuthData();
       setStatus(AuthStatus.UNAUTHENTICATED);
+      try {
+        localStorage.removeItem('preferred_dashboard_role');
+      } catch {
+        /* ignore */
+      }
     }
+  };
+
+  // Switch between home owner and home seeker. Goes through the switch_profile_role
+  // database function; `role` cannot be updated directly on profiles.
+  const switchRole = async (role: UserRole): Promise<User> => {
+    if (!user) throw new Error('Sign in to switch profiles.');
+    if (role !== UserRole.HOME_OWNER && role !== UserRole.HOME_SEEKER) {
+      throw new Error('You can only switch between home owner and home seeker.');
+    }
+    if (user.role === role) return user;
+
+    const dbRole = mapUserRoleToDbRole(role);
+    const { error: rpcError } = await supabase.rpc('switch_profile_role', { target_role: dbRole });
+    if (rpcError) {
+      throw new Error(rpcError.message || 'Could not switch profile. Try again.');
+    }
+
+    // Keep auth metadata in step so the first render after a future login is correct.
+    try {
+      await supabase.auth.updateUser({ data: { role: dbRole } });
+    } catch (metaError) {
+      console.warn('Could not update auth metadata role:', metaError);
+    }
+
+    const nextUser: User = { ...user, role, updatedAt: new Date() };
+    setUser(nextUser);
+    try {
+      localStorage.setItem('preferred_dashboard_role', role);
+    } catch {
+      /* ignore */
+    }
+    return nextUser;
   };
 
   // Verify email function
@@ -672,6 +759,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     register,
     logout,
+    switchRole,
     verifyEmail,
     verifyPhone,
     resetPassword,

@@ -10,6 +10,8 @@ export interface ConstructionProjectSummary {
   created_at: string;
   paid_at?: string | null;
   preview_granted?: boolean;
+  /** Package price in NGN for this project's building type (from the server). */
+  price?: number;
   specs: Partial<ConstructionSpecs> & {
     location?: { city?: string | null; state?: string | null };
   };

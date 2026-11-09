@@ -19,6 +19,8 @@ interface ResultPaywallProps {
   title?: string;
   description?: ReactNode;
   preview?: ReactNode;
+  /** Amount in NGN. Defaults to the flat tool price. */
+  price?: number;
   onUnlocked: () => void;
 }
 
@@ -28,6 +30,7 @@ const ResultPaywall: React.FC<ResultPaywallProps> = ({
   title = 'Unlock your results',
   description,
   preview,
+  price = TOOL_REPORT_PRICE_NGN,
   onUnlocked,
 }) => {
   const { user } = useAuth();
@@ -56,11 +59,11 @@ const ResultPaywall: React.FC<ResultPaywallProps> = ({
       }
 
       const result = await openFlutterwaveCheckout({
-        amount: TOOL_REPORT_PRICE_NGN,
+        amount: price,
         email: trimmed,
         name: name.trim() || 'DirectHome customer',
         title: 'DirectHome',
-        description: `${title} — ₦${TOOL_REPORT_PRICE_NGN}`,
+        description: `${title} — ₦${price.toLocaleString()}`,
         txRef: createPaymentRef(toolId, projectId),
         meta: {
           toolId,
@@ -115,7 +118,7 @@ const ResultPaywall: React.FC<ResultPaywallProps> = ({
         {description || (
           <>
             Your estimate is ready. Pay{' '}
-            <span className="text-courtyard-700 font-semibold">₦{TOOL_REPORT_PRICE_NGN}</span> to view
+            <span className="text-courtyard-700 font-semibold">₦{price.toLocaleString()}</span> to view
             the full breakdown
             {projectId ? ' for this build project' : ' — one payment unlocks this tool for your session'}.
           </>
@@ -150,7 +153,7 @@ const ResultPaywall: React.FC<ResultPaywallProps> = ({
           disabled={busy}
           className="w-full mt-2 py-3 rounded-sm bg-courtyard-700 text-paper-50 font-semibold hover:bg-courtyard-600 disabled:opacity-50"
         >
-          {busy ? 'Opening checkout…' : `₦${TOOL_REPORT_PRICE_NGN}`}
+          {busy ? 'Opening checkout…' : `Pay ₦${price.toLocaleString()}`}
         </button>
       </form>
     </div>

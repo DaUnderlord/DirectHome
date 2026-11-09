@@ -60,6 +60,15 @@ export interface ConstructionSpecs {
   finishingQuality: FinishingQuality;
   roofing: RoofingChoice;
   plotSquareMeters: number;
+  /**
+   * Commercial buildings are priced from their own parameters: number of rooms,
+   * assumed floor area (totalSquareMeters) and wall height. Bedrooms, bathrooms and
+   * floors are not used for commercial estimates.
+   */
+  commercial?: {
+    numberOfRooms: number;
+    wallHeight: number;
+  };
   location: {
     state: string;
     city: string;

@@ -218,6 +218,8 @@ export interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<AuthResponse>;
   register: (data: RegistrationData) => Promise<void>;
   logout: () => Promise<void>;
+  /** Switch the account between home owner and home seeker. Returns the updated user. */
+  switchRole: (role: UserRole) => Promise<User>;
   verifyEmail: (code: string) => Promise<void>;
   verifyPhone: (code: string) => Promise<void>;
   resetPassword: (request: PasswordResetRequest) => Promise<void>;

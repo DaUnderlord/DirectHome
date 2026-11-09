@@ -1,41 +1,70 @@
 import React, { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { IconDownload } from '@tabler/icons-react';
-import type { ConstructionEstimate, QualityComparison } from '../../types/construction';
+import {
+  BuildingType,
+  type ConstructionEstimate,
+  type ConstructionSpecs,
+  type QualityComparison,
+} from '../../types/construction';
 import { formatNaira } from '../../utils/naira';
 import { printEstimateReport } from './estimatorPrint';
 import {
   BREAKDOWN_BAR,
   BUILDING_LABELS,
   CATEGORY_LABELS,
+  PROFESSIONAL_SERVICES_NOTE,
+  PROFESSIONAL_SERVICES_PATH,
   QUALITY_LABELS,
   ROOFING_LABELS,
 } from './estimatorCopy';
+
+/** Number of BOQ lines shown on screen; the full BOQ is in the paid PDF. */
+const BOQ_SNIPPET_ROWS = 4;
 
 interface EstimatorReportProps {
   estimate: ConstructionEstimate;
   comparisons: QualityComparison[];
   pdfLocked?: boolean;
+  pdfPrice?: number;
   onRequestPdf?: () => void;
+}
+
+export function describeSpecs(specs: ConstructionSpecs): string {
+  const parts: string[] = [`${specs.totalSquareMeters} sqm`];
+  if (specs.buildingType === BuildingType.COMMERCIAL && specs.commercial) {
+    parts.push(
+      `${specs.commercial.numberOfRooms} room${specs.commercial.numberOfRooms === 1 ? '' : 's'}`,
+      `${specs.commercial.wallHeight} m wall height`
+    );
+  } else {
+    parts.push(
+      `${specs.numberOfBedrooms} bed`,
+      `${specs.numberOfBathrooms} bath`,
+      `${specs.numberOfFloors} floor${specs.numberOfFloors === 1 ? '' : 's'}`
+    );
+  }
+  parts.push(QUALITY_LABELS[specs.finishingQuality], ROOFING_LABELS[specs.roofing]);
+  return parts.join(' · ');
 }
 
 const EstimatorReport: React.FC<EstimatorReportProps> = ({
   estimate,
   comparisons,
   pdfLocked = false,
+  pdfPrice,
   onRequestPdf,
 }) => {
   const { specs } = estimate;
 
-  const groupedMaterials = useMemo(() => {
-    const groups = new Map<string, typeof estimate.materialCosts>();
-    estimate.materialCosts.forEach((item) => {
-      const key = item.category || 'other';
-      const list = groups.get(key) || [];
-      list.push(item);
-      groups.set(key, list);
-    });
-    return Array.from(groups.entries());
-  }, [estimate]);
+  // Top items by cost — a preview of the BOQ, not the full bill.
+  const boqSnippet = useMemo(
+    () =>
+      [...estimate.materialCosts]
+        .sort((a, b) => b.totalCost - a.totalCost)
+        .slice(0, BOQ_SNIPPET_ROWS),
+    [estimate]
+  );
 
   const mix = [
     { label: 'Materials', amount: estimate.breakdown.materials },
@@ -58,11 +87,7 @@ const EstimatorReport: React.FC<EstimatorReportProps> = ({
         <h3 className="font-display text-2xl md:text-3xl font-semibold text-ink-950 mt-1">
           {formatNaira(estimate.grandTotal)}
         </h3>
-        <p className="text-ink-600 mt-2">
-          {specs.totalSquareMeters} sqm · {specs.numberOfBedrooms} bed · {specs.numberOfBathrooms}{' '}
-          bath · {specs.numberOfFloors} floor{specs.numberOfFloors === 1 ? '' : 's'} ·{' '}
-          {QUALITY_LABELS[specs.finishingQuality]} · {ROOFING_LABELS[specs.roofing]}
-        </p>
+        <p className="text-ink-600 mt-2">{describeSpecs(specs)}</p>
         <p className="text-sm text-ink-600 mt-1">
           {formatNaira(estimate.costPerSquareMeter)} per sqm · {estimate.estimatedDuration.months}{' '}
           months
@@ -165,54 +190,49 @@ const EstimatorReport: React.FC<EstimatorReportProps> = ({
 
           <div>
             <h4 className="text-[11px] tracking-[0.28em] uppercase text-courtyard-700 font-semibold mb-3">
-              Bill of quantities
+              Bill of quantities — snippet
             </h4>
-            <div className="space-y-6">
-              {groupedMaterials.map(([category, items]) => (
-                <div key={category}>
-                  <p className="text-sm font-semibold text-ink-800 mb-2">
-                    {CATEGORY_LABELS[category] || category}
-                  </p>
-                  <div className="overflow-x-auto border border-paper-200">
-                    <table className="min-w-full">
-                      <thead className="bg-paper-100">
-                        <tr>
-                          <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide text-ink-600">
-                            Item
-                          </th>
-                          <th className="px-3 py-2 text-right text-[11px] uppercase tracking-wide text-ink-600">
-                            Qty
-                          </th>
-                          <th className="px-3 py-2 text-right text-[11px] uppercase tracking-wide text-ink-600">
-                            Unit
-                          </th>
-                          <th className="px-3 py-2 text-right text-[11px] uppercase tracking-wide text-ink-600">
-                            Total
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {items.map((item) => (
-                          <tr key={item.description} className="border-t border-paper-200">
-                            <td className="px-3 py-2 text-sm text-ink-800">{item.description}</td>
-                            <td className="px-3 py-2 text-sm text-ink-600 text-right">
-                              {item.quantity} {item.unit}
-                            </td>
-                            <td className="px-3 py-2 text-sm text-ink-600 text-right">
-                              {formatNaira(item.unitCost)}
-                            </td>
-                            <td className="px-3 py-2 text-sm font-medium text-ink-950 text-right">
-                              {formatNaira(item.totalCost)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ))}
+            <div className="overflow-x-auto border border-paper-200">
+              <table className="min-w-full">
+                <thead className="bg-paper-100">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide text-ink-600">
+                      Item
+                    </th>
+                    <th className="px-3 py-2 text-right text-[11px] uppercase tracking-wide text-ink-600">
+                      Qty
+                    </th>
+                    <th className="px-3 py-2 text-right text-[11px] uppercase tracking-wide text-ink-600">
+                      Total
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {boqSnippet.map((item) => (
+                    <tr key={item.description} className="border-t border-paper-200">
+                      <td className="px-3 py-2 text-sm text-ink-800">
+                        {item.description}
+                        <span className="block text-xs text-ink-400">
+                          {CATEGORY_LABELS[item.category] || item.category}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-sm text-ink-600 text-right">
+                        {item.quantity} {item.unit}
+                      </td>
+                      <td className="px-3 py-2 text-sm font-medium text-ink-950 text-right">
+                        {formatNaira(item.totalCost)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+            <p className="text-xs text-ink-600 mt-2">
+              Showing the {BOQ_SNIPPET_ROWS} largest of {estimate.materialCosts.length} material
+              lines.
+            </p>
           </div>
+
 
           {estimate.addonCosts.length > 0 && (
             <div>
@@ -229,46 +249,6 @@ const EstimatorReport: React.FC<EstimatorReportProps> = ({
               </div>
             </div>
           )}
-
-          <div>
-            <h4 className="text-[11px] tracking-[0.28em] uppercase text-courtyard-700 font-semibold mb-3">
-              Labour
-            </h4>
-            <div className="overflow-x-auto border border-paper-200">
-              <table className="min-w-full">
-                <thead className="bg-paper-100">
-                  <tr>
-                    <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide text-ink-600">
-                      Trade
-                    </th>
-                    <th className="px-3 py-2 text-left text-[11px] uppercase tracking-wide text-ink-600">
-                      Scope
-                    </th>
-                    <th className="px-3 py-2 text-right text-[11px] uppercase tracking-wide text-ink-600">
-                      Days
-                    </th>
-                    <th className="px-3 py-2 text-right text-[11px] uppercase tracking-wide text-ink-600">
-                      Total
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {estimate.laborCosts.map((item) => (
-                    <tr key={item.category} className="border-t border-paper-200">
-                      <td className="px-3 py-2 text-sm text-ink-800">{item.category}</td>
-                      <td className="px-3 py-2 text-sm text-ink-600">{item.description}</td>
-                      <td className="px-3 py-2 text-sm text-ink-600 text-right">
-                        {Math.ceil(item.estimatedDays)}
-                      </td>
-                      <td className="px-3 py-2 text-sm font-medium text-ink-950 text-right">
-                        {formatNaira(item.totalCost)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -323,13 +303,18 @@ const EstimatorReport: React.FC<EstimatorReportProps> = ({
             className="w-full min-h-12 flex items-center justify-center px-6 py-3 bg-courtyard-700 text-paper-50 font-semibold hover:bg-courtyard-600"
           >
             <IconDownload size={18} className="mr-2" />
-            {pdfLocked ? 'Download PDF report — ₦399' : 'Download PDF report'}
+            {pdfLocked && pdfPrice
+              ? `Download PDF report — ${formatNaira(pdfPrice)}`
+              : 'Download PDF report'}
           </button>
           {pdfLocked && (
             <p className="text-sm text-ink-600 text-center">
-              This first estimate is free to view. Pay ₦399 to download the print-ready PDF.
+              This first estimate is free to view.
+              {pdfPrice ? ` Pay ${formatNaira(pdfPrice)} to download the print-ready PDF.` : ''}
             </p>
           )}
+
+          <ProfessionalServicesNote />
 
           <p className="text-sm text-ink-600 border border-paper-200 bg-paper-100 px-4 py-3">
             Planning estimate only. Unit rates are DirectHome’s client-reviewed Nigerian market
@@ -339,6 +324,23 @@ const EstimatorReport: React.FC<EstimatorReportProps> = ({
     </div>
   );
 };
+
+export function ProfessionalServicesNote() {
+  return (
+    <div className="border border-courtyard-700/30 bg-courtyard-50 px-4 py-4">
+      <p className="text-[11px] tracking-[0.2em] uppercase text-courtyard-700 font-semibold mb-1">
+        Drawings &amp; tender BOQ
+      </p>
+      <p className="text-sm text-ink-800">{PROFESSIONAL_SERVICES_NOTE}</p>
+      <Link
+        to={PROFESSIONAL_SERVICES_PATH}
+        className="inline-block mt-2 text-sm font-semibold text-courtyard-700 hover:text-courtyard-600"
+      >
+        Request drawings and a detailed BOQ →
+      </Link>
+    </div>
+  );
+}
 
 function FeeRow({ label, amount }: { label: string; amount: number }) {
   return (

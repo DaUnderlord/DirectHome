@@ -2,10 +2,11 @@ import type { ConstructionEstimate, QualityComparison } from '../../types/constr
 import { formatNaira } from '../../utils/naira';
 import {
   BUILDING_LABELS,
-  CATEGORY_LABELS,
+  PROFESSIONAL_SERVICES_NOTE,
+  PROFESSIONAL_SERVICES_PATH,
   QUALITY_LABELS,
-  ROOFING_LABELS,
 } from './estimatorCopy';
+import { describeSpecs } from './EstimatorReport';
 
 function esc(value: string): string {
   return value
@@ -81,13 +82,15 @@ function buildEstimateHtml(
     th { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #5C534C; }
     td:last-child, th:last-child { text-align: right; }
     .note { color: #5C534C; font-size: 12px; margin-top: 24px; }
+    .services { border: 1px solid #1F4A3E; background: #EEF3EF; padding: 12px 14px; margin-top: 28px; }
+    .services p { margin: 4px 0; }
     @media print { body { padding: 12px; } }
   </style>
 </head>
 <body>
   <p class="kicker">DirectHome · Construction estimate</p>
   <h1>${esc(BUILDING_LABELS[specs.buildingType])} · ${specs.totalSquareMeters} sqm</h1>
-  <p>${esc(specs.location.city)} · ${specs.numberOfBedrooms} bed · ${specs.numberOfBathrooms} bath · ${specs.numberOfFloors} floor${specs.numberOfFloors === 1 ? '' : 's'} · ${QUALITY_LABELS[specs.finishingQuality]} · ${ROOFING_LABELS[specs.roofing]}</p>
+  <p>${esc(specs.location.city)} · ${esc(describeSpecs(specs))}</p>
   <p class="total">${formatNaira(estimate.grandTotal)}</p>
   <p>${formatNaira(estimate.costPerSquareMeter)} per sqm · ${estimate.estimatedDuration.months} months</p>
 
@@ -142,6 +145,12 @@ function buildEstimateHtml(
       <tr><td>VAT 7.5%</td><td>${formatNaira(estimate.vat)}</td></tr>
     </tbody>
   </table>
+
+  <div class="services">
+    <p class="kicker">Drawings &amp; tender BOQ</p>
+    <p>${esc(PROFESSIONAL_SERVICES_NOTE)}</p>
+    <p>Request them at ${esc(window.location.origin + PROFESSIONAL_SERVICES_PATH)}</p>
+  </div>
 
   <p class="note">DirectHome estimate for planning only. Unit rates are DirectHome’s client-reviewed Nigerian market rates as of August 2026. Actual costs vary by site, contractor, and availability. Get multiple quotes from licensed contractors before you commit. This is not a tender or a construction contract.</p>
 </body>

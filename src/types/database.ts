@@ -1508,7 +1508,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      switch_profile_role: {
+        Args: { target_role: string }
+        Returns: string
+      }
     }
     Enums: {
       account_status: "active" | "suspended" | "deactivated" | "deleted"

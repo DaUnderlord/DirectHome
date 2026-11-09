@@ -719,7 +719,7 @@ const ProfilePage: React.FC = () => {
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">My build estimates</h2>
                 <p className="text-gray-600 mb-6">
-                  Paid construction projects saved to your account. Each build is ₦399 to unlock.
+                  Paid construction projects saved to your account. Each build is priced by building type, from ₦399.
                 </p>
 
                 {loadingProjects ? (

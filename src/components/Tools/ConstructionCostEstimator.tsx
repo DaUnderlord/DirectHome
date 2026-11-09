@@ -34,7 +34,17 @@ import { useAuth } from '../../context/AuthContext';
 import ToolShell from '../UI/ToolShell';
 import NumberField, { toolSelectClass } from '../UI/NumberField';
 import plateBuild from '../../assets/plate-build.png';
-import { BUILDING_LABELS, QUALITY_LABELS } from './estimatorCopy';
+import { BUILDING_LABELS, ESTIMATOR_PACKAGE_ORDER, QUALITY_LABELS } from './estimatorCopy';
+import { ESTIMATOR_MIN_PRICE_NGN, estimatorPriceFor } from '../../constants/toolPricing';
+import {
+  DEFAULT_COMMERCIAL_ROOMS,
+  DEFAULT_COMMERCIAL_WALL_HEIGHT_M,
+} from '../../services/constructionCostService';
+import { formatNaira } from '../../utils/naira';
+
+const PACKAGE_SUMMARY = ESTIMATOR_PACKAGE_ORDER.map(
+  (type) => `${BUILDING_LABELS[type]} ${formatNaira(estimatorPriceFor(type))}`
+).join(' · ');
 
 const ESTIMATOR_FAQ = [
   {
@@ -48,14 +58,18 @@ const ESTIMATOR_FAQ = [
       'Lagos and Abuja use major-city rates. Port Harcourt, Ibadan, and Kano use urban rates. Other listed cities and a rural/peri-urban option use lower multipliers.',
   },
   {
-    question: 'What do I get for ₦399?',
-    answer:
-      'Your first estimate on this device is free to view. Downloading the PDF, and every extra build after that, is ₦399 per project. The paid report includes the total, finishing comparison, bill of quantities, labour, staged cash calendar, and a print-ready PDF.',
+    question: 'How much does a report cost?',
+    answer: `Each build project is priced by building type: ${PACKAGE_SUMMARY}. Your first estimate on this device is free to view on screen. Downloading the PDF, and every extra build after that, is paid per project. The paid report includes the total, finishing comparison, bill of quantities, labour, staged cash calendar, and a print-ready PDF.`,
   },
   {
     question: 'Does it include professional fees and permits?',
     answer:
-      'Yes. Architect and engineering fees (by building type), permits, contingency, and VAT at 7.5% are in the unlocked report.',
+      'Yes. Architect, project manager, and engineering fees (structural engineer for everything except bungalows; electrical and mechanical engineers for all builds), permits, contingency, and VAT at 7.5%.',
+  },
+  {
+    question: 'Can I get drawings and a tender BOQ?',
+    answer:
+      'Yes. The estimate is for planning. For full construction drawings, a detailed BOQ for tender, and engineering drawings, contact DirectHome and our team will prepare them for your project.',
   },
 ];
 
@@ -103,7 +117,8 @@ function floorsForType(type: BuildingType, current: number): number {
     case BuildingType.APARTMENT_BLOCK:
       return Math.max(current, 3);
     case BuildingType.COMMERCIAL:
-      return current < 2 ? 2 : current;
+      // Commercial is sized by rooms, floor area and wall height only.
+      return 1;
     default:
       return current;
   }
@@ -112,7 +127,7 @@ function floorsForType(type: BuildingType, current: number): number {
 function normalizeSpecs(input?: Partial<ConstructionSpecs> | null): ConstructionSpecs {
   const specs = input || {};
   const floors = specs.numberOfFloors ?? DEFAULT_SPECS.numberOfFloors;
-  return {
+  const base: ConstructionSpecs = {
     ...DEFAULT_SPECS,
     ...specs,
     roofing: specs.roofing ?? RoofingChoice.AUTO,
@@ -122,14 +137,31 @@ function normalizeSpecs(input?: Partial<ConstructionSpecs> | null): Construction
     utilities: { ...DEFAULT_SPECS.utilities, ...specs.utilities },
     numberOfFloors: floors,
   };
+  if (base.buildingType !== BuildingType.COMMERCIAL) {
+    const { commercial: _unused, ...residential } = base;
+    return residential;
+  }
+  return {
+    ...base,
+    numberOfFloors: 1,
+    features: { ...base.features, hasBQ: false, hasElevator: false },
+    commercial: {
+      numberOfRooms: specs.commercial?.numberOfRooms ?? DEFAULT_COMMERCIAL_ROOMS,
+      wallHeight: specs.commercial?.wallHeight ?? DEFAULT_COMMERCIAL_WALL_HEIGHT_M,
+    },
+  };
 }
 
 function suggestedSqm(beds: number, type: BuildingType): number {
   const base = beds <= 2 ? 90 : beds === 3 ? 150 : beds === 4 ? 220 : 280;
   if (type === BuildingType.DUPLEX) return Math.round(base * 1.35);
   if (type === BuildingType.APARTMENT_BLOCK) return Math.round(base * 1.6);
-  if (type === BuildingType.COMMERCIAL) return Math.round(base * 1.4);
   return base;
+}
+
+/** Typical commercial floor area: ~20 sqm per room plus ~25% circulation and toilets. */
+function suggestedCommercialSqm(rooms: number): number {
+  return Math.max(50, Math.round(rooms * 20 * 1.25));
 }
 
 const ConstructionCostEstimator: React.FC = () => {
@@ -165,8 +197,28 @@ const ConstructionCostEstimator: React.FC = () => {
     { name: 'Rural / peri-urban', tier: LocationTier.RURAL, label: 'Rural' },
   ];
 
+  const commercial = specs.buildingType === BuildingType.COMMERCIAL;
+  const packagePrice = estimatorPriceFor(specs.buildingType);
+
   const handleCalculate = async () => {
-    if (
+    if (commercial) {
+      const rooms = specs.commercial?.numberOfRooms ?? 0;
+      const wallHeight = specs.commercial?.wallHeight ?? 0;
+      if (
+        !Number.isFinite(rooms) ||
+        rooms < 1 ||
+        !Number.isFinite(wallHeight) ||
+        wallHeight < 2.4 ||
+        wallHeight > 12 ||
+        !Number.isFinite(specs.totalSquareMeters) ||
+        specs.totalSquareMeters < 50
+      ) {
+        setValidationError(
+          'Enter the number of rooms, a floor area of at least 50 sqm, and a wall height between 2.4 m and 12 m.'
+        );
+        return;
+      }
+    } else if (
       !Number.isFinite(specs.numberOfBedrooms) ||
       specs.numberOfBedrooms < 1 ||
       !Number.isFinite(specs.numberOfBathrooms) ||
@@ -224,23 +276,93 @@ const ConstructionCostEstimator: React.FC = () => {
           onChange={(e) => {
             const buildingType = e.target.value as BuildingType;
             const floors = floorsForType(buildingType, specs.numberOfFloors);
-            setSpecs({
-              ...specs,
-              buildingType,
-              numberOfFloors: floors,
-              features: floors < 3 ? { ...specs.features, hasElevator: false } : specs.features,
-            });
+            setSpecs(
+              normalizeSpecs({
+                ...specs,
+                buildingType,
+                numberOfFloors: floors,
+                features: floors < 3 ? { ...specs.features, hasElevator: false } : specs.features,
+              })
+            );
           }}
           className={toolSelectClass}
         >
-          {Object.values(BuildingType).map((type) => (
+          {ESTIMATOR_PACKAGE_ORDER.map((type) => (
             <option key={type} value={type}>
-              {BUILDING_LABELS[type]}
+              {BUILDING_LABELS[type]} — {formatNaira(estimatorPriceFor(type))}
             </option>
           ))}
         </select>
+        <p className="mt-2 text-sm text-ink-600">
+          {BUILDING_LABELS[specs.buildingType]} package:{' '}
+          <span className="font-semibold text-courtyard-700">{formatNaira(packagePrice)}</span> per
+          project.
+        </p>
       </label>
 
+      {commercial ? renderCommercialFields() : renderResidentialFields()}
+    </div>
+  );
+
+  const renderCommercialFields = () => {
+    const rooms = specs.commercial?.numberOfRooms ?? DEFAULT_COMMERCIAL_ROOMS;
+    const wallHeight = specs.commercial?.wallHeight ?? DEFAULT_COMMERCIAL_WALL_HEIGHT_M;
+    const typicalCommercial = suggestedCommercialSqm(rooms);
+    const setCommercial = (patch: Partial<NonNullable<ConstructionSpecs['commercial']>>) =>
+      setSpecs({
+        ...specs,
+        numberOfFloors: 1,
+        commercial: { numberOfRooms: rooms, wallHeight, ...patch },
+      });
+
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-ink-600">
+          Commercial buildings are estimated from the number of rooms, the assumed floor area, and
+          the wall height.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <NumberField
+            label="Number of rooms"
+            value={rooms}
+            min={1}
+            max={500}
+            hint="Offices, shops, or units."
+            onChange={(numberOfRooms) => setCommercial({ numberOfRooms })}
+          />
+          <div>
+            <NumberField
+              label="Assumed floor area"
+              value={specs.totalSquareMeters}
+              min={50}
+              max={50000}
+              suffix="sqm"
+              onChange={(totalSquareMeters) => setSpecs({ ...specs, totalSquareMeters })}
+            />
+            <button
+              type="button"
+              onClick={() => setSpecs({ ...specs, totalSquareMeters: typicalCommercial })}
+              className="mt-2 text-sm text-courtyard-700 hover:text-courtyard-600"
+            >
+              Typical for {rooms} room{rooms === 1 ? '' : 's'}: {typicalCommercial} sqm
+            </button>
+          </div>
+          <NumberField
+            label="Wall height"
+            value={wallHeight}
+            min={2.4}
+            max={12}
+            allowDecimal
+            suffix="m"
+            hint="Floor to ceiling. 3–4 m is typical."
+            onChange={(value) => setCommercial({ wallHeight: value })}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const renderResidentialFields = () => (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <NumberField
           label="Number of Bedrooms"
@@ -288,7 +410,6 @@ const ConstructionCostEstimator: React.FC = () => {
           </button>
         </div>
       </div>
-    </div>
   );
 
   const renderStep2 = () => (
@@ -388,7 +509,7 @@ const ConstructionCostEstimator: React.FC = () => {
   const renderStep4 = () => {
     const optionalFeatures = [
       { key: 'hasSwimmingPool', label: 'Swimming Pool' },
-      { key: 'hasBQ', label: 'Boys Quarters (BQ)' },
+      ...(commercial ? [] : [{ key: 'hasBQ', label: 'Boys Quarters (BQ)' }]),
       { key: 'hasGarage', label: 'Covered garage' },
       { key: 'hasFence', label: 'Fence / perimeter wall' },
       { key: 'hasGate', label: 'Entrance gate' },
@@ -457,7 +578,7 @@ const ConstructionCostEstimator: React.FC = () => {
       meta={{
         title: 'Construction Cost Estimator Nigeria — Build Budget Tool',
         description:
-          'Construction cost estimator for Nigeria. Get a staged build budget for bungalows, duplexes, and apartments with materials, labour, fees, and VAT. Unlock the full report for ₦399.',
+          'Construction cost estimator for Nigeria. Get a staged build budget for bungalows, duplexes, storey buildings, apartment blocks, and commercial buildings with materials, labour, fees, and VAT. Reports from ₦399 per project.',
         path: '/construction-estimator',
       }}
       eyebrow="First estimate free to view"
@@ -468,7 +589,7 @@ const ConstructionCostEstimator: React.FC = () => {
           <span className="italic text-courtyard-700">for Nigeria.</span>
         </>
       }
-      heroSubtitle="Step-by-step estimate for materials, labour, professional fees, permits, extras, and VAT. Your first generation is free to view; pay ₦399 to download the PDF or run another project."
+      heroSubtitle={`Step-by-step estimate for materials, labour, professional fees, permits, extras, and VAT. Your first generation is free to view; reports are priced per project by building type, from ${formatNaira(ESTIMATOR_MIN_PRICE_NGN)}.`}
       heroImage={plateBuild}
       faq={ESTIMATOR_FAQ}
     >

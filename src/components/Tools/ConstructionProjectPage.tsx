@@ -12,15 +12,18 @@ import { useAuth } from '../../context/AuthContext';
 import ToolShell from '../UI/ToolShell';
 import ResultPaywall from '../UI/ResultPaywall';
 import EstimatorReport from './EstimatorReport';
-import { BUILDING_LABELS } from './estimatorCopy';
+import { BUILDING_LABELS, ESTIMATOR_PACKAGE_ORDER } from './estimatorCopy';
 import plateBuild from '../../assets/plate-build.png';
 import type { ConstructionEstimate, ConstructionSpecs } from '../../types/construction';
+import { estimatorPriceFor } from '../../constants/toolPricing';
+import { formatNaira } from '../../utils/naira';
 
 const PROJECT_FAQ = [
   {
-    question: 'What do I get for ₦399?',
-    answer:
-      'Your first estimate on this device is free to view. Downloading the PDF, and every extra build after that, is ₦399 per project.',
+    question: 'How much does a report cost?',
+    answer: `Each build is priced by building type: ${ESTIMATOR_PACKAGE_ORDER.map(
+      (type) => `${BUILDING_LABELS[type]} ${formatNaira(estimatorPriceFor(type))}`
+    ).join(' · ')}. Your first estimate on this device is free to view. Downloading the PDF, and every extra build after that, is paid per project.`,
   },
   {
     question: 'Can I access this later?',
@@ -187,6 +190,8 @@ const ConstructionProjectPage: React.FC = () => {
   const preview =
     Boolean(project.preview_granted) || Boolean(freePreview && localSpecs && estimate);
   const canView = Boolean(paid || (preview && estimate));
+  const price = project.price || estimatorPriceFor(project.specs.buildingType);
+  const priceLabel = formatNaira(price);
 
   return (
     <ToolShell
@@ -195,13 +200,13 @@ const ConstructionProjectPage: React.FC = () => {
         description: 'Your saved construction cost estimate for Nigeria.',
         path: projectRoute(project.id),
       }}
-      eyebrow={paid ? 'Paid project' : preview ? 'Free preview' : '₦399 to unlock'}
+      eyebrow={paid ? 'Paid project' : preview ? 'Free preview' : `${priceLabel} to unlock`}
       heroTitle={project.title}
       heroSubtitle={
         paid
-          ? 'Full bill of quantities, labour, staged cash plan, and PDF export.'
+          ? 'Construction estimate, staged cash plan, and the full bill of quantities in the PDF.'
           : preview
-            ? 'Your first estimate is free to view. Pay ₦399 to download the PDF for this build.'
+            ? `Your first estimate is free to view. Pay ${priceLabel} to download the PDF for this build.`
             : 'Your estimate is ready. Pay once to unlock the totals, BOQ, and PDF for this build.'
       }
       heroImage={plateBuild}
@@ -236,19 +241,22 @@ const ConstructionProjectPage: React.FC = () => {
           estimate={estimate}
           comparisons={comparisons}
           pdfLocked={!paid}
+          pdfPrice={price}
           onRequestPdf={() => setShowPdfPaywall(true)}
         />
       ) : (
         <ResultPaywall
           toolId="construction-estimator"
           projectId={project.id}
+          price={price}
           title="Unlock your construction estimate"
           description={
             <>
               Your {buildingLabel.toLowerCase()} in {city}
               {sqm ? ` (${sqm} sqm)` : ''} is saved. Pay{' '}
-              <span className="text-courtyard-700 font-semibold">₦399</span> to unlock the total,
-              bill of quantities, labour, cash calendar, and PDF. Each new build after your first
+              <span className="text-courtyard-700 font-semibold">{priceLabel}</span> (
+              {buildingLabel.toLowerCase()} package) to unlock the construction estimate, cash
+              calendar, and the PDF with the full bill of quantities. Each new build after your first
               free preview is a separate project.
             </>
           }
@@ -260,11 +268,12 @@ const ConstructionProjectPage: React.FC = () => {
         <ResultPaywall
           toolId="construction-estimator"
           projectId={project.id}
+          price={price}
           title="Download the PDF report"
           description={
             <>
               The on-screen estimate is free this first time. Pay{' '}
-              <span className="text-courtyard-700 font-semibold">₦399</span> to download the
+              <span className="text-courtyard-700 font-semibold">{priceLabel}</span> to download the
               print-ready PDF for this build.
             </>
           }

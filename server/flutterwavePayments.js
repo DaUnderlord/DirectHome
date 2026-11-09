@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
-import { markConstructionProjectPaid } from './constructionProjects.js'
+import { getConstructionProjectPrice, markConstructionProjectPaid } from './constructionProjects.js'
+import { DEFAULT_TOOL_PRICE_NGN } from './estimatorPricing.js'
 
-const TOOL_REPORT_PRICE_NGN = 399
+const TOOL_REPORT_PRICE_NGN = DEFAULT_TOOL_PRICE_NGN
 const TOOL_IDS = new Set(['construction-estimator', 'rent-calculator'])
 
 function env(name) {
@@ -118,8 +119,8 @@ export async function verifyFlutterwavePayment({
   if (payload?.status !== 'success' || data?.status !== 'successful') {
     return { ok: false, error: 'Payment could not be verified.' }
   }
-  if (Number(data.amount) !== TOOL_REPORT_PRICE_NGN || data.currency !== 'NGN') {
-    return { ok: false, error: 'Payment amount did not match.' }
+  if (data.currency !== 'NGN') {
+    return { ok: false, error: 'Payment currency did not match.' }
   }
   if (txRef && data.tx_ref && String(data.tx_ref) !== String(txRef)) {
     return { ok: false, error: 'Payment reference did not match.' }
@@ -143,6 +144,16 @@ export async function verifyFlutterwavePayment({
     if (txRef && !String(txRef).includes(projectId)) {
       return { ok: false, error: 'Payment reference did not match this project.' }
     }
+    // Price depends on the project's building type (package tier), read from the DB, not the client.
+    const priced = await getConstructionProjectPrice(projectId)
+    if (!priced.ok) {
+      return { ok: false, error: priced.error || 'Project not found.' }
+    }
+    if (Number(data.amount) !== priced.price) {
+      return { ok: false, error: 'Payment amount did not match.' }
+    }
+  } else if (Number(data.amount) !== TOOL_REPORT_PRICE_NGN) {
+    return { ok: false, error: 'Payment amount did not match.' }
   }
 
   const record = mapFlutterwaveRecord(data, {

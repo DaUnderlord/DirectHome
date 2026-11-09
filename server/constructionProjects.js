@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'crypto'
+import { estimatorPriceFor } from './estimatorPricing.js'
+
+const COMPLIMENTARY_TX_REF = 'complimentary-full-access'
 
 function env(name) {
   return String(process.env[name] || '').trim()
@@ -51,11 +54,14 @@ function normalizeEmail(value) {
 
 function buildProjectTitle(specs) {
   const type = specs?.buildingType || 'build'
+  const isCommercial = type === 'commercial'
   const beds = specs?.numberOfBedrooms
+  const rooms = specs?.commercial?.numberOfRooms
   const city = specs?.location?.city || specs?.location?.state || 'Nigeria'
   const sqm = specs?.totalSquareMeters
   const parts = []
-  if (beds) parts.push(`${beds}-bed`)
+  if (isCommercial && rooms) parts.push(`${rooms}-room`)
+  else if (!isCommercial && beds) parts.push(`${beds}-bed`)
   parts.push(String(type).replace(/_/g, ' '))
   if (sqm) parts.push(`${sqm} sqm`)
   parts.push(city)
@@ -71,6 +77,12 @@ function publicSpecs(specs) {
     numberOfFloors: specs.numberOfFloors ?? null,
     totalSquareMeters: specs.totalSquareMeters ?? null,
     finishingQuality: specs.finishingQuality || null,
+    commercial: specs.commercial
+      ? {
+          numberOfRooms: specs.commercial.numberOfRooms ?? null,
+          wallHeight: specs.commercial.wallHeight ?? null,
+        }
+      : undefined,
     location: {
       city: specs.location?.city || null,
       state: specs.location?.state || null,
@@ -90,6 +102,7 @@ function toClientProject(row, { includeEstimate }) {
     created_at: row.created_at,
     paid_at: row.paid_at || null,
     preview_granted: Boolean(row.preview_granted),
+    price: estimatorPriceFor(row.specs?.buildingType),
     specs: includeEstimate ? row.specs : publicSpecs(row.specs),
   }
   if (includeEstimate && hasEstimateTotals(row.estimate)) {
@@ -110,6 +123,42 @@ async function sessionUser(authHeader) {
   const { data, error } = await authed.auth.getUser()
   if (error || !data?.user?.id) return null
   return data.user
+}
+
+// Accounts granted complimentary estimator access (profiles.estimator_full_access).
+// Only the service role / SQL editor can set this flag; see the profile privilege trigger.
+async function hasEstimatorFullAccess(supabase, userId) {
+  if (!supabase || !isUuid(userId)) return false
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('estimator_full_access')
+    .eq('id', userId)
+    .maybeSingle()
+  if (error) {
+    if (!/estimator_full_access/i.test(error.message || '')) {
+      console.warn('DirectHome: full-access lookup failed', error.message)
+    }
+    return false
+  }
+  return Boolean(data?.estimator_full_access)
+}
+
+function complimentaryPaidPatch() {
+  const now = new Date().toISOString()
+  return { status: 'paid', paid_at: now, updated_at: now, tx_ref: COMPLIMENTARY_TX_REF }
+}
+
+export async function getConstructionProjectPrice(projectId) {
+  if (!isUuid(projectId)) return { ok: false, error: 'Invalid project id.' }
+  const supabase = serviceClient()
+  if (!supabase) return { ok: false, error: 'Database is not configured.' }
+  const { data, error } = await supabase
+    .from('construction_projects')
+    .select('specs')
+    .eq('id', projectId)
+    .maybeSingle()
+  if (error || !data) return { ok: false, error: 'Project not found.' }
+  return { ok: true, price: estimatorPriceFor(data.specs?.buildingType) }
 }
 
 export async function createConstructionProject({
@@ -140,6 +189,8 @@ export async function createConstructionProject({
     previewGranted,
   })
 
+  const fullAccess = await hasEstimatorFullAccess(supabase, user?.id)
+
   const accessToken = randomUUID()
   const row = {
     title: String(title || buildProjectTitle(specs)).slice(0, 200),
@@ -150,6 +201,7 @@ export async function createConstructionProject({
     guest_email: normalizeEmail(user?.email) || null,
     access_token: accessToken,
     preview_granted: previewGranted,
+    ...(fullAccess ? complimentaryPaidPatch() : {}),
   }
 
   const { data, error } = await supabase
@@ -236,6 +288,19 @@ export async function getConstructionProject({ projectId, authToken, accessToken
 
   if (!allowed) {
     return { ok: false, status: 403, error: 'You do not have access to this project.' }
+  }
+
+  const isOwner = Boolean(owner?.id && data.user_id === owner.id)
+  if (data.status !== 'paid' && isOwner && (await hasEstimatorFullAccess(supabase, owner.id))) {
+    const patch = complimentaryPaidPatch()
+    const { error: unlockError } = await supabase
+      .from('construction_projects')
+      .update(patch)
+      .eq('id', data.id)
+    if (!unlockError) {
+      data.status = patch.status
+      data.paid_at = patch.paid_at
+    }
   }
 
   const hasProjectAccessToken = isUuid(accessToken) && data.access_token === accessToken
