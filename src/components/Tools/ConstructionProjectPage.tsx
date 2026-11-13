@@ -23,7 +23,7 @@ const PROJECT_FAQ = [
     ? {
         question: 'Is this really free?',
         answer:
-          'Yes. During our launch every estimate and PDF is free, for as many builds as you like.',
+          'Yes. For a limited time, every estimate and PDF is free, for as many builds as you like.',
       }
     : {
     question: 'How much does a report cost?',
@@ -210,7 +210,7 @@ const ConstructionProjectPage: React.FC = () => {
       }}
       eyebrow={
         freeLaunch
-          ? 'Free during our launch'
+          ? 'Free for a limited time'
           : paid
             ? 'Paid project'
             : preview
@@ -220,7 +220,7 @@ const ConstructionProjectPage: React.FC = () => {
       heroTitle={project.title}
       heroSubtitle={
         freeLaunch
-          ? 'Your construction estimate and staged cash plan. Download the PDF for the full bill of quantities — free during our launch.'
+          ? 'Your construction estimate and staged cash plan. Download the PDF for the full bill of quantities — free for a limited time.'
           : paid
           ? 'Construction estimate, staged cash plan, and the full bill of quantities in the PDF.'
           : preview

@@ -70,7 +70,7 @@ const ESTIMATOR_FAQ = [
     ? {
         question: 'Is it really free?',
         answer:
-          'Yes — during our launch every estimate and PDF is free, for as many builds as you like. We just ask for your name, email and phone so we can send you your estimate and keep you posted when DirectHome launches fully.',
+          'Yes — for a limited time, every estimate and PDF is free, for as many builds as you like. We just ask for your name, email and phone so we can send you your estimate and keep you posted when DirectHome launches fully.',
       }
     : {
         question: 'How much does a report cost?',
@@ -348,7 +348,7 @@ const ConstructionCostEstimator: React.FC = () => {
         </select>
         {ESTIMATOR_FREE_MODE ? (
           <p className="mt-2 text-sm text-ink-600">
-            <span className="font-semibold text-courtyard-700">Free during our launch</span> —
+            <span className="font-semibold text-courtyard-700">Free for a limited time</span> —
             full estimate and PDF for every building type.
           </p>
         ) : (
@@ -638,10 +638,10 @@ const ConstructionCostEstimator: React.FC = () => {
       meta={{
         title: 'Construction Cost Estimator Nigeria — Build Budget Tool',
         description:
-          'Construction cost estimator for Nigeria. Get a staged build budget for bungalows, duplexes, storey buildings, apartment blocks, and commercial buildings with materials, labour, fees, and VAT. Free during our launch.',
+          'Construction cost estimator for Nigeria. Get a staged build budget for bungalows, duplexes, storey buildings, apartment blocks, and commercial buildings with materials, labour, fees, and VAT. Free for a limited time.',
         path: '/construction-estimator',
       }}
-      eyebrow={ESTIMATOR_FREE_MODE ? 'Free during our launch' : 'First estimate free to view'}
+      eyebrow={ESTIMATOR_FREE_MODE ? 'Free for a limited time' : 'First estimate free to view'}
       heroTitle={
         <>
           Build cost estimator
@@ -651,7 +651,7 @@ const ConstructionCostEstimator: React.FC = () => {
       }
       heroSubtitle={
         ESTIMATOR_FREE_MODE
-          ? 'Step-by-step estimate for materials, labour, professional fees, permits, extras, and VAT. Free during our launch — every estimate and PDF, for as many builds as you like.'
+          ? 'Step-by-step estimate for materials, labour, professional fees, permits, extras, and VAT. Free for a limited time — every estimate and PDF, for as many builds as you like.'
           : `Step-by-step estimate for materials, labour, professional fees, permits, extras, and VAT. Your first generation is free to view; reports are priced per project by building type, from ${formatNaira(ESTIMATOR_MIN_PRICE_NGN)}.`
       }
       heroImage={plateBuild}

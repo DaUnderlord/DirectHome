@@ -80,7 +80,7 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>
       <div>
         <p className="text-[11px] tracking-[0.28em] uppercase text-courtyard-700 font-semibold flex items-center gap-2">
-          <IconSparkles size={14} /> Free during our launch
+          <IconSparkles size={14} /> Free for a limited time
         </p>
         <h3 className="font-display text-xl md:text-2xl font-semibold text-ink-950 mt-2">
           Where should we send your estimate?

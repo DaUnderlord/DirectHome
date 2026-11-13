@@ -111,7 +111,7 @@ const TermsPage: React.FC = () => {
           
           <h2 className="text-xl font-semibold mt-6 mb-3 text-gray-900">11. Contact Information</h2>
           <p className="mb-4">
-            If you have any questions about these Terms, please contact us at support@directhome.ng.
+            If you have any questions about these Terms, please contact us at norwickprojects@gmail.com.
           </p>
           
           <p className="mt-8 text-sm text-gray-600">

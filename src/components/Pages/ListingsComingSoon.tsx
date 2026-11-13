@@ -8,7 +8,7 @@ const ListingsComingSoon: React.FC = () => {
   usePageMeta({
     title: 'Property Listings Coming Soon',
     description:
-      'DirectHome property listings are launching soon. Use the Construction Cost Estimator while you wait — free during our launch.',
+      'DirectHome property listings are launching soon. Use the Construction Cost Estimator while you wait — free for a limited time.',
     path: '/search',
   });
 
@@ -35,7 +35,7 @@ const ListingsComingSoon: React.FC = () => {
           </h2>
           <p className="text-ink-600 max-w-lg mx-auto mb-10 leading-relaxed">
             Owners and seekers will connect here soon. Use the Construction Cost Estimator today.
-            Estimates are free during our launch.
+            Estimates are free for a limited time.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-12">

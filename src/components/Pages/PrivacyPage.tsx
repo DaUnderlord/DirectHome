@@ -129,7 +129,7 @@ const PrivacyPage: React.FC = () => {
             If you have any questions about this Privacy Policy, please contact us at:
           </p>
           <p className="mb-4">
-            Email: privacy@directhome.ng<br />
+            Email: norwickprojects@gmail.com<br />
             Address: 123 Main Street, Lagos, Nigeria
           </p>
           

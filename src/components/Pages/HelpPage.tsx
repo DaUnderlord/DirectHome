@@ -18,12 +18,12 @@ const faqCategories = [
         id: 'gs-2',
         question: 'Do I need an account to use the calculators?',
         answer:
-          'No. You can fill in the Construction Cost Estimator without signing in. During our launch, every estimate and PDF is free; we just ask for your name, email and phone.',
+          'No. You can fill in the Construction Cost Estimator without signing in. For a limited time, every estimate and PDF is free; we just ask for your name, email and phone.',
       },
       {
         id: 'gs-3',
         question: 'Is creating an account free?',
-        answer: 'Yes. Accounts are free. The estimator is free during our launch. We may introduce paid packages and premium listing features later.',
+        answer: 'Yes. Accounts are free. The estimator is free for a limited time. We may introduce paid packages and premium listing features later.',
       },
     ],
   },

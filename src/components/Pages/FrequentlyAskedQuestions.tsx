@@ -9,7 +9,7 @@ const faqs = [
   },
   {
     q: 'Do I need an account?',
-    a: 'No for filling in the estimator. During our launch, every estimate and PDF is free — we only ask for your name, email and phone. Accounts are free. Accounts are free.',
+    a: 'No for filling in the estimator. For a limited time, every estimate and PDF is free — we only ask for your name, email and phone. Accounts are free.',
   },
   {
     q: 'Are the calculators accurate?',

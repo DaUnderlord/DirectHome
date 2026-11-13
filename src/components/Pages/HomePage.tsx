@@ -17,7 +17,7 @@ const HomePage: React.FC = () => {
   usePageMeta({
     title: 'DirectHome — Build cost planning for Nigeria',
     description:
-      'Plan your build budget before you break ground. Construction cost estimator for Nigerian cities — free during our launch. Property listings coming soon.',
+      'Plan your build budget before you break ground. Construction cost estimator for Nigerian cities — free for a limited time. Property listings coming soon.',
     path: '/',
   });
 
@@ -141,7 +141,7 @@ const HomePage: React.FC = () => {
           <div className="grid sm:grid-cols-3 gap-10 md:gap-6">
             {[
               { label: 'Nigeria-first pricing', desc: 'Rates tuned for local markets' },
-              { label: 'Free during launch', desc: 'Full estimate and PDF for every build type' },
+              { label: 'Free for a limited time', desc: 'Full estimate and PDF for every build type' },
               { label: 'No middlemen', desc: 'Direct connections when listings launch' },
             ].map((item) => (
               <div key={item.label} className="text-center px-4">
