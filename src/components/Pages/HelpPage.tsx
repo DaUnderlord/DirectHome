@@ -18,12 +18,12 @@ const faqCategories = [
         id: 'gs-2',
         question: 'Do I need an account to use the calculators?',
         answer:
-          'No. You can fill in the Construction Cost Estimator without signing in. The first estimate is free to view. Downloading the PDF, and extra builds, are paid per project — from ₦399 (bungalow) to ₦979 (apartment block or commercial).',
+          'No. You can fill in the Construction Cost Estimator without signing in. During our launch, every estimate and PDF is free; we just ask for your name, email and phone.',
       },
       {
         id: 'gs-3',
         question: 'Is creating an account free?',
-        answer: 'Yes. Accounts are free. We charge from ₦399 per project (by building type) to unlock estimator reports, and later for premium listing features.',
+        answer: 'Yes. Accounts are free. The estimator is free during our launch. We may introduce paid packages and premium listing features later.',
       },
     ],
   },

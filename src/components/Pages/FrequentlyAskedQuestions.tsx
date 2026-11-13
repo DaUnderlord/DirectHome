@@ -9,7 +9,7 @@ const faqs = [
   },
   {
     q: 'Do I need an account?',
-    a: 'No for filling in the estimator. Your first estimate is free to view. Downloading the PDF, and extra builds, are paid per project — from ₦399 (bungalow) to ₦979 (apartment block or commercial). Accounts are free.',
+    a: 'No for filling in the estimator. During our launch, every estimate and PDF is free — we only ask for your name, email and phone. Accounts are free. Accounts are free.',
   },
   {
     q: 'Are the calculators accurate?',

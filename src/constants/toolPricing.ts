@@ -1,5 +1,13 @@
 import { BuildingType } from '../types/construction';
 
+/**
+ * Freemium switch for the UI. Payments are OFF unless VITE_ESTIMATOR_PAYWALL=on is
+ * set at build time (pair it with ESTIMATOR_PAYWALL=on on the server, which enforces it).
+ */
+export const ESTIMATOR_PAYWALL_ENABLED =
+  String(import.meta.env.VITE_ESTIMATOR_PAYWALL || '').trim().toLowerCase() === 'on';
+export const ESTIMATOR_FREE_MODE = !ESTIMATOR_PAYWALL_ENABLED;
+
 /** Legacy flat price — still used for tools that are not priced per building type. */
 export const TOOL_REPORT_PRICE_NGN = 399;
 

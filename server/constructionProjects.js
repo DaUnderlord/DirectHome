@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'crypto'
-import { estimatorPriceFor } from './estimatorPricing.js'
+import { estimatorPriceFor, isEstimatorPaywallEnabled } from './estimatorPricing.js'
+import { linkLeadToProject, normalizeLead, upsertLead } from './estimatorLeads.js'
 
 const COMPLIMENTARY_TX_REF = 'complimentary-full-access'
 
@@ -103,6 +104,8 @@ function toClientProject(row, { includeEstimate }) {
     paid_at: row.paid_at || null,
     preview_granted: Boolean(row.preview_granted),
     price: estimatorPriceFor(row.specs?.buildingType),
+    // Freemium: while the paywall is off, every estimate and PDF is free.
+    free_access: !isEstimatorPaywallEnabled(),
     specs: includeEstimate ? row.specs : publicSpecs(row.specs),
   }
   if (includeEstimate && hasEstimateTotals(row.estimate)) {
@@ -167,6 +170,7 @@ export async function createConstructionProject({
   authToken,
   claimFreePreview,
   cookies,
+  lead,
 }) {
   const supabase = serviceClient()
   if (!supabase) {
@@ -191,6 +195,24 @@ export async function createConstructionProject({
 
   const fullAccess = await hasEstimatorFullAccess(supabase, user?.id)
 
+  // Freemium: anonymous users leave their details (a lead) before seeing results.
+  const freeMode = !isEstimatorPaywallEnabled()
+  let savedLead = null
+  if (lead || (freeMode && !user)) {
+    const normalized = normalizeLead(lead)
+    if (!normalized.ok) {
+      if (freeMode && !user) {
+        return { ok: false, status: 400, code: 'lead_required', error: normalized.error }
+      }
+    } else {
+      const upserted = await upsertLead(supabase, normalized.lead, { userId: user?.id, specs })
+      if (!upserted.ok && freeMode && !user) {
+        return { ok: false, status: 500, error: upserted.error }
+      }
+      if (upserted.ok) savedLead = { id: upserted.id, email: normalized.lead.email }
+    }
+  }
+
   const accessToken = randomUUID()
   const row = {
     title: String(title || buildProjectTitle(specs)).slice(0, 200),
@@ -198,7 +220,7 @@ export async function createConstructionProject({
     estimate: {},
     status: 'awaiting_payment',
     user_id: user?.id || null,
-    guest_email: normalizeEmail(user?.email) || null,
+    guest_email: normalizeEmail(user?.email) || savedLead?.email || null,
     access_token: accessToken,
     preview_granted: previewGranted,
     ...(fullAccess ? complimentaryPaidPatch() : {}),
@@ -219,11 +241,13 @@ export async function createConstructionProject({
         .select('id, title, status, created_at')
         .single()
       if (!retry.error && retry.data) {
+        await linkLeadToProject(supabase, savedLead?.id, retry.data.id)
         return {
           ok: true,
           project: {
             ...retry.data,
             preview_granted: previewGranted,
+            free_access: freeMode,
             accessToken,
           },
         }
@@ -233,11 +257,14 @@ export async function createConstructionProject({
     return { ok: false, status: 500, error: 'Could not save project.' }
   }
 
+  await linkLeadToProject(supabase, savedLead?.id, data.id)
+
   return {
     ok: true,
     project: {
       ...data,
       preview_granted: previewGranted || Boolean(data.preview_granted),
+      free_access: freeMode,
       accessToken,
     },
   }
@@ -323,10 +350,11 @@ export async function getConstructionProject({ projectId, authToken, accessToken
 
   const paid = data.status === 'paid'
   const previewGranted = Boolean(data.preview_granted)
+  const freeMode = !isEstimatorPaywallEnabled()
   return {
     ok: true,
-    setPreviewCookie: previewGranted && !paid,
-    project: toClientProject(data, { includeEstimate: paid || previewGranted }),
+    setPreviewCookie: previewGranted && !paid && !freeMode,
+    project: toClientProject(data, { includeEstimate: paid || previewGranted || freeMode }),
   }
 }
 
@@ -412,7 +440,10 @@ export async function listConstructionProjects({ authToken }) {
   return {
     ok: true,
     projects: (data || []).map((row) =>
-      toClientProject(row, { includeEstimate: row.status === 'paid' || row.preview_granted })
+      toClientProject(row, {
+        includeEstimate:
+          row.status === 'paid' || row.preview_granted || !isEstimatorPaywallEnabled(),
+      })
     ),
   }
 }

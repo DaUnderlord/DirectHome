@@ -24,18 +24,27 @@ import {
   type SavedEstimateResult,
 } from '../../services/estimateStorage';
 import {
+  clearSavedLead,
   createConstructionProject,
   hasUsedFreePreview,
+  loadSavedLead,
   markFreePreviewUsed,
   projectRoute,
+  saveLeadLocally,
   savePreviewCache,
+  type EstimatorLead,
 } from '../../services/constructionProjectService';
+import LeadCaptureForm, { emptyLead, NIGERIAN_STATES } from './LeadCaptureForm';
 import { useAuth } from '../../context/AuthContext';
 import ToolShell from '../UI/ToolShell';
 import NumberField, { toolSelectClass } from '../UI/NumberField';
 import plateBuild from '../../assets/plate-build.png';
 import { BUILDING_LABELS, ESTIMATOR_PACKAGE_ORDER, QUALITY_LABELS } from './estimatorCopy';
-import { ESTIMATOR_MIN_PRICE_NGN, estimatorPriceFor } from '../../constants/toolPricing';
+import {
+  ESTIMATOR_FREE_MODE,
+  ESTIMATOR_MIN_PRICE_NGN,
+  estimatorPriceFor,
+} from '../../constants/toolPricing';
 import {
   DEFAULT_COMMERCIAL_ROOMS,
   DEFAULT_COMMERCIAL_WALL_HEIGHT_M,
@@ -57,10 +66,16 @@ const ESTIMATOR_FAQ = [
     answer:
       'Lagos and Abuja use major-city rates. Port Harcourt, Ibadan, and Kano use urban rates. Other listed cities and a rural/peri-urban option use lower multipliers.',
   },
-  {
-    question: 'How much does a report cost?',
-    answer: `Each build project is priced by building type: ${PACKAGE_SUMMARY}. Your first estimate on this device is free to view on screen. Downloading the PDF, and every extra build after that, is paid per project. The paid report includes the total, finishing comparison, bill of quantities, labour, staged cash calendar, and a print-ready PDF.`,
-  },
+  ESTIMATOR_FREE_MODE
+    ? {
+        question: 'Is it really free?',
+        answer:
+          'Yes — during our launch every estimate and PDF is free, for as many builds as you like. We just ask for your name, email and phone so we can send you your estimate and keep you posted when DirectHome launches fully.',
+      }
+    : {
+        question: 'How much does a report cost?',
+        answer: `Each build project is priced by building type: ${PACKAGE_SUMMARY}. Your first estimate on this device is free to view on screen. Downloading the PDF, and every extra build after that, is paid per project. The paid report includes the total, finishing comparison, bill of quantities, labour, staged cash calendar, and a print-ready PDF.`,
+      },
   {
     question: 'Does it include professional fees and permits?',
     answer:
@@ -174,6 +189,9 @@ const ConstructionCostEstimator: React.FC = () => {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [history, setHistory] = useState<SavedEstimateResult[]>(() => loadHistory());
   const [creating, setCreating] = useState(false);
+  // Freemium lead capture: shown after step 4 for visitors who are not signed in.
+  const [leadStep, setLeadStep] = useState(false);
+  const [leadError, setLeadError] = useState<string | null>(null);
 
   const [specs, setSpecs] = useState<ConstructionSpecs>(() =>
     normalizeSpecs(restoredDraft?.specs)
@@ -198,9 +216,13 @@ const ConstructionCostEstimator: React.FC = () => {
   ];
 
   const commercial = specs.buildingType === BuildingType.COMMERCIAL;
+  const stateForLead =
+    NIGERIAN_STATES.find((state) =>
+      state.toLowerCase().startsWith(String(specs.location.state || '').toLowerCase().split(' ')[0])
+    ) || '';
   const packagePrice = estimatorPriceFor(specs.buildingType);
 
-  const handleCalculate = async () => {
+  const specsAreValid = (): boolean => {
     if (commercial) {
       const rooms = specs.commercial?.numberOfRooms ?? 0;
       const wallHeight = specs.commercial?.wallHeight ?? 0;
@@ -216,7 +238,7 @@ const ConstructionCostEstimator: React.FC = () => {
         setValidationError(
           'Enter the number of rooms, a floor area of at least 50 sqm, and a wall height between 2.4 m and 12 m.'
         );
-        return;
+        return false;
       }
     } else if (
       !Number.isFinite(specs.numberOfBedrooms) ||
@@ -229,26 +251,55 @@ const ConstructionCostEstimator: React.FC = () => {
       specs.totalSquareMeters < 50
     ) {
       setValidationError('Please enter valid building details before calculating.');
+      return false;
+    }
+    setValidationError(null);
+    return true;
+  };
+
+  const handleCalculate = async () => {
+    if (!specsAreValid()) return;
+    if (ESTIMATOR_FREE_MODE && !user) {
+      const savedLead = loadSavedLead();
+      if (!savedLead) {
+        setLeadError(null);
+        setLeadStep(true);
+        return;
+      }
+      await submitProject(savedLead);
       return;
     }
+    await submitProject(null);
+  };
 
-    setValidationError(null);
+  const submitProject = async (lead: EstimatorLead | null) => {
     setCreating(true);
-
     try {
       const normalized = normalizeSpecs(specs);
       const deviceFree = !hasUsedFreePreview();
       const saved = await createConstructionProject({
         specs: normalized,
         claimFreePreview: deviceFree,
+        lead,
       });
 
       if (!saved.ok || !saved.project?.id) {
-        setValidationError(saved.error || 'Could not save project. Try again.');
+        if (saved.code === 'lead_required') {
+          // Stored details were rejected (or none were sent): ask again.
+          clearSavedLead();
+          setLeadError(saved.error || null);
+          setLeadStep(true);
+          return;
+        }
+        if (leadStep) setLeadError(saved.error || 'Could not save project. Try again.');
+        else setValidationError(saved.error || 'Could not save project. Try again.');
         return;
       }
 
-      const freePreview = Boolean(saved.project.preview_granted) || deviceFree;
+      if (lead) saveLeadLocally(lead);
+
+      const freePreview =
+        Boolean(saved.project.free_access) || Boolean(saved.project.preview_granted) || deviceFree;
       if (freePreview) {
         markFreePreviewUsed();
         savePreviewCache(saved.project.id, normalized);
@@ -289,15 +340,24 @@ const ConstructionCostEstimator: React.FC = () => {
         >
           {ESTIMATOR_PACKAGE_ORDER.map((type) => (
             <option key={type} value={type}>
-              {BUILDING_LABELS[type]} — {formatNaira(estimatorPriceFor(type))}
+              {ESTIMATOR_FREE_MODE
+                ? BUILDING_LABELS[type]
+                : `${BUILDING_LABELS[type]} — ${formatNaira(estimatorPriceFor(type))}`}
             </option>
           ))}
         </select>
-        <p className="mt-2 text-sm text-ink-600">
-          {BUILDING_LABELS[specs.buildingType]} package:{' '}
-          <span className="font-semibold text-courtyard-700">{formatNaira(packagePrice)}</span> per
-          project.
-        </p>
+        {ESTIMATOR_FREE_MODE ? (
+          <p className="mt-2 text-sm text-ink-600">
+            <span className="font-semibold text-courtyard-700">Free during our launch</span> —
+            full estimate and PDF for every building type.
+          </p>
+        ) : (
+          <p className="mt-2 text-sm text-ink-600">
+            {BUILDING_LABELS[specs.buildingType]} package:{' '}
+            <span className="font-semibold text-courtyard-700">{formatNaira(packagePrice)}</span>{' '}
+            per project.
+          </p>
+        )}
       </label>
 
       {commercial ? renderCommercialFields() : renderResidentialFields()}
@@ -578,10 +638,10 @@ const ConstructionCostEstimator: React.FC = () => {
       meta={{
         title: 'Construction Cost Estimator Nigeria — Build Budget Tool',
         description:
-          'Construction cost estimator for Nigeria. Get a staged build budget for bungalows, duplexes, storey buildings, apartment blocks, and commercial buildings with materials, labour, fees, and VAT. Reports from ₦399 per project.',
+          'Construction cost estimator for Nigeria. Get a staged build budget for bungalows, duplexes, storey buildings, apartment blocks, and commercial buildings with materials, labour, fees, and VAT. Free during our launch.',
         path: '/construction-estimator',
       }}
-      eyebrow="First estimate free to view"
+      eyebrow={ESTIMATOR_FREE_MODE ? 'Free during our launch' : 'First estimate free to view'}
       heroTitle={
         <>
           Build cost estimator
@@ -589,7 +649,11 @@ const ConstructionCostEstimator: React.FC = () => {
           <span className="italic text-courtyard-700">for Nigeria.</span>
         </>
       }
-      heroSubtitle={`Step-by-step estimate for materials, labour, professional fees, permits, extras, and VAT. Your first generation is free to view; reports are priced per project by building type, from ${formatNaira(ESTIMATOR_MIN_PRICE_NGN)}.`}
+      heroSubtitle={
+        ESTIMATOR_FREE_MODE
+          ? 'Step-by-step estimate for materials, labour, professional fees, permits, extras, and VAT. Free during our launch — every estimate and PDF, for as many builds as you like.'
+          : `Step-by-step estimate for materials, labour, professional fees, permits, extras, and VAT. Your first generation is free to view; reports are priced per project by building type, from ${formatNaira(ESTIMATOR_MIN_PRICE_NGN)}.`
+      }
       heroImage={plateBuild}
       faq={ESTIMATOR_FAQ}
     >
@@ -645,6 +709,18 @@ const ConstructionCostEstimator: React.FC = () => {
         </div>
       </div>
 
+      {leadStep ? (
+        <LeadCaptureForm
+          initial={emptyLead(stateForLead)}
+          submitting={creating}
+          serverError={leadError}
+          onBack={() => {
+            setLeadStep(false);
+            setLeadError(null);
+          }}
+          onSubmit={(lead) => void submitProject(lead)}
+        />
+      ) : (
       <div>
         {currentStep === 1 && renderStep1()}
         {currentStep === 2 && renderStep2()}
@@ -724,6 +800,7 @@ const ConstructionCostEstimator: React.FC = () => {
           </div>
         )}
       </div>
+      )}
     </ToolShell>
   );
 };

@@ -183,7 +183,7 @@ export async function verifyFlutterwavePayment({
   return { ok: true, toolId, projectId: paidProjectId || undefined }
 }
 
-async function requireAdmin(authHeader) {
+export async function requireAdmin(authHeader) {
   const token = String(authHeader || '').replace(/^Bearer\s+/i, '').trim()
   if (!token) {
     return { ok: false, status: 401, error: 'Sign in as admin to view payments.' }

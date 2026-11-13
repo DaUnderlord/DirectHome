@@ -12,6 +12,7 @@ import {
   IconUserShield,
   IconFileText,
   IconCreditCard,
+  IconAddressBook,
   IconBell,
   IconMenu2,
   IconX,
@@ -76,6 +77,12 @@ const AdminLayout: React.FC = () => {
       href: '/admin/analytics',
       icon: IconChartBar,
       current: location.pathname.startsWith('/admin/analytics')
+    },
+    {
+      name: 'Leads',
+      href: '/admin/leads',
+      icon: IconAddressBook,
+      current: location.pathname.startsWith('/admin/leads')
     },
     {
       name: 'Payments',

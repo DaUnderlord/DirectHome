@@ -17,6 +17,7 @@ import AdminUserManagement from '../components/Admin/AdminUserManagement';
 import AuditLogs from '../components/Admin/AuditLogs';
 import ReportsManagement from '../components/Admin/ReportsManagement';
 import PaymentManagement from '../components/Admin/PaymentManagement';
+import LeadsManagement from '../components/Admin/LeadsManagement';
 
 // Route Guards
 import AdminRoute from '../components/Auth/AdminRoute';
@@ -185,6 +186,16 @@ const AdminRoutes: React.FC = () => {
         </Route>
 
         {/* Payment Management */}
+        {/* Estimator leads (freemium sign-ups) */}
+        <Route
+          path="leads"
+          element={
+            <AdminRoute requiredPermissions={[AdminPermission.VIEW_USERS]}>
+              <LeadsManagement />
+            </AdminRoute>
+          }
+        />
+
         <Route path="payments">
           <Route 
             index 

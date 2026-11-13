@@ -14,6 +14,7 @@ export default async function handler(req, res) {
       claimFreePreview: Boolean(body.claimFreePreview),
       authToken: req.headers.authorization,
       cookies: req.headers.cookie,
+      lead: body.lead,
     })
     if (result.setPreviewCookie) {
       res.setHeader('Set-Cookie', PREVIEW_SET_COOKIE)

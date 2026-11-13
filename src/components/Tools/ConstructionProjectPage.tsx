@@ -15,11 +15,17 @@ import EstimatorReport from './EstimatorReport';
 import { BUILDING_LABELS, ESTIMATOR_PACKAGE_ORDER } from './estimatorCopy';
 import plateBuild from '../../assets/plate-build.png';
 import type { ConstructionEstimate, ConstructionSpecs } from '../../types/construction';
-import { estimatorPriceFor } from '../../constants/toolPricing';
+import { ESTIMATOR_FREE_MODE, estimatorPriceFor } from '../../constants/toolPricing';
 import { formatNaira } from '../../utils/naira';
 
 const PROJECT_FAQ = [
-  {
+  ESTIMATOR_FREE_MODE
+    ? {
+        question: 'Is this really free?',
+        answer:
+          'Yes. During our launch every estimate and PDF is free, for as many builds as you like.',
+      }
+    : {
     question: 'How much does a report cost?',
     answer: `Each build is priced by building type: ${ESTIMATOR_PACKAGE_ORDER.map(
       (type) => `${BUILDING_LABELS[type]} ${formatNaira(estimatorPriceFor(type))}`
@@ -28,7 +34,7 @@ const PROJECT_FAQ = [
   {
     question: 'Can I access this later?',
     answer:
-      'Yes. Paid projects are saved to your DirectHome profile. Guest buyers can create an account with the same email to claim their projects.',
+      'Yes. Projects are saved to your DirectHome profile. If you used the estimator without an account, create one with the same email to see your projects there.',
   },
 ];
 
@@ -50,7 +56,8 @@ function visibleEstimate(
   project: ConstructionProjectSummary,
   localSpecs: ConstructionSpecs | null
 ): ConstructionEstimate | null {
-  const paid = project.status === 'paid';
+  // Freemium: while the paywall is off every project is fully unlocked.
+  const paid = project.status === 'paid' || Boolean(project.free_access) || ESTIMATOR_FREE_MODE;
   const preview = Boolean(project.preview_granted) || Boolean(localSpecs);
   if (!paid && !preview) return null;
 
@@ -133,7 +140,8 @@ const ConstructionProjectPage: React.FC = () => {
     void loadProject();
   }, [projectId, user?.id]);
 
-  const paid = project?.status === 'paid';
+  const freeLaunch = Boolean(project?.free_access) || ESTIMATOR_FREE_MODE;
+  const paid = project?.status === 'paid' || freeLaunch;
   const estimate = useMemo(
     () => (project ? visibleEstimate(project, freePreview ? localSpecs : null) : null),
     [project, localSpecs, freePreview]
@@ -200,10 +208,20 @@ const ConstructionProjectPage: React.FC = () => {
         description: 'Your saved construction cost estimate for Nigeria.',
         path: projectRoute(project.id),
       }}
-      eyebrow={paid ? 'Paid project' : preview ? 'Free preview' : `${priceLabel} to unlock`}
+      eyebrow={
+        freeLaunch
+          ? 'Free during our launch'
+          : paid
+            ? 'Paid project'
+            : preview
+              ? 'Free preview'
+              : `${priceLabel} to unlock`
+      }
       heroTitle={project.title}
       heroSubtitle={
-        paid
+        freeLaunch
+          ? 'Your construction estimate and staged cash plan. Download the PDF for the full bill of quantities — free during our launch.'
+          : paid
           ? 'Construction estimate, staged cash plan, and the full bill of quantities in the PDF.'
           : preview
             ? `Your first estimate is free to view. Pay ${priceLabel} to download the PDF for this build.`

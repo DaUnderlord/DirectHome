@@ -45,6 +45,21 @@ const PrivacyPage: React.FC = () => {
             <li>Device and usage information</li>
           </ul>
           
+          <h3 className="text-lg font-semibold mt-6 mb-3 text-gray-900">Construction Cost Estimator</h3>
+          <p className="mb-4">
+            When you use the Construction Cost Estimator without an account, we ask for your name,
+            email address, phone or WhatsApp number, the state you live in, and which best describes
+            you (for example, building your own home or a developer). We store these details with the
+            build details you enter so we can show and save your estimate, follow up on your request,
+            and improve our rates and services.
+          </p>
+          <p className="mb-4">
+            We only send you marketing messages (building tips, price updates and DirectHome offers by
+            email, SMS or WhatsApp) if you tick the box to agree. You can withdraw that consent at any
+            time by replying STOP, using the unsubscribe link in our emails, or contacting us, and you
+            can ask us to correct or delete your details. We do not sell your personal information.
+          </p>
+
           <h2 className="text-xl font-semibold mt-6 mb-3 text-gray-900">2. How We Use Your Information</h2>
           <p className="mb-4">
             We may use the information we collect for various purposes, including to:

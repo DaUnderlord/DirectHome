@@ -2,6 +2,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { listToolPayments, verifyFlutterwavePayment } from './server/flutterwavePayments.js'
+import { listEstimatorLeads } from './server/estimatorLeadsAdmin.js'
 import {
   claimGuestConstructionProjects,
   createConstructionProject,
@@ -57,6 +58,16 @@ function flutterwaveApiPlugin(): Plugin {
           return
         }
 
+        if (url === '/api/estimator-leads' && req.method === 'GET') {
+          try {
+            const result = await listEstimatorLeads(req.headers.authorization)
+            sendJson(res, result.status || (result.ok ? 200 : 400), result)
+          } catch {
+            sendJson(res, 500, { ok: false, error: 'Could not load leads.' })
+          }
+          return
+        }
+
         if (url === '/api/construction-projects/create' && req.method === 'POST') {
           try {
             const raw = await readJsonBody(req)
@@ -67,6 +78,7 @@ function flutterwaveApiPlugin(): Plugin {
               claimFreePreview: Boolean(body.claimFreePreview),
               authToken: req.headers.authorization,
               cookies: req.headers.cookie,
+              lead: body.lead,
             })
             sendJson(
               res,
@@ -152,6 +164,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   for (const key of [
     'FLUTTERWAVE_SECRET_KEY',
+    'ESTIMATOR_PAYWALL',
     'SUPABASE_SERVICE_ROLE_KEY',
     'SUPABASE_URL',
     'SUPABASE_ANON_KEY',

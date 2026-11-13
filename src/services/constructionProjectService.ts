@@ -12,6 +12,8 @@ export interface ConstructionProjectSummary {
   preview_granted?: boolean;
   /** Package price in NGN for this project's building type (from the server). */
   price?: number;
+  /** Freemium: true while the paywall is off — estimate and PDF are free. */
+  free_access?: boolean;
   specs: Partial<ConstructionSpecs> & {
     location?: { city?: string | null; state?: string | null };
   };
@@ -22,6 +24,55 @@ export interface ConstructionProjectSummary {
 const ACCESS_KEY = 'dh-construction-access-tokens';
 const FREE_PREVIEW_KEY = 'dh-estimator-free-preview-used';
 const PREVIEW_CACHE_KEY = 'dh-estimator-preview-cache';
+const LEAD_KEY = 'dh-estimator-lead-v1';
+
+export type LeadPersona = 'homeowner' | 'diaspora' | 'developer' | 'contractor' | 'other';
+
+/** Details a visitor leaves before seeing a free estimate (freemium lead capture). */
+export interface EstimatorLead {
+  fullName: string;
+  email: string;
+  phone: string;
+  persona: LeadPersona | '';
+  state: string;
+  marketingConsent: boolean;
+}
+
+/** The lead submitted earlier on this device, so repeat visitors are not asked again. */
+export function loadSavedLead(): EstimatorLead | null {
+  try {
+    const raw = localStorage.getItem(LEAD_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<EstimatorLead>;
+    if (!parsed.email || !parsed.fullName) return null;
+    return {
+      fullName: parsed.fullName,
+      email: parsed.email,
+      phone: parsed.phone || '',
+      persona: (parsed.persona as LeadPersona) || '',
+      state: parsed.state || '',
+      marketingConsent: Boolean(parsed.marketingConsent),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function saveLeadLocally(lead: EstimatorLead): void {
+  try {
+    localStorage.setItem(LEAD_KEY, JSON.stringify(lead));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearSavedLead(): void {
+  try {
+    localStorage.removeItem(LEAD_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 
 function readAccessMap(): Record<string, string> {
   try {
@@ -83,10 +134,13 @@ export function loadPreviewCache(projectId: string): ConstructionSpecs | null {
 }
 
 function buildTitle(specs: ConstructionSpecs): string {
-  const beds = specs.numberOfBedrooms;
   const type = specs.buildingType.replace(/_/g, ' ');
   const city = specs.location.city || specs.location.state;
-  return `${beds}-bed ${type} · ${specs.totalSquareMeters} sqm · ${city}`.slice(0, 200);
+  const size =
+    specs.buildingType === 'commercial' && specs.commercial
+      ? `${specs.commercial.numberOfRooms}-room`
+      : `${specs.numberOfBedrooms}-bed`;
+  return `${size} ${type} · ${specs.totalSquareMeters} sqm · ${city}`.slice(0, 200);
 }
 
 async function authHeader(): Promise<Record<string, string>> {
@@ -111,6 +165,7 @@ export async function createConstructionProject(params: {
   specs: ConstructionSpecs;
   title?: string;
   claimFreePreview?: boolean;
+  lead?: EstimatorLead | null;
 }): Promise<{
   ok: boolean;
   project?: {
@@ -118,8 +173,11 @@ export async function createConstructionProject(params: {
     status: ConstructionProjectStatus;
     accessToken?: string;
     preview_granted?: boolean;
+    free_access?: boolean;
   };
   error?: string;
+  /** 'lead_required' when the server needs the visitor's details first. */
+  code?: string;
 }> {
   const response = await fetch('/api/construction-projects/create', {
     method: 'POST',
@@ -132,6 +190,7 @@ export async function createConstructionProject(params: {
       title: params.title || buildTitle(params.specs),
       specs: params.specs,
       claimFreePreview: Boolean(params.claimFreePreview),
+      ...(params.lead ? { lead: params.lead } : {}),
     }),
   });
   const payload = (await response.json().catch(() => null)) as {
@@ -141,11 +200,13 @@ export async function createConstructionProject(params: {
       status: ConstructionProjectStatus;
       accessToken?: string;
       preview_granted?: boolean;
+      free_access?: boolean;
     };
     error?: string;
+    code?: string;
   } | null;
   if (!response.ok || !payload?.ok || !payload.project?.id) {
-    return { ok: false, error: payload?.error || 'Could not save project.' };
+    return { ok: false, error: payload?.error || 'Could not save project.', code: payload?.code };
   }
   if (payload.project.accessToken) {
     rememberProjectAccess(payload.project.id, payload.project.accessToken);
